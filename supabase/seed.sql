@@ -1,0 +1,40 @@
+-- Seed Categories
+INSERT INTO categories (name, slug, sort_order, active) VALUES
+  ('A to Z Diary Collection', 'a-to-z-diary-collection', 1, true),
+  ('Bottles Gift Sets', 'bottles-gift-sets', 2, true),
+  ('Buy Diary with Pen', 'buy-diary-with-pen', 3, true),
+  ('Card Holder', 'card-holder', 4, true),
+  ('Carry Bags', 'carry-bags', 5, true),
+  ('Certificate Folders', 'certificate-folders', 6, true),
+  ('Cheque Book Holders', 'cheque-book-holders', 7, true),
+  ('Coffee Mug', 'coffee-mug', 8, true),
+  ('Corporate Diary', 'corporate-diary', 9, true),
+  ('Diary with Pen Gift Set', 'diary-with-pen-gift-set', 10, true),
+  ('Eco Friendly Memo Pads', 'eco-friendly-memo-pads', 11, true),
+  ('Economy Diary', 'economy-diary', 12, true),
+  ('Employee Joining Kit', 'employee-joining-kit', 13, true),
+  ('Engineering Diary', 'engineering-diary', 14, true),
+  ('Executive Diary', 'executive-diary', 15, true),
+  ('Executive Folder Diary', 'executive-folder-diary', 16, true),
+  ('Give Away Gifts', 'give-away-gifts', 17, true),
+  ('Key Chains', 'key-chains', 18, true),
+  ('LEATHER PLANNERS', 'leather-planners', 19, true),
+  ('Laptop Bags', 'laptop-bags', 20, true),
+  ('Latest Product', 'latest-product', 21, true),
+  ('Leather Diary', 'leather-diary', 22, true),
+  ('Leather Planner', 'leather-planner', 23, true),
+  ('Leather Planners', 'leather-planners', 24, true),
+  ('Leather Wallets', 'leather-wallets', 25, true),
+  ('Notebook with Pen', 'notebook-with-pen', 26, true),
+  ('Plain Diary', 'plain-diary', 27, true),
+  ('Premium Diary', 'premium-diary', 28, true),
+  ('Promotional Umbrella', 'promotional-umbrella', 29, true),
+  ('Sunday Full Page Diary', 'sunday-full-page-diary', 30, true),
+  ('Table Calendar', 'table-calendar', 31, true),
+  ('Water Bottles', 'water-bottles', 32, true);
+
+-- Seed Banners
+INSERT INTO banners (title, subtitle, cta_text, cta_link, image_url, order_index, active) VALUES
+  ('Premium Leather Diaries', 'Handcrafted with love, designed for professionals', 'Shop Now', '/shop', 'https://newyeardiaries.in/wp-content/uploads/2020/02/newyear.jpg', 1, true),
+  ('Corporate Gift Solutions', 'Bulk orders with your logo embossed', 'Get Quote', '/corporate', 'https://newyeardiaries.in/wp-content/uploads/2020/02/newyear.jpg', 2, true),
+  ('New Year Collection 2026', 'Start the year organized', 'Explore', '/shop', 'https://newyeardiaries.in/wp-content/uploads/2020/02/newyear.jpg', 3, true);
