@@ -328,7 +328,7 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
   let query = supabase
     .from('products')
     .select('*, category:categories(name)', { count: 'exact' })
-    .order('sort_order');
+    .order('created_at', { ascending: false });
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,sku.ilike.%${search}%`);
@@ -424,12 +424,14 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
     });
   });
 
-  // Search with debounce
+  // Search with debounce — use mutable variable to avoid stale closure
   let searchTimeout;
+  let searchTerm = search;
   document.getElementById('product-search')?.addEventListener('input', (e) => {
+    searchTerm = e.target.value;
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      renderProducts(container, 1, e.target.value, document.getElementById('filter-category')?.value || '', document.getElementById('filter-active')?.value || '');
+      renderProducts(container, 1, searchTerm, document.getElementById('filter-category')?.value || '', document.getElementById('filter-active')?.value || '');
     }, 350);
   });
 

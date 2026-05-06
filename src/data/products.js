@@ -40,7 +40,7 @@ export async function getProducts() {
     .from('products')
     .select('*, category:categories(name)')
     .eq('active', true)
-    .order('sort_order');
+    .order('created_at', { ascending: false });
   _cache = (data || []).map(normalize);
   _fetchedAt = Date.now();
   return _cache;

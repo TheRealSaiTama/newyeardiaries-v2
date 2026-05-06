@@ -77,22 +77,22 @@ CREATE POLICY "Public read products" ON products FOR SELECT TO anon USING (activ
 CREATE POLICY "Public read banners" ON banners FOR SELECT TO anon USING (active = true);
 CREATE POLICY "Public read site_settings" ON site_settings FOR SELECT TO anon USING (true);
 
--- Admin write policies (authenticated users can write)
-CREATE POLICY "Admin insert categories" ON categories FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admin update categories" ON categories FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin delete categories" ON categories FOR DELETE TO authenticated USING (true);
+-- Admin write policies (anon can write — admin auth handled client-side via password)
+CREATE POLICY "Allow insert categories" ON categories FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow update categories" ON categories FOR UPDATE TO anon USING (true);
+CREATE POLICY "Allow delete categories" ON categories FOR DELETE TO anon USING (true);
 
-CREATE POLICY "Admin insert products" ON products FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admin update products" ON products FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin delete products" ON products FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Allow insert products" ON products FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow update products" ON products FOR UPDATE TO anon USING (true);
+CREATE POLICY "Allow delete products" ON products FOR DELETE TO anon USING (true);
 
-CREATE POLICY "Admin insert banners" ON banners FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admin update banners" ON banners FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin delete banners" ON banners FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Allow insert banners" ON banners FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow update banners" ON banners FOR UPDATE TO anon USING (true);
+CREATE POLICY "Allow delete banners" ON banners FOR DELETE TO anon USING (true);
 
-CREATE POLICY "Admin insert site_settings" ON site_settings FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Admin update site_settings" ON site_settings FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin delete site_settings" ON site_settings FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Allow insert site_settings" ON site_settings FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow update site_settings" ON site_settings FOR UPDATE TO anon USING (true);
+CREATE POLICY "Allow delete site_settings" ON site_settings FOR DELETE TO anon USING (true);
 
 -- Seed default site settings
 INSERT INTO site_settings (key, value, description) VALUES
