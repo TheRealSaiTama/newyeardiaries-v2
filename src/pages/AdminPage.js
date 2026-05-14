@@ -569,11 +569,19 @@ async function openProductModal(container, product = null) {
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
     };
+
+    let error;
     if (isEdit) {
-      await supabase.from('products').update(payload).eq('id', product.id);
+      ({ error } = await supabase.from('products').update(payload).eq('id', product.id));
     } else {
-      await supabase.from('products').insert(payload);
+      ({ error } = await supabase.from('products').insert(payload));
     }
+
+    if (error) {
+      showToast(`Failed: ${error.message}`, 'error');
+      return;
+    }
+
     closeModal();
     showToast(isEdit ? 'Product updated!' : 'Product added!');
     await renderProducts(container);

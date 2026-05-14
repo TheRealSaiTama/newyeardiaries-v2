@@ -35,7 +35,7 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
     .from('products')
     .select('*, category:categories(name)')
     .eq('active', true)
-    .order('sort_order')
+    .order('created_at', { ascending: false })
     .range(offset, offset + (limit || 100) - 1);
 
   if (categoryId) query = query.eq('category_id', categoryId);
