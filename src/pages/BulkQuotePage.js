@@ -1,5 +1,6 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { navigateTo } from '../router.js';
+import { supabase } from '../lib/supabase.js';
 
 export function renderBulkQuotePage() {
   const app = document.getElementById('app');
@@ -34,17 +35,17 @@ export function renderBulkQuotePage() {
             <h2 class="heading-3" style="margin-bottom:var(--space-6);">Tell Us About Your Needs</h2>
             <form id="bulk-quote-form" class="auth-form">
               <div class="form-row">
-                <div class="input-group"><label>Full Name *</label><input type="text" class="input-field" required></div>
-                <div class="input-group"><label>Company Name *</label><input type="text" class="input-field" required></div>
+                <div class="input-group"><label>Full Name *</label><input name="name" type="text" class="input-field" required></div>
+                <div class="input-group"><label>Company Name *</label><input name="company" type="text" class="input-field" required></div>
               </div>
               <div class="form-row">
-                <div class="input-group"><label>Email *</label><input type="email" class="input-field" required></div>
-                <div class="input-group"><label>Phone *</label><input type="tel" class="input-field" required></div>
+                <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
+                <div class="input-group"><label>Phone *</label><input name="phone" type="tel" class="input-field" required></div>
               </div>
               <div class="input-group">
                 <label>Product Interest</label>
-                <select class="input-field select-field">
-                  <option>Select a category</option>
+                <select name="product_type" class="input-field select-field">
+                  <option value="">Select a category</option>
                   <option>2026 Diaries</option>
                   <option>Executive Planners</option>
                   <option>Corporate Gift Sets</option>
@@ -52,14 +53,14 @@ export function renderBulkQuotePage() {
                 </select>
               </div>
               <div class="form-row">
-                <div class="input-group"><label>Estimated Quantity</label><input type="number" class="input-field" placeholder="Min. 25 units" min="25"></div>
-                <div class="input-group"><label>Required By</label><input type="date" class="input-field"></div>
+                <div class="input-group"><label>Estimated Quantity</label><input name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25"></div>
+                <div class="input-group"><label>Required By</label><input name="required_by" type="date" class="input-field"></div>
               </div>
               <div class="input-group">
                 <label>Customization Details</label>
-                <textarea class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea>
+                <textarea name="custom_requirements" class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea>
               </div>
-              <button type="submit" class="btn btn--accent btn--lg btn--full">Submit Enquiry</button>
+              <button type="submit" class="btn btn--accent btn--lg btn--full" id="submit-btn">Submit Enquiry</button>
             </form>
           </div>
         </div>
@@ -67,8 +68,39 @@ export function renderBulkQuotePage() {
     </div>
   `;
 
-  document.getElementById('bulk-quote-form')?.addEventListener('submit', (e) => {
+  document.getElementById('bulk-quote-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('submit-btn');
+
+    if (btn.disabled) return;
+
+    const data = {
+      name: form.name.value.trim(),
+      email: form.email.value.trim(),
+      phone: form.phone.value.trim(),
+      company: form.company.value.trim(),
+      product_type: form.product_type.value || null,
+      quantity: form.quantity.value ? Number(form.quantity.value) : null,
+      custom_requirements: [
+        form.custom_requirements.value.trim(),
+        form.required_by.value ? `Required by: ${form.required_by.value}` : '',
+      ].filter(Boolean).join('\n') || null,
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    const { error } = await supabase.from('quote_requests').insert([data]);
+
+    if (error) {
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = 'Submit Enquiry';
+      alert('Something went wrong. Please try again or contact us directly.');
+      return;
+    }
+
     navigateTo('/enquiry-success');
   });
 }
