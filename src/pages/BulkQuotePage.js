@@ -1,6 +1,7 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { navigateTo } from '../router.js';
 import { supabase } from '../lib/supabase.js';
+import { sendQuoteEmail } from '../lib/notify.js';
 
 export function renderBulkQuotePage() {
   const app = document.getElementById('app');
@@ -101,6 +102,7 @@ export function renderBulkQuotePage() {
       return;
     }
 
+    sendQuoteEmail(data).catch(() => {});
     navigateTo('/enquiry-success');
   });
 }
