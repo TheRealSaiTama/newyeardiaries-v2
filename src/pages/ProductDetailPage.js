@@ -5,6 +5,21 @@ import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, formatPrice } from '../data/products.js';
 import { addToQuoteList, addToCart } from '../data/store.js';
 
+function renderProductMedia(src, alt) {
+  if (!src) return `<span class="placeholder-icon material-symbols-outlined">menu_book</span>`;
+  if (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4')) {
+    return `<video src="${src}" controls muted playsinline></video>`;
+  }
+  return `<img src="${src}" alt="${alt}">`;
+}
+
+function renderProductThumb(src, alt) {
+  if (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4')) {
+    return `<video src="${src}" muted playsinline></video>`;
+  }
+  return `<img src="${src}" alt="${alt}">`;
+}
+
 export async function renderProductDetailPage(params) {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page-content"><div class="container section">${renderPDPSkeleton()}</div></div>`;
@@ -33,14 +48,12 @@ export async function renderProductDetailPage(params) {
         <div class="pdp-layout">
           <div class="pdp-gallery">
             <div class="pdp-main-image">
-              ${product.image
-                ? `<img src="${product.image}" alt="${product.title}">`
-                : `<span class="placeholder-icon material-symbols-outlined">menu_book</span>`}
+              ${renderProductMedia(product.image, product.title)}
             </div>
             <div class="pdp-thumbnails">
               ${product.images.slice(0, 4).map((img, i) => `
                 <div class="pdp-thumb ${i === 0 ? 'active' : ''}">
-                  <img src="${img}" alt="${product.title}">
+                  ${renderProductThumb(img, product.title)}
                 </div>
               `).join('') || Array(4).fill('').map((_, i) => `
                 <div class="pdp-thumb ${i === 0 ? 'active' : ''}">

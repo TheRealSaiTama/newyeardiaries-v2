@@ -3,6 +3,9 @@ import { navigateTo } from '../router.js';
 
 let currentTab = 'products';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const SECONDARY_MEDIA_TYPES = [...IMAGE_TYPES, 'video/mp4'];
+const MAX_MEDIA_SIZE = 8 * 1024 * 1024;
 
 export function renderAdminPage() {
   const isAuthed = sessionStorage.getItem('admin_auth') === '1';
@@ -169,6 +172,7 @@ export function renderAdminPage() {
     .form-group label { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--color-text-secondary); }
     .form-group input, .form-group select, .form-group textarea { padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: var(--fs-base); background: var(--color-surface); color: var(--color-text-primary); transition: var(--transition-fast); }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(160, 82, 45, 0.12); }
+    .form-group input[readonly] { background: var(--color-surface-alt); color: var(--color-text-secondary); cursor: not-allowed; }
     .form-group textarea { resize: vertical; min-height: 80px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
     .form-group.checkbox { flex-direction: row; align-items: center; gap: var(--space-3); }
@@ -482,9 +486,39 @@ function generateSlug(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+function parseMediaList(value) {
+  return (value || '')
+    .split('\n')
+    .flatMap(line => {
+      const clean = line.trim();
+      if (!clean) return [];
+      return clean.startsWith('data:') ? [clean] : clean.split(',').map(item => item.trim()).filter(Boolean);
+    });
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readMediaFiles(input, allowedTypes) {
+  const files = Array.from(input?.files || []);
+  const invalid = files.find(file => !allowedTypes.includes(file.type));
+  if (invalid) throw new Error(`${invalid.name} is not an allowed file type.`);
+  const tooLarge = files.find(file => file.size > MAX_MEDIA_SIZE);
+  if (tooLarge) throw new Error(`${tooLarge.name} is larger than 8 MB.`);
+  return Promise.all(files.map(readFileAsDataUrl));
+}
+
 async function openProductModal(container, product = null) {
   const { data: categories } = await supabase.from('categories').select('id, name').order('name');
   const isEdit = !!product;
+  const primaryImage = product?.images?.[0] || '';
+  const secondaryImages = product?.images?.slice(1) || [];
 
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
@@ -515,11 +549,20 @@ async function openProductModal(container, product = null) {
         </div>
         <div class="form-row">
           <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
-          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product?.min_bulk_order || 1}" min="1"></div>
+          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="100" placeholder="100" readonly></div>
         </div>
         <div class="form-group"><label>Short Description</label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
         <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
-        <div class="form-group"><label>Images <small style="color:var(--color-text-tertiary)">(comma-separated URLs)</small></label><textarea name="images" placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg" style="min-height:60px">${product?.images?.join(', ') || ''}</textarea></div>
+        <div class="form-group">
+          <label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label>
+          <input name="primary_image_url" value="${primaryImage}" placeholder="https://example.com/product.jpg">
+          <input name="primary_image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+        </div>
+        <div class="form-group">
+          <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(one URL per line, jpg/png/webp/mp4)</small></label>
+          <textarea name="secondary_images" placeholder="https://example.com/angle-2.jpg&#10;https://example.com/demo.mp4" style="min-height:80px">${secondaryImages.join('\n')}</textarea>
+          <input name="secondary_image_files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,image/jpeg,image/png,image/webp,video/mp4">
+        </div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div>
           <div class="form-group checkbox"><input name="active" type="checkbox" id="active" ${product?.active !== false ? 'checked' : ''}><label for="active">Active</label></div>
@@ -553,6 +596,20 @@ async function openProductModal(container, product = null) {
     e.preventDefault();
     const fd = new FormData(e.target);
     let slug = fd.get('slug') || generateSlug(fd.get('name'));
+    let uploadedPrimary = [];
+    let uploadedSecondary = [];
+    try {
+      uploadedPrimary = await readMediaFiles(e.target.primary_image_file, IMAGE_TYPES);
+      uploadedSecondary = await readMediaFiles(e.target.secondary_image_files, SECONDARY_MEDIA_TYPES);
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+
+    const primaryImages = [...uploadedPrimary, ...parseMediaList(fd.get('primary_image_url'))];
+    const secondaryMedia = [...parseMediaList(fd.get('secondary_images')), ...uploadedSecondary];
+    const images = [...primaryImages.slice(0, 1), ...secondaryMedia];
+
     const payload = {
       name: fd.get('name'),
       slug: slug,
@@ -563,8 +620,8 @@ async function openProductModal(container, product = null) {
       badge: fd.get('badge') || null,
       short_description: fd.get('short_description') || null,
       description: fd.get('description') || null,
-      images: fd.get('images') ? fd.get('images').split(',').map(s => s.trim()).filter(Boolean) : [],
-      min_bulk_order: Number(fd.get('min_bulk_order')) || 1,
+      images,
+      min_bulk_order: 100,
       in_stock: fd.get('in_stock') === 'on',
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,

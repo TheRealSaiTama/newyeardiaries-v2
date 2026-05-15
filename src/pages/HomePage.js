@@ -10,6 +10,8 @@ const SECTION_CATS = {
   combo: 'diary-with-pen-gift-set',
   premium: 'premium-diary',
 };
+const WHATSAPP_NUMBER = '919311135190';
+const WHATSAPP_MESSAGE = encodeURIComponent('Hi New Year Diaries, I want to enquire about diaries and corporate gifting.');
 
 export async function renderHomePage() {
   const [content, allCategories] = await Promise.all([
@@ -39,6 +41,9 @@ export async function renderHomePage() {
 
   app.innerHTML = `
     <div class="page-content">
+      <a class="home-whatsapp-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}" target="_blank" rel="noopener" aria-label="Enquire on WhatsApp">
+        <span>WhatsApp Enquiry</span>
+      </a>
       <section class="hero-section">
         <div class="hero-slider" id="hero-slider">
           <div class="hero-slide active" style="background-image:url('/images/banner2.jpg')"></div>
