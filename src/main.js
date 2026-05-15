@@ -46,6 +46,14 @@ async function preloadCategories() {
   }
 }
 
+function hideLoader() {
+  const loader = document.getElementById('app-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 300);
+  }
+}
+
 function setupShell() {
   const shell = document.getElementById('shell');
   shell.innerHTML = `
@@ -94,6 +102,7 @@ addRoute('/admin', (params) => {
 loadContent().then(() => {
   preloadCategories().then(() => {
     setupShell();
+    hideLoader();
     initRouter();
   });
 });

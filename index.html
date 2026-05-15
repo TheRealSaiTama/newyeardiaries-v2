@@ -11,6 +11,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div id="app-loader" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;z-index:9999;transition:opacity .3s">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div class="loader-spinner" style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#1a1a1a;border-radius:50%;animation:spin .7s linear infinite"></div>
+      <span style="font-family:Poppins,sans-serif;font-size:14px;color:#6b7280">Loading...</span>
+    </div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   <div id="shell"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
