@@ -80,9 +80,9 @@ export const filters = {
   material: ['Full-grain Leather', 'Italian PU Leather', 'Vegan Leather', 'Woven Linen', 'Hardbound'],
   size: ['A4', 'A5', 'B5'],
   priceRange: [
-    { label: 'Under ₹1,500', min: 0, max: 1500 },
-    { label: '₹1,500 – ₹2,500', min: 1500, max: 2500 },
-    { label: '₹2,500 – ₹4,000', min: 2500, max: 4000 },
-    { label: 'Above ₹4,000', min: 4000, max: Infinity },
+    { label: 'Under ₹500', min: 0, max: 500 },
+    { label: '₹500 – ₹1,000', min: 500, max: 1000 },
+    { label: '₹1,000 – ₹1,500', min: 1000, max: 1500 },
+    { label: '₹1,500 – ₹2,000', min: 1500, max: 2000 },
   ],
 };
