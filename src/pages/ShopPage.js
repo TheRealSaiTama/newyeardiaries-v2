@@ -3,9 +3,40 @@ import { renderFilterSidebar, initFilterEvents } from '../components/FilterSideb
 import { renderProductCard } from '../components/ProductCard.js';
 import { getProducts } from '../data/products.js';
 import { addToQuoteList } from '../data/store.js';
+import { CATEGORY_GROUPS } from '../lib/categories.js';
+
+const PAGE_TITLES = {
+  Planners: { title: 'Planners', desc: 'Stay organized with our curated range of premium planners — crafted for focus, productivity, and style.' },
+  Diaries: { title: 'Diaries', desc: 'Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.' },
+  'Corporate Gifts': { title: 'Corporate Gifts', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
+};
 
 export async function renderShopPage() {
-  const products = await getProducts();
+  const allProducts = await getProducts();
+  const params = new URLSearchParams(window.location.search);
+  const catSlug = params.get('cat');
+  const groupName = params.get('group');
+
+  // Filter products based on ?cat= or ?group=
+  let products;
+  let pageTitle = 'The 2026 Diary Collection';
+  let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
+  let breadcrumbLabel = 'All Diaries';
+
+  if (catSlug) {
+    products = allProducts.filter(p => (p.category || '').toLowerCase() === catSlug.toLowerCase());
+    pageTitle = catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    pageDesc = '';
+    breadcrumbLabel = pageTitle;
+  } else if (groupName && CATEGORY_GROUPS[groupName]) {
+    const slugs = CATEGORY_GROUPS[groupName];
+    products = allProducts.filter(p => slugs.includes(p.category));
+    const meta = PAGE_TITLES[groupName];
+    if (meta) { pageTitle = meta.title; pageDesc = meta.desc; }
+    breadcrumbLabel = groupName;
+  } else {
+    products = allProducts;
+  }
 
   const app = document.getElementById('app');
 
@@ -15,13 +46,13 @@ export async function renderShopPage() {
         ${renderBreadcrumbs([
           { label: 'Home', path: '/' },
           { label: 'Collections', path: '/shop' },
-          { label: 'All Diaries' },
+          { label: breadcrumbLabel },
         ])}
 
         <div class="shop-header">
           <div>
-            <h1>The 2026 Diary Collection</h1>
-            <p>Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.</p>
+            <h1>${pageTitle}</h1>
+            ${pageDesc ? `<p>${pageDesc}</p>` : ''}
           </div>
           <div class="shop-controls">
             <button class="btn btn--secondary btn--sm filter-toggle-mobile" id="filter-toggle">

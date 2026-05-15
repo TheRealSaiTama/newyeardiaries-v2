@@ -26,7 +26,7 @@ export function renderHeader(content) {
   const mainNavItems = [
     { label: 'Diaries', path: '/shop', group: 'Diaries' },
     { label: 'Corporate', path: '/shop/corporate', group: 'Corporate Gifts' },
-    { label: 'Planners', path: '/shop?cat=planners', group: 'Planners' },
+    { label: 'Planners', path: '/shop?group=Planners', group: 'Planners' },
     { label: 'Shop', path: '/shop', group: null },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },

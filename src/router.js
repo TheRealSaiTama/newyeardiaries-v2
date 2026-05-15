@@ -18,8 +18,10 @@ export function addRoute(path, handler) {
 }
 
 export function navigateTo(path) {
-  if (window.location.pathname === path) return;
-  window.history.pushState({}, '', path);
+  const url = new URL(path, window.location.origin);
+  const fullPath = url.pathname + url.search;
+  if (window.location.pathname + window.location.search === fullPath) return;
+  window.history.pushState({}, '', fullPath);
   resolveRoute();
 }
 
