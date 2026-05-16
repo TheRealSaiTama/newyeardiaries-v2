@@ -119,11 +119,11 @@
 
 .ap-cat-img-wrapper {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  width: 220px;
+  height: 220px;
   overflow: hidden;
   background: #F0EDE8;
-  border-radius: 0;
+  border-radius: 8px;
 }
 
 .ap-cat-img-wrapper img {
@@ -220,6 +220,7 @@
   .ap-cat-section { padding: 40px 0; }
   .ap-cat-inner { padding: 0 20px; }
   .ap-cat-card { flex: 0 0 160px; }
+  .ap-cat-img-wrapper { width: 160px; height: 160px; }
   .ap-cat-heading { font-size: 16px; }
   .home-whatsapp-btn { right: 0; min-width: 54px; width: 54px; padding: 10px 8px; }
   .home-whatsapp-btn span { font-size: 0; }
@@ -228,6 +229,7 @@
 
 @media (max-width: 480px) {
   .ap-cat-card { flex: 0 0 140px; }
+  .ap-cat-img-wrapper { width: 140px; height: 140px; }
 }
 
 /* ===== Anand Prakash Complete Catalogue ===== */

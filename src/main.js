@@ -28,6 +28,7 @@ import { renderPrivacyPolicyPage } from './pages/PrivacyPolicyPage.js';
 import { renderTermsPage } from './pages/TermsPage.js';
 import { renderShippingReturnsPage } from './pages/ShippingReturnsPage.js';
 import { renderAdminPage, initAdminPage } from './pages/AdminPage.js';
+import { initFaqChatbot } from './components/FaqChatbot.js';
 
 let appContent = null;
 
@@ -102,6 +103,7 @@ addRoute('/admin', (params) => {
 loadContent().then(() => {
   preloadCategories().then(() => {
     setupShell();
+    initFaqChatbot();
     hideLoader();
     initRouter();
   });

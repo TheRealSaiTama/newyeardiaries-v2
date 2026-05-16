@@ -35,10 +35,23 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
     .from('products')
     .select('*, category:categories(name)')
     .eq('active', true)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + (limit || 100) - 1);
+    .order('created_at', { ascending: false });
 
-  if (categoryId) query = query.eq('category_id', categoryId);
+  if (categoryId) {
+    const { data: pcRows } = await supabase
+      .from('product_categories')
+      .select('product_id')
+      .eq('category_id', categoryId);
+    const ids = (pcRows || []).map(r => r.product_id);
+    if (ids.length) {
+      query = query.in('id', ids);
+    } else {
+      query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+    }
+  }
+
+  query = query.range(offset, offset + (limit || 100) - 1);
+
   if (search) query = query.ilike('name', `%${search}%`);
 
   const { data, error } = await query;
@@ -95,7 +108,7 @@ const LOCAL_CAT_IMAGES = {
 export async function getCategories() {
   const { data, error } = await supabase
     .from('categories')
-    .select('id, name, slug, icon, description, image_url, sort_order, active')
+    .select('id, name, slug, icon, description, image_url, sort_order, active, parent_id')
     .eq('active', true)
     .order('sort_order');
   if (error) return [];

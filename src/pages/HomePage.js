@@ -10,7 +10,7 @@ const SECTION_CATS = {
   combo: 'diary-with-pen-gift-set',
   premium: 'premium-diary',
 };
-const WHATSAPP_NUMBER = '919311135190';
+const WHATSAPP_NUMBER = '919899223130';
 const WHATSAPP_MESSAGE = encodeURIComponent('Hi New Year Diaries, I want to enquire about diaries and corporate gifting.');
 
 export async function renderHomePage() {
@@ -66,14 +66,33 @@ export async function renderHomePage() {
           </div>
           <div class="ap-cat-wrapper">
             <div class="ap-cat-grid" id="apCatGrid">
-              ${allCategories.map(cat => `
-                <a href="/shop?cat=${cat.slug}" class="ap-cat-card">
-                  <div class="ap-cat-img-wrapper">
-                    <img src="${cat.image_url || '/images/placeholder.jpg'}" alt="${cat.name}" loading="lazy" />
-                  </div>
-                  <div class="ap-cat-label">${cat.name}</div>
-                </a>
-              `).join('')}
+              ${(() => {
+                const parents = allCategories.filter(c => !c.parent_id);
+                const childrenMap = {};
+                allCategories.filter(c => c.parent_id).forEach(c => {
+                  const pid = typeof c.parent_id === 'string' ? c.parent_id : c.parent_id?.id;
+                  if (!childrenMap[pid]) childrenMap[pid] = [];
+                  childrenMap[pid].push(c);
+                });
+                return parents.map(cat => {
+                  const children = childrenMap[cat.id] || [];
+                  return `
+                    <div class="ap-cat-card-wrap">
+                      <a href="/shop?cat=${cat.slug}" class="ap-cat-card">
+                        <div class="ap-cat-img-wrapper">
+                          <img src="${cat.image_url || '/images/placeholder.jpg'}" alt="${cat.name}" loading="lazy" />
+                        </div>
+                        <div class="ap-cat-label">${cat.name}</div>
+                      </a>
+                      ${children.length ? `
+                        <div class="ap-cat-subcats">
+                          ${children.map(sub => `<a href="/shop?cat=${sub.slug}" class="ap-cat-subcat">${sub.name}</a>`).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('');
+              })()}
             </div>
             <button class="ap-cat-arrow ap-cat-arrow--left" id="apCatLeft">&#8249;</button>
             <button class="ap-cat-arrow ap-cat-arrow--right" id="apCatRight">&#8250;</button>

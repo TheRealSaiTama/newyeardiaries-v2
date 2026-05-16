@@ -63,10 +63,16 @@ export async function getProductsByCategory(categorySlug) {
     .eq('slug', categorySlug)
     .single();
   if (!cats) return [];
+  const { data: pcRows } = await supabase
+    .from('product_categories')
+    .select('product_id')
+    .eq('category_id', cats.id);
+  const ids = (pcRows || []).map(r => r.product_id);
+  if (!ids.length) return [];
   const { data } = await supabase
     .from('products')
     .select('*, category:categories(name)')
-    .eq('category_id', cats.id)
+    .in('id', ids)
     .eq('active', true)
     .order('sort_order');
   return (data || []).map(normalize);

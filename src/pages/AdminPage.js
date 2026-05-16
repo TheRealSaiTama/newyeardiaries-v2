@@ -177,6 +177,10 @@ export function renderAdminPage() {
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
     .form-group.checkbox { flex-direction: row; align-items: center; gap: var(--space-3); }
     .form-group.checkbox input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+    .admin-cat-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-2); max-height: 160px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+    .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; }
+    .admin-cat-checkbox:hover { background: var(--color-surface-alt); }
+    .admin-cat-checkbox input { accent-color: var(--color-primary); }
     .admin-modal-actions { display: flex; gap: var(--space-3); justify-content: flex-end; padding: var(--space-6); border-top: 1px solid var(--color-border); }
     .empty-state { text-align: center; padding: var(--space-16); color: var(--color-text-secondary); }
     .empty-state .material-symbols-outlined { font-size: 48px; margin-bottom: var(--space-4); }
@@ -338,7 +342,13 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
     query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,sku.ilike.%${search}%`);
   }
   if (filterCategory) {
-    query = query.eq('category_id', filterCategory);
+    const { data: pcFilter } = await supabase.from('product_categories').select('product_id').eq('category_id', filterCategory);
+    const filterIds = (pcFilter || []).map(r => r.product_id);
+    if (filterIds.length) {
+      query = query.in('id', filterIds);
+    } else {
+      query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+    }
   }
   if (filterActive !== '') {
     query = query.eq('active', filterActive === 'true');
@@ -350,7 +360,17 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
 
   const { data: products, error, count } = await query;
 
-  const { data: categories } = await supabase.from('categories').select('id, name').order('name');
+  const productIds = (products || []).map(p => p.id);
+  const [{ data: categories }, { data: pcRows }] = await Promise.all([
+    supabase.from('categories').select('id, name').order('name'),
+    productIds.length ? supabase.from('product_categories').select('product_id, category_id, categories(name)').in('product_id', productIds) : Promise.resolve({ data: [] }),
+  ]);
+
+  const catMapByProduct = {};
+  (pcRows || []).forEach(r => {
+    if (!catMapByProduct[r.product_id]) catMapByProduct[r.product_id] = [];
+    catMapByProduct[r.product_id].push(r.categories?.name || '');
+  });
   const totalPages = Math.ceil((count || 0) / PRODUCTS_PER_PAGE);
 
   container.innerHTML = `
@@ -388,7 +408,7 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
             <tr class="product-row" data-id="${p.id}">
               <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
               <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
-              <td>${p.category?.name || '—'}</td>
+              <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
               <td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
               <td>${p.in_stock ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>` : '<span style="color:var(--color-error)">Out of stock</span>'}</td>
               <td><span class="badge ${p.active ? 'badge-active' : 'badge-inactive'}">${p.active ? 'Active' : 'Inactive'}</span></td>
@@ -515,10 +535,14 @@ async function readMediaFiles(input, allowedTypes) {
 }
 
 async function openProductModal(container, product = null) {
-  const { data: categories } = await supabase.from('categories').select('id, name').order('name');
+  const [{ data: categories }, existingCats] = await Promise.all([
+    supabase.from('categories').select('id, name').order('name'),
+    product?.id ? supabase.from('product_categories').select('category_id').eq('product_id', product.id) : Promise.resolve({ data: [] }),
+  ]);
   const isEdit = !!product;
   const primaryImage = product?.images?.[0] || '';
   const secondaryImages = product?.images?.slice(1) || [];
+  const selectedCatIds = new Set((existingCats?.data || []).map(r => r.category_id));
 
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
@@ -535,11 +559,10 @@ async function openProductModal(container, product = null) {
           <div class="form-group"><label>Slug *</label><input name="slug" value="${product?.slug || ''}" required id="p-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>Category</label>
-            <select name="category_id">
-              <option value="">— None —</option>
-              ${categories.map(c => `<option value="${c.id}" ${product?.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
+          <div class="form-group" style="flex:1"><label>Categories</label>
+            <div class="admin-cat-checkboxes">
+              ${categories.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+            </div>
           </div>
           <div class="form-group"><label>Price *</label><input name="price" type="number" step="0.01" value="${product?.price || ''}" required></div>
         </div>
@@ -549,7 +572,7 @@ async function openProductModal(container, product = null) {
         </div>
         <div class="form-row">
           <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
-          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="100" placeholder="100" readonly></div>
+          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product?.min_bulk_order || ''}" placeholder="100"></div>
         </div>
         <div class="form-group"><label>Short Description</label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
         <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
@@ -610,10 +633,12 @@ async function openProductModal(container, product = null) {
     const secondaryMedia = [...parseMediaList(fd.get('secondary_images')), ...uploadedSecondary];
     const images = [...primaryImages.slice(0, 1), ...secondaryMedia];
 
+    const selectedCatIds = fd.getAll('category_ids');
+
     const payload = {
       name: fd.get('name'),
       slug: slug,
-      category_id: fd.get('category_id') || null,
+      category_id: selectedCatIds[0] || null,
       price: Number(fd.get('price')),
       original_price: fd.get('original_price') ? Number(fd.get('original_price')) : null,
       sku: fd.get('sku') || null,
@@ -621,22 +646,41 @@ async function openProductModal(container, product = null) {
       short_description: fd.get('short_description') || null,
       description: fd.get('description') || null,
       images,
-      min_bulk_order: 100,
+      min_bulk_order: Number(fd.get('min_bulk_order')) || 100,
       in_stock: fd.get('in_stock') === 'on',
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
     };
 
-    let error;
+    let savedProduct;
     if (isEdit) {
-      ({ error } = await supabase.from('products').update(payload).eq('id', product.id));
+      const { error: updateError } = await supabase.from('products').update(payload).eq('id', product.id);
+      if (updateError) {
+        console.error('Product save failed:', updateError);
+        showToast(`Failed: ${updateError.message}`, 'error');
+        return;
+      }
+      savedProduct = product;
     } else {
-      ({ error } = await supabase.from('products').insert(payload));
+      const { data: inserted, error: insertError } = await supabase.from('products').insert(payload).select('id').single();
+      if (insertError) {
+        console.error('Product save failed:', insertError);
+        showToast(`Failed: ${insertError.message}`, 'error');
+        return;
+      }
+      savedProduct = inserted;
     }
 
-    if (error) {
-      showToast(`Failed: ${error.message}`, 'error');
-      return;
+    if (savedProduct?.id) {
+      await supabase.from('product_categories').delete().eq('product_id', savedProduct.id);
+      if (selectedCatIds.length) {
+        const rows = selectedCatIds.map(cid => ({ product_id: savedProduct.id, category_id: cid }));
+        const { error: pcError } = await supabase.from('product_categories').insert(rows);
+        if (pcError) {
+          console.error('Category assignment failed:', pcError);
+          showToast('Product saved but category assignment failed');
+        }
+      }
     }
 
     closeModal();
@@ -708,8 +752,10 @@ async function renderCategories(container) {
   });
 }
 
-function openCategoryModal(container, category = null) {
+async function openCategoryModal(container, category = null) {
   const isEdit = !!category;
+  const { data: allCats } = await supabase.from('categories').select('id, name').order('name');
+  const parentOptions = (allCats || []).filter(c => c.id !== category?.id);
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
@@ -720,6 +766,12 @@ function openCategoryModal(container, category = null) {
         <div class="form-row">
           <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required></div>
+        </div>
+        <div class="form-group"><label>Parent Category</label>
+          <select name="parent_id">
+            <option value="">— None (top-level) —</option>
+            ${parentOptions.map(c => `<option value="${c.id}" ${category?.parent_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+          </select>
         </div>
         <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
@@ -743,9 +795,15 @@ function openCategoryModal(container, category = null) {
   document.getElementById('cat-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = { name: fd.get('name'), slug: fd.get('slug'), icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
-    if (isEdit) { await supabase.from('categories').update(payload).eq('id', category.id); }
-    else { await supabase.from('categories').insert(payload); }
+    const payload = { name: fd.get('name'), slug: fd.get('slug'), parent_id: fd.get('parent_id') || null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+    const { error: catError } = isEdit
+      ? await supabase.from('categories').update(payload).eq('id', category.id)
+      : await supabase.from('categories').insert(payload);
+    if (catError) {
+      console.error('Category save failed:', catError);
+      showToast(`Failed: ${catError.message}`, 'error');
+      return;
+    }
     closeModal();
     showToast(isEdit ? 'Category updated!' : 'Category added!');
     await renderCategories(container);
@@ -859,8 +917,14 @@ function openBannerModal(container, banner = null) {
       active: fd.get('active') === 'on',
       order_index: Number(fd.get('order_index')) || 0,
     };
-    if (isEdit) { await supabase.from('banners').update(payload).eq('id', banner.id); }
-    else { await supabase.from('banners').insert(payload); }
+    const { error: bannerError } = isEdit
+      ? await supabase.from('banners').update(payload).eq('id', banner.id)
+      : await supabase.from('banners').insert(payload);
+    if (bannerError) {
+      console.error('Banner save failed:', bannerError);
+      showToast(`Failed: ${bannerError.message}`, 'error');
+      return;
+    }
     closeModal();
     showToast(isEdit ? 'Banner updated!' : 'Banner added!');
     await renderBanners(container);
@@ -1249,8 +1313,14 @@ function openAnnModal(container, ann = null) {
     e.preventDefault();
     const fd = new FormData(e.target);
     const payload = { text: fd.get('text'), link: fd.get('link') || null, sort_order: Number(fd.get('sort_order')) || 0, active: fd.get('active') === 'on' };
-    if (isEdit) { await supabase.from('announcements').update(payload).eq('id', ann.id); }
-    else { await supabase.from('announcements').insert(payload); }
+    const { error: annError } = isEdit
+      ? await supabase.from('announcements').update(payload).eq('id', ann.id)
+      : await supabase.from('announcements').insert(payload);
+    if (annError) {
+      console.error('Announcement save failed:', annError);
+      showToast(`Failed: ${annError.message}`, 'error');
+      return;
+    }
     closeModal();
     showToast(isEdit ? 'Announcement updated!' : 'Announcement added!');
     renderHeaderSection(document.getElementById('admin-content'));
