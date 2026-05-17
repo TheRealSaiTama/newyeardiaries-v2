@@ -110,9 +110,10 @@ export async function seedCategoriesIfEmpty() {
 
   const categoriesToInsert = CATEGORIES_TO_INSERT.map((cat, index) => ({
     slug: cat.slug,
-    title: cat.title,
+    name: cat.title,
     group_name: cat.group,
-    sort_order: index + 1
+    sort_order: index + 1,
+    active: true
   }));
 
   const { error } = await supabase.from('categories').insert(categoriesToInsert);

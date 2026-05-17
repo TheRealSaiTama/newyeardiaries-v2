@@ -4,6 +4,11 @@ let _cache = null;
 let _fetchedAt = null;
 const CACHE_TTL = 60_000;
 
+export function bustContentCache() {
+  _cache = null;
+  _fetchedAt = null;
+}
+
 export async function getContent() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
 
@@ -12,11 +17,13 @@ export async function getContent() {
     { data: siteContent },
     { data: homepageSections },
     { data: announcements },
+    { data: banners },
   ] = await Promise.all([
     supabase.from('site_settings').select('*'),
     supabase.from('site_content').select('*'),
     supabase.from('homepage_sections').select('*').order('sort_order'),
     supabase.from('announcements').select('*').order('created_at'),
+    supabase.from('banners').select('*').eq('active', true).order('order_index'),
   ]);
 
   _cache = {
@@ -24,6 +31,7 @@ export async function getContent() {
     siteContent: Object.fromEntries((siteContent || []).map(s => [`${s.section}.${s.key}`, s.value])),
     homepageSections: Object.fromEntries((homepageSections || []).map(s => [s.section_key, s])),
     announcements: (announcements || []).filter(a => a.active),
+    banners: banners || [],
   };
   _fetchedAt = Date.now();
   return _cache;

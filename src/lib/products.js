@@ -23,7 +23,7 @@ function normalize(product) {
     images: product.images || [],
     colors: product.colors || [],
     features: product.features || [],
-    minBulkOrder: product.min_bulk_order || 1,
+    minBulkOrder: product.min_bulk_order || 100,
     inStock: product.in_stock !== false,
     active: product.active !== false,
     sortOrder: product.sort_order || 0,

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
+import { bustContentCache } from '../lib/content.js';
 
 let currentTab = 'products';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
@@ -904,8 +905,6 @@ async function renderCategories(container) {
 
 async function openCategoryModal(container, category = null) {
   const isEdit = !!category;
-  const { data: allCats } = await supabase.from('categories').select('id, name').order('name');
-  const parentOptions = (allCats || []).filter(c => c.id !== category?.id);
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
@@ -939,7 +938,7 @@ async function openCategoryModal(container, category = null) {
   document.getElementById('cat-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = { name: fd.get('name'), slug: fd.get('slug'), icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+    const payload = { name: fd.get('name'), slug: fd.get('slug'), parent_id: null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
     const { error: catError } = isEdit
       ? await supabase.from('categories').update(payload).eq('id', category.id)
       : await supabase.from('categories').insert(payload);
@@ -1065,10 +1064,10 @@ function openBannerModal(container, banner = null) {
       ? await supabase.from('banners').update(payload).eq('id', banner.id)
       : await supabase.from('banners').insert(payload);
     if (bannerError) {
-      console.error('Banner save failed:', bannerError);
       showToast(`Failed: ${bannerError.message}`, 'error');
       return;
     }
+    bustContentCache();
     closeModal();
     showToast(isEdit ? 'Banner updated!' : 'Banner added!');
     await renderBanners(container);
@@ -1122,11 +1121,20 @@ async function renderSettings(container) {
     for (const field of fields) {
       const existing = settings?.find(s => s.key === field.key);
       if (existing) {
-        await supabase.from('site_settings').update({ value: field.value }).eq('id', existing.id);
+        const { error } = await supabase.from('site_settings').update({ value: field.value }).eq('id', existing.id);
+        if (error) {
+          showToast(`Failed to save ${field.key}: ${error.message}`, 'error');
+          return;
+        }
       } else {
-        await supabase.from('site_settings').insert({ key: field.key, value: field.value });
+        const { error } = await supabase.from('site_settings').insert({ key: field.key, value: field.value });
+        if (error) {
+          showToast(`Failed to save ${field.key}: ${error.message}`, 'error');
+          return;
+        }
       }
     }
+    bustContentCache();
     showToast('Settings saved!');
     await renderSettings(container);
   };
@@ -1420,8 +1428,13 @@ async function renderHeaderSection(container) {
       { key: 'announcement_link', value: fd.get('announcement_link'), section: 'header' },
     ];
     for (const row of rows) {
-      await supabase.from('site_content').upsert(row, { onConflict: 'section,key' });
+      const { error } = await supabase.from('site_content').upsert(row, { onConflict: 'section,key' });
+      if (error) {
+        showToast(`Failed to save header: ${error.message}`, 'error');
+        return;
+      }
     }
+    bustContentCache();
     showToast('Header saved!');
     renderHeaderSection(container);
   };
@@ -1461,10 +1474,10 @@ function openAnnModal(container, ann = null) {
       ? await supabase.from('announcements').update(payload).eq('id', ann.id)
       : await supabase.from('announcements').insert(payload);
     if (annError) {
-      console.error('Announcement save failed:', annError);
       showToast(`Failed: ${annError.message}`, 'error');
       return;
     }
+    bustContentCache();
     closeModal();
     showToast(isEdit ? 'Announcement updated!' : 'Announcement added!');
     renderHeaderSection(document.getElementById('admin-content'));
@@ -1610,11 +1623,20 @@ async function renderFooterSection(container) {
       const existing = rows?.find(r => r.key === dbKey);
       const value = fd.get(formKey) || '';
       if (existing) {
-        await supabase.from('site_settings').update({ value }).eq('id', existing.id);
+        const { error } = await supabase.from('site_settings').update({ value }).eq('id', existing.id);
+        if (error) {
+          showToast(`Failed to save ${formKey}: ${error.message}`, 'error');
+          return;
+        }
       } else {
-        await supabase.from('site_settings').insert({ key: dbKey, value });
+        const { error } = await supabase.from('site_settings').insert({ key: dbKey, value });
+        if (error) {
+          showToast(`Failed to save ${formKey}: ${error.message}`, 'error');
+          return;
+        }
       }
     }
+    bustContentCache();
     showToast('Footer saved!');
     renderFooterSection(container);
   };

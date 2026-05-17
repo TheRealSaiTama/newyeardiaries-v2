@@ -27,7 +27,7 @@ function normalize(p) {
     images: p.images || [],
     colors: p.colors || [],
     features: p.features || [],
-    minBulkOrder: p.min_bulk_order || 1,
+    minBulkOrder: p.min_bulk_order || 100,
     inStock: p.in_stock !== false,
     active: p.active !== false,
     sortOrder: p.sort_order || 0,
