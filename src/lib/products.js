@@ -108,7 +108,7 @@ const LOCAL_CAT_IMAGES = {
 export async function getCategories() {
   const { data, error } = await supabase
     .from('categories')
-    .select('id, name, slug, icon, description, image_url, sort_order, active, parent_id')
+    .select('id, name, slug, icon, description, image_url, sort_order, active')
     .eq('active', true)
     .order('sort_order');
   if (error) return [];

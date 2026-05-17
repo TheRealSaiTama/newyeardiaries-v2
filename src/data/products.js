@@ -48,7 +48,7 @@ export async function getProducts() {
 
 export async function getProductBySlug(slug) {
   const products = await getProducts();
-  return products.find(p => p.slug === slug) || null;
+  return products.find(p => p.slug === slug || p.id === slug) || null;
 }
 
 export async function getProductById(id) {

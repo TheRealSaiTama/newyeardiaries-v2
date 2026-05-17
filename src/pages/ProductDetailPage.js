@@ -2,7 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderTrustBadges } from '../components/TrustBadges.js';
 import { renderProductCard } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
-import { getProductBySlug, formatPrice } from '../data/products.js';
+import { getProductBySlug, getProducts, formatPrice } from '../data/products.js';
 import { addToQuoteList, addToCart } from '../data/store.js';
 
 function renderProductMedia(src, alt) {
@@ -26,7 +26,7 @@ export async function renderProductDetailPage(params) {
 
   const [product, allProducts] = await Promise.all([
     getProductBySlug(params.slug),
-    getProductBySlug('').then(() => []),
+    getProducts(),
   ]);
 
   if (!product) {

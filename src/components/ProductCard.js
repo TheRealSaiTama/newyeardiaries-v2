@@ -11,7 +11,7 @@ export function renderProductCard(product) {
   const outOfStock = !product.inStock;
 
   return `
-    <a href="/product/${product.id}" class="ap-product-card" data-product-id="${product.id}">
+    <a href="/product/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}">
       <div class="ap-product-image-wrapper">
         ${badge}
         ${img}

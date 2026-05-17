@@ -7,6 +7,7 @@ import './styles/pages.css';
 import { addRoute, initRouter } from './router.js';
 import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories } from './components/Header.js';
 import { renderFooter } from './components/Footer.js';
+import { renderAboutSection } from './components/AboutSection.js';
 import { renderQuickViewModal } from './components/QuickViewModal.js';
 import { getContent } from './lib/content.js';
 
@@ -61,6 +62,7 @@ function setupShell() {
     <div id="header-area">${renderHeader(appContent)}</div>
     ${renderQuickViewModal()}
     <main id="app"></main>
+    ${renderAboutSection()}
     <div id="footer-area">${renderFooter(appContent)}</div>
   `;
   initHeaderEvents();

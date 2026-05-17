@@ -177,6 +177,20 @@ export function renderAdminPage() {
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
     .form-group.checkbox { flex-direction: row; align-items: center; gap: var(--space-3); }
     .form-group.checkbox input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+    .admin-media-picker { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-alt); }
+    .admin-media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: var(--space-3); min-height: 148px; }
+    .admin-media-empty { min-height: 148px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-tertiary); font-size: var(--fs-sm); text-align: center; padding: var(--space-4); background: var(--color-surface); }
+    .admin-media-tile { position: relative; aspect-ratio: 1 / 1; overflow: hidden; border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border-light); box-shadow: var(--shadow-sm); }
+    .admin-media-tile img, .admin-media-tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .admin-media-remove { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border: none; border-radius: var(--radius-full); background: rgba(0,0,0,0.72); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }
+    .admin-media-remove .material-symbols-outlined { font-size: 18px; }
+    .admin-media-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 7px 8px; background: linear-gradient(transparent, rgba(0,0,0,0.72)); color: #fff; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-media-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+    .admin-media-actions small { color: var(--color-text-tertiary); font-size: var(--fs-xs); }
+    .admin-media-add { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-primary); cursor: pointer; font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: var(--transition-fast); }
+    .admin-media-add:hover { border-color: var(--color-primary); color: var(--color-primary); box-shadow: var(--shadow-sm); }
+    .admin-media-add .material-symbols-outlined { font-size: 18px; }
+    .admin-media-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
     .admin-cat-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-2); max-height: 160px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
     .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; }
     .admin-cat-checkbox:hover { background: var(--color-surface-alt); }
@@ -525,13 +539,20 @@ function readFileAsDataUrl(file) {
   });
 }
 
-async function readMediaFiles(input, allowedTypes) {
-  const files = Array.from(input?.files || []);
+async function readMediaFilesFromList(files, allowedTypes) {
   const invalid = files.find(file => !allowedTypes.includes(file.type));
   if (invalid) throw new Error(`${invalid.name} is not an allowed file type.`);
   const tooLarge = files.find(file => file.size > MAX_MEDIA_SIZE);
   if (tooLarge) throw new Error(`${tooLarge.name} is larger than 8 MB.`);
   return Promise.all(files.map(readFileAsDataUrl));
+}
+
+async function readMediaFiles(input, allowedTypes) {
+  return readMediaFilesFromList(Array.from(input?.files || []), allowedTypes);
+}
+
+function isVideoMedia(src, type = '') {
+  return type === 'video/mp4' || /\.mp4($|[?#])/i.test(src);
 }
 
 async function openProductModal(container, product = null) {
@@ -542,6 +563,8 @@ async function openProductModal(container, product = null) {
   const isEdit = !!product;
   const primaryImage = product?.images?.[0] || '';
   const secondaryImages = product?.images?.slice(1) || [];
+  const selectedSecondaryFiles = [];
+  const secondaryObjectUrls = new Map();
   const selectedCatIds = new Set((existingCats?.data || []).map(r => r.category_id));
 
   const overlay = document.createElement('div');
@@ -572,7 +595,7 @@ async function openProductModal(container, product = null) {
         </div>
         <div class="form-row">
           <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
-          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product?.min_bulk_order || ''}" placeholder="100"></div>
+          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div>
         </div>
         <div class="form-group"><label>Short Description</label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
         <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
@@ -583,8 +606,18 @@ async function openProductModal(container, product = null) {
         </div>
         <div class="form-group">
           <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(one URL per line, jpg/png/webp/mp4)</small></label>
+          <div class="admin-media-picker">
+            <div class="admin-media-grid" id="secondary-media-grid"></div>
+            <div class="admin-media-actions">
+              <label class="admin-media-add">
+                <span class="material-symbols-outlined">add_photo_alternate</span>
+                Add images
+                <input class="admin-media-input" name="secondary_image_files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,image/jpeg,image/png,image/webp,video/mp4">
+              </label>
+              <small>Select multiple local files. Remove unwanted items from the tiles before saving.</small>
+            </div>
+          </div>
           <textarea name="secondary_images" placeholder="https://example.com/angle-2.jpg&#10;https://example.com/demo.mp4" style="min-height:80px">${secondaryImages.join('\n')}</textarea>
-          <input name="secondary_image_files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,image/jpeg,image/png,image/webp,video/mp4">
         </div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div>
@@ -599,9 +632,126 @@ async function openProductModal(container, product = null) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  const closeProductModal = () => {
+    secondaryObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    closeModal();
+  };
+  overlay.querySelector('.admin-modal-close').onclick = closeProductModal;
+  overlay.querySelector('.modal-cancel').onclick = closeProductModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeProductModal(); };
+
+  const secondaryTextarea = overlay.querySelector('[name="secondary_images"]');
+  const secondaryGrid = overlay.querySelector('#secondary-media-grid');
+  const secondaryFileInput = overlay.querySelector('[name="secondary_image_files"]');
+
+  const renderSecondaryMediaGrid = () => {
+    if (!secondaryGrid) return;
+    secondaryGrid.innerHTML = '';
+
+    const urlMedia = parseMediaList(secondaryTextarea.value);
+    if (!urlMedia.length && !selectedSecondaryFiles.length) {
+      const empty = document.createElement('div');
+      empty.className = 'admin-media-empty';
+      empty.textContent = 'Selected media previews will appear here';
+      secondaryGrid.appendChild(empty);
+      return;
+    }
+
+    urlMedia.forEach((src, index) => {
+      const tile = document.createElement('div');
+      tile.className = 'admin-media-tile';
+
+      const media = document.createElement(isVideoMedia(src) ? 'video' : 'img');
+      media.src = src;
+      if (media.tagName === 'VIDEO') {
+        media.muted = true;
+        media.playsInline = true;
+        media.controls = true;
+      }
+      tile.appendChild(media);
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'admin-media-remove';
+      remove.setAttribute('aria-label', 'Remove media URL');
+      remove.innerHTML = '<span class="material-symbols-outlined">close</span>';
+      remove.onclick = () => {
+        const next = parseMediaList(secondaryTextarea.value).filter((_, i) => i !== index);
+        secondaryTextarea.value = next.join('\n');
+        renderSecondaryMediaGrid();
+      };
+      tile.appendChild(remove);
+
+      const name = document.createElement('div');
+      name.className = 'admin-media-name';
+      name.textContent = src.split('/').pop() || 'Media URL';
+      tile.appendChild(name);
+      secondaryGrid.appendChild(tile);
+    });
+
+    selectedSecondaryFiles.forEach((file, index) => {
+      let objectUrl = secondaryObjectUrls.get(file);
+      if (!objectUrl) {
+        objectUrl = URL.createObjectURL(file);
+        secondaryObjectUrls.set(file, objectUrl);
+      }
+
+      const tile = document.createElement('div');
+      tile.className = 'admin-media-tile';
+
+      const media = document.createElement(isVideoMedia(objectUrl, file.type) ? 'video' : 'img');
+      media.src = objectUrl;
+      if (media.tagName === 'VIDEO') {
+        media.muted = true;
+        media.playsInline = true;
+        media.controls = true;
+      }
+      tile.appendChild(media);
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'admin-media-remove';
+      remove.setAttribute('aria-label', `Remove ${file.name}`);
+      remove.innerHTML = '<span class="material-symbols-outlined">close</span>';
+      remove.onclick = () => {
+        URL.revokeObjectURL(objectUrl);
+        secondaryObjectUrls.delete(file);
+        selectedSecondaryFiles.splice(index, 1);
+        renderSecondaryMediaGrid();
+      };
+      tile.appendChild(remove);
+
+      const name = document.createElement('div');
+      name.className = 'admin-media-name';
+      name.textContent = file.name;
+      tile.appendChild(name);
+      secondaryGrid.appendChild(tile);
+    });
+  };
+
+  secondaryTextarea?.addEventListener('input', renderSecondaryMediaGrid);
+  secondaryFileInput?.addEventListener('change', async () => {
+    const incoming = Array.from(secondaryFileInput.files || []);
+    try {
+      await readMediaFilesFromList(incoming, SECONDARY_MEDIA_TYPES);
+    } catch (err) {
+      showToast(err.message, 'error');
+      secondaryFileInput.value = '';
+      return;
+    }
+
+    incoming.forEach(file => {
+      const alreadySelected = selectedSecondaryFiles.some(selected =>
+        selected.name === file.name &&
+        selected.size === file.size &&
+        selected.lastModified === file.lastModified
+      );
+      if (!alreadySelected) selectedSecondaryFiles.push(file);
+    });
+    secondaryFileInput.value = '';
+    renderSecondaryMediaGrid();
+  });
+  renderSecondaryMediaGrid();
 
   // Auto-generate slug from name
   const nameInput = document.getElementById('p-name');
@@ -623,7 +773,7 @@ async function openProductModal(container, product = null) {
     let uploadedSecondary = [];
     try {
       uploadedPrimary = await readMediaFiles(e.target.primary_image_file, IMAGE_TYPES);
-      uploadedSecondary = await readMediaFiles(e.target.secondary_image_files, SECONDARY_MEDIA_TYPES);
+      uploadedSecondary = await readMediaFilesFromList(selectedSecondaryFiles, SECONDARY_MEDIA_TYPES);
     } catch (err) {
       showToast(err.message, 'error');
       return;
@@ -683,7 +833,7 @@ async function openProductModal(container, product = null) {
       }
     }
 
-    closeModal();
+    closeProductModal();
     showToast(isEdit ? 'Product updated!' : 'Product added!');
     await renderProducts(container);
   };
@@ -767,12 +917,6 @@ async function openCategoryModal(container, category = null) {
           <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required></div>
         </div>
-        <div class="form-group"><label>Parent Category</label>
-          <select name="parent_id">
-            <option value="">— None (top-level) —</option>
-            ${parentOptions.map(c => `<option value="${c.id}" ${category?.parent_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-          </select>
-        </div>
         <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
         <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
@@ -795,7 +939,7 @@ async function openCategoryModal(container, category = null) {
   document.getElementById('cat-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = { name: fd.get('name'), slug: fd.get('slug'), parent_id: fd.get('parent_id') || null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+    const payload = { name: fd.get('name'), slug: fd.get('slug'), icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
     const { error: catError } = isEdit
       ? await supabase.from('categories').update(payload).eq('id', category.id)
       : await supabase.from('categories').insert(payload);
@@ -1397,7 +1541,7 @@ async function renderHomepageSection(container) {
 
 // ===== FOOTER SECTION =====
 async function renderFooterSection(container) {
-  const { data: rows } = await supabase.from('site_content').select('*').eq('section', 'footer');
+  const { data: rows } = await supabase.from('site_settings').select('*');
   const get = (key, fallback = '') => rows?.find(r => r.key === key)?.value || fallback;
 
   container.innerHTML = `
@@ -1412,18 +1556,18 @@ async function renderFooterSection(container) {
       <form id="footer-form" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)">
         <div style="display:flex;flex-direction:column;gap:var(--space-4)">
           <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Brand</h2>
-          <div class="form-group"><label>Tagline</label><textarea name="tagline" rows="2">${get('tagline')}</textarea></div>
-          <div class="form-group"><label>Copyright Text</label><input name="copyright" value="${get('copyright')}"></div>
+          <div class="form-group"><label>Tagline</label><textarea name="tagline" rows="2">${get('footer_tagline') || get('tagline')}</textarea></div>
+          <div class="form-group"><label>Copyright Text</label><input name="copyright" value="${get('footer_copyright')}"></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--space-4)">
           <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Contact</h2>
-          <div class="form-group"><label>Address</label><textarea name="address" rows="2">${get('address')}</textarea></div>
+          <div class="form-group"><label>Address</label><textarea name="address" rows="2">${get('contact_address')}</textarea></div>
           <div class="form-row">
-            <div class="form-group"><label>Phone 1</label><input name="phone" value="${get('phone')}"></div>
-            <div class="form-group"><label>Phone 2</label><input name="phone2" value="${get('phone2')}"></div>
+            <div class="form-group"><label>Phone 1</label><input name="phone" value="${get('contact_phone')}"></div>
+            <div class="form-group"><label>Phone 2</label><input name="phone2" value="${get('contact_phone2')}"></div>
           </div>
-          <div class="form-group"><label>Email</label><input name="email" value="${get('email')}" type="email"></input></div>
-          <div class="form-group"><label>Business Hours</label><input name="hours" value="${get('hours')}"></div>
+          <div class="form-group"><label>Email</label><input name="email" value="${get('contact_email')}" type="email"></input></div>
+          <div class="form-group"><label>Business Hours</label><input name="hours" value="${get('footer_hours')}"></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--space-4)">
           <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2>
@@ -1447,14 +1591,28 @@ async function renderFooterSection(container) {
   document.getElementById('footer-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const fields = ['tagline', 'copyright', 'address', 'phone', 'phone2', 'email', 'hours', 'facebook_url', 'instagram_url', 'twitter_url', 'youtube_url', 'payment_icons_url', 'map_embed_url'];
-    for (const key of fields) {
-      const existing = rows?.find(r => r.key === key);
-      const value = fd.get(key);
+    const keyMap = {
+      tagline: 'footer_tagline',
+      copyright: 'footer_copyright',
+      address: 'contact_address',
+      phone: 'contact_phone',
+      phone2: 'contact_phone2',
+      email: 'contact_email',
+      hours: 'footer_hours',
+      facebook_url: 'facebook_url',
+      instagram_url: 'instagram_url',
+      twitter_url: 'twitter_url',
+      youtube_url: 'youtube_url',
+      payment_icons_url: 'payment_icons_url',
+      map_embed_url: 'map_embed_url'
+    };
+    for (const [formKey, dbKey] of Object.entries(keyMap)) {
+      const existing = rows?.find(r => r.key === dbKey);
+      const value = fd.get(formKey) || '';
       if (existing) {
-        await supabase.from('site_content').update({ value }).eq('id', existing.id);
+        await supabase.from('site_settings').update({ value }).eq('id', existing.id);
       } else {
-        await supabase.from('site_content').insert({ key, value, section: 'footer' });
+        await supabase.from('site_settings').insert({ key: dbKey, value });
       }
     }
     showToast('Footer saved!');

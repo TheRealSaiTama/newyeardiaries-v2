@@ -31,17 +31,17 @@ export async function getContent() {
 
 export function getFooterContent(content) {
   return {
-    tagline: content.siteContent['footer.tagline'] || content.siteSettings?.footer_tagline || '',
-    address: content.siteContent['footer.address'] || '',
-    phone: content.siteContent['footer.phone'] || '',
-    phone2: content.siteContent['footer.phone2'] || '',
-    email: content.siteContent['footer.email'] || '',
-    hours: content.siteContent['footer.hours'] || '',
-    copyright: content.siteContent['footer.copyright'] || '',
-    facebook: content.siteContent['footer.facebook_url'] || '',
-    instagram: content.siteContent['footer.instagram_url'] || '',
-    twitter: content.siteContent['footer.twitter_url'] || '',
-    youtube: content.siteContent['footer.youtube_url'] || '',
+    tagline: content.siteSettings?.footer_tagline || content.siteSettings?.tagline || content.siteContent?.['footer.tagline'] || '',
+    address: content.siteSettings?.contact_address || content.siteContent?.['footer.address'] || '',
+    phone: content.siteSettings?.contact_phone || content.siteContent?.['footer.phone'] || '',
+    phone2: content.siteSettings?.contact_phone2 || content.siteContent?.['footer.phone2'] || '',
+    email: content.siteSettings?.contact_email || content.siteContent?.['footer.email'] || '',
+    hours: content.siteSettings?.footer_hours || content.siteContent?.['footer.hours'] || '',
+    copyright: content.siteSettings?.footer_copyright || content.siteContent?.['footer.copyright'] || '',
+    facebook: content.siteSettings?.facebook_url || content.siteContent?.['footer.facebook_url'] || '',
+    instagram: content.siteSettings?.instagram_url || content.siteContent?.['footer.instagram_url'] || '',
+    twitter: content.siteSettings?.twitter_url || content.siteContent?.['footer.twitter_url'] || '',
+    youtube: content.siteSettings?.youtube_url || content.siteContent?.['footer.youtube_url'] || '',
     paymentIcons: content.siteSettings?.payment_icons_url || '/images/payment-icons-transparent.png',
     mapEmbed: content.siteSettings?.map_embed_url || '',
   };
