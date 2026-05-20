@@ -1,4 +1,3 @@
-import { navigateTo } from '../router.js';
 import { getContent, getAnnouncementContent } from '../lib/content.js';
 import { fetchCategories, seedCategoriesIfEmpty, getCategoriesByGroup, CATEGORY_GROUPS } from '../lib/categories.js';
 import { getProducts } from '../lib/products.js';

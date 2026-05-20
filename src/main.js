@@ -28,6 +28,7 @@ import { renderFaqPage } from './pages/FaqPage.js';
 import { renderPrivacyPolicyPage } from './pages/PrivacyPolicyPage.js';
 import { renderTermsPage } from './pages/TermsPage.js';
 import { renderShippingReturnsPage } from './pages/ShippingReturnsPage.js';
+import { renderBrandingPage } from './pages/BrandingPage.js';
 import { renderAdminPage, initAdminPage } from './pages/AdminPage.js';
 import { initFaqChatbot } from './components/FaqChatbot.js';
 
@@ -97,6 +98,7 @@ addRoute('/faq', wrapPage(renderFaqPage));
 addRoute('/privacy-policy', wrapPage(renderPrivacyPolicyPage));
 addRoute('/terms', wrapPage(renderTermsPage));
 addRoute('/shipping-returns', wrapPage(renderShippingReturnsPage));
+addRoute('/branding', wrapPage(renderBrandingPage));
 addRoute('/admin', (params) => {
   document.getElementById('header-area').style.display = 'none';
   document.getElementById('footer-area').style.display = 'none';
