@@ -200,7 +200,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: 52px;
   height: 52px;
   border-radius: 26px;
