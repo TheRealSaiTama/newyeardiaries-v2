@@ -1,6 +1,7 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { supabase } from '../lib/supabase.js';
 import { sendContactEmail } from '../lib/notify.js';
+import { generateEnquiryCode } from '../lib/enquiry-code.js';
 
 export function renderContactPage() {
   document.getElementById('app').innerHTML = `
@@ -61,6 +62,7 @@ export function renderContactPage() {
       email: form.email.value.trim(),
       subject: form.subject.value.trim(),
       message: form.message.value.trim() || null,
+      enquiry_code: generateEnquiryCode('CT'),
     };
 
     btn.disabled = true;

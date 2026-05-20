@@ -20,16 +20,21 @@ export function addToQuoteList(productId, qty = 50) {
 
 export function removeFromQuoteList(productId) {
   let list = getQuoteList();
-  list = list.filter(item => item.productId !== productId);
+  list = list.filter(item => String(item.productId) !== String(productId));
   localStorage.setItem('quoteList', JSON.stringify(list));
   updateHeaderCounts();
 }
 
 export function updateQuoteQty(productId, qty) {
   const list = getQuoteList();
-  const item = list.find(i => i.productId === productId);
+  const item = list.find(i => String(i.productId) === String(productId));
   if (item) item.qty = qty;
   localStorage.setItem('quoteList', JSON.stringify(list));
+  updateHeaderCounts();
+}
+
+export function clearQuoteList() {
+  localStorage.removeItem('quoteList');
   updateHeaderCounts();
 }
 

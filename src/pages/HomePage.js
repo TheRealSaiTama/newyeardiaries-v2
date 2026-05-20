@@ -2,6 +2,7 @@ import { renderTrustBadges } from '../components/TrustBadges.js';
 import { renderProductCard } from '../components/ProductCard.js';
 import { addToQuoteList } from '../data/store.js';
 import { openQuickView } from '../components/QuickViewModal.js';
+import { supabase } from '../lib/supabase.js';
 import { getContent, getHeroContent } from '../lib/content.js';
 import { getProducts, getCategories } from '../lib/products.js';
 
@@ -36,6 +37,12 @@ export async function renderHomePage() {
     getProducts({ limit: 6 }),
     getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
   ]);
+
+  const { data: shopCategories } = await supabase
+    .from('shop_categories')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order');
 
   const app = document.getElementById('app');
 
@@ -75,13 +82,13 @@ export async function renderHomePage() {
           </div>
           <div class="ap-cat-wrapper">
             <div class="ap-cat-grid" id="apCatGrid">
-              ${allCategories.map(cat => `
+              ${(shopCategories || []).map(sc => `
                 <div class="ap-cat-card-wrap">
-                  <a href="/shop?cat=${cat.slug}" class="ap-cat-card">
+                  <a href="${sc.link}" class="ap-cat-card">
                     <div class="ap-cat-img-wrapper">
-                      <img src="${cat.image_url || '/images/placeholder.jpg'}" alt="${cat.name}" loading="lazy" />
+                      <img src="${sc.image_url || '/images/placeholder.jpg'}" alt="${sc.title}" loading="lazy" />
                     </div>
-                    <div class="ap-cat-label">${cat.name}</div>
+                    <div class="ap-cat-label">${sc.title}</div>
                   </a>
                 </div>
               `).join('')}

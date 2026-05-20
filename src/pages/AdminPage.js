@@ -851,13 +851,14 @@ async function openProductModal(container, product = null) {
     }
 
     if (savedProduct?.id) {
-      await supabase.from('product_categories').delete().eq('product_id', savedProduct.id);
+      const { error: delError } = await supabase.from('product_categories').delete().eq('product_id', savedProduct.id);
+      if (delError) console.error('Category delete failed:', delError);
       if (selectedCatIds.length) {
         const rows = selectedCatIds.map(cid => ({ product_id: savedProduct.id, category_id: cid }));
         const { error: pcError } = await supabase.from('product_categories').insert(rows);
         if (pcError) {
           console.error('Category assignment failed:', pcError);
-          showToast('Product saved but category assignment failed');
+          showToast(`Category assignment failed: ${pcError.message}`, 'error');
         }
       }
     }
@@ -1296,18 +1297,19 @@ async function renderEnquiries(container, tab = 'contact') {
 
   const renderContactTable = () => (contacts?.length ? `
     <table class="admin-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Subject</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${contacts.map(c => `<tr data-id="${c.id}">
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${c.enquiry_code || '—'}</code></td>
           <td>${c.name}</td>
           <td><a href="mailto:${c.email}">${c.email}</a></td>
-          <td>${c.phone || '—'}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.message}">${c.message}</td>
+          <td>${c.subject || '—'}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.message || '').replace(/"/g, '&quot;')}">${c.message || '—'}</td>
           <td>${new Date(c.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${c.reviewed ? 'badge-reviewed' : 'badge-new'}">${c.reviewed ? 'Reviewed' : 'New'}</span></td>
+          <td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
             <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${c.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}"><span class="material-symbols-outlined">${c.reviewed ? 'undo' : 'check'}</span></button>
+            <button class="review-btn" title="${c.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${c.status === 'reviewed' ? 'undo' : 'check'}</span></button>
             <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
           </td>
         </tr>`).join('')}
@@ -1316,18 +1318,19 @@ async function renderEnquiries(container, tab = 'contact') {
 
   const renderEnquiryTable = () => (enquiries?.length ? `
     <table class="admin-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${enquiries.map(e => `<tr data-id="${e.id}">
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${e.enquiry_code || '—'}</code></td>
           <td>${e.name}</td>
           <td><a href="mailto:${e.email}">${e.email}</a></td>
           <td>${e.company || '—'}</td>
           <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.product_names || e.products || '—'}</td>
           <td>${new Date(e.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${e.reviewed ? 'badge-reviewed' : 'badge-new'}">${e.reviewed ? 'Reviewed' : 'New'}</span></td>
+          <td><span class="badge ${e.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${e.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
             <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${e.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}"><span class="material-symbols-outlined">${e.reviewed ? 'undo' : 'check'}</span></button>
+            <button class="review-btn" title="${e.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${e.status === 'reviewed' ? 'undo' : 'check'}</span></button>
             <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
           </td>
         </tr>`).join('')}
@@ -1336,19 +1339,20 @@ async function renderEnquiries(container, tab = 'contact') {
 
   const renderQuoteTable = () => (quotes?.length ? `
     <table class="admin-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Product</th><th>Quantity</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>Product</th><th>Quantity</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${quotes.map(q => `<tr data-id="${q.id}">
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${q.enquiry_code || '—'}</code></td>
           <td>${q.name}</td>
           <td><a href="mailto:${q.email}">${q.email}</a></td>
           <td>${q.phone || '—'}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.product_name || q.product_id || '—'}</td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.product_names || q.product_type || '—'}</td>
           <td>${q.quantity || '—'}</td>
           <td>${new Date(q.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${q.reviewed ? 'badge-reviewed' : 'badge-new'}">${q.reviewed ? 'Reviewed' : 'New'}</span></td>
+          <td><span class="badge ${q.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${q.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
             <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${q.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}"><span class="material-symbols-outlined">${q.reviewed ? 'undo' : 'check'}</span></button>
+            <button class="review-btn" title="${q.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${q.status === 'reviewed' ? 'undo' : 'check'}</span></button>
             <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
           </td>
         </tr>`).join('')}
@@ -1419,8 +1423,9 @@ async function renderEnquiries(container, tab = 'contact') {
     btn.onclick = async () => {
       const id = btn.closest('tr').dataset.id;
       const item = currentData.find(d => d.id === id);
-      await supabase.from(tableName).update({ reviewed: !item.reviewed }).eq('id', id);
-      showToast(item.reviewed ? 'Marked as new!' : 'Marked as reviewed!');
+      const newStatus = item.status === 'reviewed' ? 'pending' : 'reviewed';
+      await supabase.from(tableName).update({ status: newStatus }).eq('id', id);
+      showToast(newStatus === 'reviewed' ? 'Marked as reviewed!' : 'Marked as pending!');
       await renderEnquiries(container, tab);
     };
   });
@@ -1444,28 +1449,37 @@ function openEnquiryDetailModal(item, type) {
 
   const fields = type === 'contact'
     ? [
+        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
         { label: 'Name', value: item.name },
         { label: 'Email', value: item.email },
         { label: 'Phone', value: item.phone || '—' },
-        { label: 'Message', value: item.message },
+        { label: 'Subject', value: item.subject || '—' },
+        { label: 'Message', value: item.message || '—' },
+        { label: 'Status', value: item.status || 'pending' },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'enquiry'
     ? [
+        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
         { label: 'Name', value: item.name },
         { label: 'Email', value: item.email },
         { label: 'Company', value: item.company || '—' },
         { label: 'Products', value: item.product_names || item.products || '—' },
         { label: 'Message', value: item.message || '—' },
+        { label: 'Status', value: item.status || 'pending' },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : [
+        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
         { label: 'Name', value: item.name },
         { label: 'Email', value: item.email },
         { label: 'Phone', value: item.phone || '—' },
-        { label: 'Product', value: item.product_name || item.product_id || '—' },
+        { label: 'Company', value: item.company || '—' },
+        { label: 'Product Interest', value: item.product_type || '—' },
+        { label: 'Products', value: item.product_names || '—' },
         { label: 'Quantity', value: item.quantity || '—' },
-        { label: 'Message', value: item.message || '—' },
+        { label: 'Requirements', value: item.custom_requirements || '—' },
+        { label: 'Status', value: item.status || 'pending' },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ];
 
@@ -1623,7 +1637,8 @@ function openAnnModal(container, ann = null) {
 async function renderHomepageSection(container) {
   const { data: hero } = await supabase.from('homepage_sections').select('*').eq('section_key', 'hero').single();
   const { data: cta } = await supabase.from('homepage_sections').select('*').eq('section_key', 'cta').single();
-  const { data: shopCats } = await supabase.from('categories').select('*').order('sort_order');
+  const { data: shopCats } = await supabase.from('shop_categories').select('*').order('sort_order');
+  const { data: primaryCats } = await supabase.from('categories').select('id, name, slug').eq('active', true).order('sort_order');
 
   container.innerHTML = `
     <div class="admin-header">
@@ -1665,11 +1680,32 @@ async function renderHomepageSection(container) {
       </div>
     </div>
 
-    <div class="admin-card">
-      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6)">
-        <h2 style="font-size:var(--fs-lg)">🗂️ Shop by Category — displayed from Categories tab</h2>
-        <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Manage categories in the Categories tab. Homepage auto-displays all active categories.</p>
+    <div class="admin-card" style="padding:0;overflow:hidden">
+      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2 style="font-size:var(--fs-lg);margin:0">🗂️ Shop by Category</h2>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Categories displayed in the homepage "SHOP BY CATEGORY" section</p>
+        </div>
+        <button class="admin-btn admin-btn-primary" id="add-shop-cat-btn">
+          <span class="material-symbols-outlined">add</span> Add Category
+        </button>
       </div>
+      ${shopCats?.length ? `<div class="admin-table-wrap"><table class="admin-table">
+        <thead><tr><th>Image</th><th>Title</th><th>Link</th><th>Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${shopCats.map(c => `<tr data-id="${c.id}">
+            <td><img src="${c.image_url || '/images/placeholder.jpg'}" style="width:48px;height:48px;object-fit:cover;border-radius:4px" /></td>
+            <td><strong>${c.title}</strong></td>
+            <td style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">${c.link}</td>
+            <td>${c.sort_order || 0}</td>
+            <td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td>
+            <td class="col-actions">
+              <button class="edit-shop-cat-btn"><span class="material-symbols-outlined">edit</span></button>
+              <button class="delete-shop-cat-btn"><span class="material-symbols-outlined">delete</span></button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">category</span><p>No shop categories added yet</p></div>`}
     </div>
   `;
 
@@ -1684,6 +1720,114 @@ async function renderHomepageSection(container) {
     const fd = new FormData(e.target);
     await supabase.from('homepage_sections').upsert({ section_key: 'cta', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link') }, { onConflict: 'section_key' });
     showToast('CTA saved!');
+  };
+
+  document.getElementById('add-shop-cat-btn').onclick = () => openShopCategoryModal(container, null, primaryCats);
+  document.querySelectorAll('.edit-shop-cat-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      openShopCategoryModal(container, shopCats.find(c => c.id === id), primaryCats);
+    };
+  });
+  document.querySelectorAll('.delete-shop-cat-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      showConfirmDialog('Delete this shop category?', async () => {
+        await supabase.from('shop_categories').delete().eq('id', id);
+        showToast('Shop category deleted!');
+        renderHomepageSection(container);
+      });
+    };
+  });
+}
+
+function openShopCategoryModal(container, shopCat, primaryCats) {
+  const isEdit = !!shopCat;
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay';
+  overlay.innerHTML = `
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>${isEdit ? 'Edit' : 'Add'} Shop Category</h2>
+        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <form class="admin-form" id="shop-cat-form">
+        <div class="form-group">
+          <label>Primary Category</label>
+          <select name="category_ref" id="cat-ref-select">
+            <option value="">— Select a category —</option>
+            ${(primaryCats || []).map(c => `
+              <option value="${c.slug}" data-name="${c.name}" ${isEdit && shopCat.link === '/shop?cat=' + c.slug ? 'selected' : ''}>${c.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Title *</label><input name="title" id="shop-cat-title" required value="${shopCat?.title || ''}"></div>
+        <div class="form-group"><label>CTA Link *</label><input name="link" id="shop-cat-link" required value="${shopCat?.link || ''}"></div>
+        <div class="form-group">
+          <label>Image</label>
+          ${shopCat?.image_url ? `<div style="margin-bottom:var(--space-2)"><img src="${shopCat.image_url}" style="max-width:200px;max-height:120px;border-radius:4px;object-fit:cover" /></div>` : ''}
+          <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Upload will replace existing image. Max 8MB.</small>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${shopCat?.sort_order || 0}"></div>
+          <div class="form-group checkbox"><input name="active" type="checkbox" id="shop-cat-active" ${shopCat?.active !== false ? 'checked' : ''}><label for="shop-cat-active">Active</label></div>
+        </div>
+        <input type="hidden" name="existing_image" value="${shopCat?.image_url || ''}">
+        <div class="admin-modal-actions">
+          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.admin-modal-close').onclick = closeModal;
+  overlay.querySelector('.modal-cancel').onclick = closeModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  document.getElementById('cat-ref-select').onchange = (e) => {
+    const opt = e.target.selectedOptions[0];
+    if (opt && opt.value) {
+      document.getElementById('shop-cat-title').value = opt.dataset.name;
+      document.getElementById('shop-cat-link').value = '/shop?cat=' + opt.value;
+    }
+  };
+
+  document.getElementById('shop-cat-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const title = fd.get('title').trim();
+    const link = fd.get('link').trim();
+    if (!title || !link) { showToast('Title and Link are required.', 'error'); return; }
+
+    let imageUrl = fd.get('existing_image') || '';
+    const fileInput = e.target.querySelector('[name="image_file"]');
+    if (fileInput?.files?.length) {
+      try {
+        const uploaded = await readMediaFiles(fileInput, IMAGE_TYPES);
+        if (uploaded.length) imageUrl = uploaded[0];
+      } catch (err) {
+        showToast(err.message, 'error');
+        return;
+      }
+    }
+
+    const payload = {
+      title,
+      link,
+      image_url: imageUrl || null,
+      sort_order: Number(fd.get('sort_order')) || 0,
+      active: fd.get('active') === 'on',
+    };
+
+    const { error } = isEdit
+      ? await supabase.from('shop_categories').update(payload).eq('id', shopCat.id)
+      : await supabase.from('shop_categories').insert(payload);
+    if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+    closeModal();
+    showToast(isEdit ? 'Shop category updated!' : 'Shop category added!');
+    renderHomepageSection(container);
   };
 }
 

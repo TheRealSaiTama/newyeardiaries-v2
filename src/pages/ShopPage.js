@@ -6,9 +6,15 @@ import { CATEGORY_GROUPS } from '../lib/categories.js';
 
 const PRODUCTS_PER_PAGE = 12;
 const PAGE_TITLES = {
-  Planners: { title: 'Planners', desc: 'Stay organized with our curated range of premium planners — crafted for focus, productivity, and style.' },
-  Diaries: { title: 'Diaries', desc: 'Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.' },
-  'Corporate Gifts': { title: 'Corporate Gifts', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
+  'Corporate Gift Sets': { title: 'Corporate Gift Sets', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
+  'Business Gifts': { title: 'Business Gifts', desc: 'Professional business gifting — eco-friendly, practical, and memorable.' },
+  'New Year Diary': { title: 'New Year Diary', desc: 'Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.' },
+  'Premium Diary': { title: 'Premium Diary', desc: 'Luxury diaries crafted from the finest materials — leather, PU, and more.' },
+  Calendars: { title: 'Calendars', desc: 'Premium calendars for the new year — desk and table designs.' },
+  'Customized Note Books': { title: 'Customized Note Books', desc: 'Personalized notebooks for every need — custom covers, pen included options.' },
+  'Leather Gifts': { title: 'Leather Gifts', desc: 'Handcrafted leather gifts — certificate folders, wallets, and accessories.' },
+  'Leather Planners': { title: 'Leather Planners', desc: 'Premium leather planners — crafted for focus, productivity, and style.' },
+  'Promotional Gifts': { title: 'Promotional Gifts', desc: 'Promotional products for brand visibility — pens, mugs, bags, and more.' },
 };
 
 export async function renderShopPage() {
@@ -145,11 +151,26 @@ function getActiveFilters() {
   return active;
 }
 
+function keywordMatch(product, keyword) {
+  const kw = keyword.toLowerCase();
+  const searchable = [
+    product.name,
+    product.material,
+    product.size,
+    product.description,
+    product.longDescription,
+    product.tagline,
+    product.tags,
+    product.category,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return searchable.includes(kw);
+}
+
 function applyFilters(allProducts) {
   const { material, size, price } = getActiveFilters();
   let filtered = allProducts;
-  if (material.length > 0) filtered = filtered.filter(p => material.some(m => (p.material || '').toLowerCase().includes(m.toLowerCase())));
-  if (size.length > 0) filtered = filtered.filter(p => size.some(s => (p.size || '').toUpperCase().includes(s.toUpperCase())));
+  if (material.length > 0) filtered = filtered.filter(p => material.some(m => keywordMatch(p, m)));
+  if (size.length > 0) filtered = filtered.filter(p => size.some(s => keywordMatch(p, s)));
   if (price.length > 0) filtered = filtered.filter(p => {
     const pPrice = Number(p.price) || 0;
     return price.some(range => {

@@ -71,19 +71,19 @@ export async function renderQuoteListPage() {
 
   document.querySelectorAll('.quote-qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
-      const item = quoteList.find(i => i.productId === id);
+      const id = btn.dataset.id;
+      const item = quoteList.find(i => String(i.productId) === String(id));
       if (item && item.qty > 10) { updateQuoteQty(id, item.qty - 10); renderQuoteListPage(); }
     });
   });
   document.querySelectorAll('.quote-qty-plus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
-      const item = quoteList.find(i => i.productId === id);
+      const id = btn.dataset.id;
+      const item = quoteList.find(i => String(i.productId) === String(id));
       if (item) { updateQuoteQty(id, item.qty + 10); renderQuoteListPage(); }
     });
   });
   document.querySelectorAll('.remove-quote-item').forEach(btn => {
-    btn.addEventListener('click', () => { removeFromQuoteList(parseInt(btn.dataset.id)); renderQuoteListPage(); });
+    btn.addEventListener('click', () => { removeFromQuoteList(btn.dataset.id); renderQuoteListPage(); });
   });
 }

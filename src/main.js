@@ -6,7 +6,7 @@ import './styles/pages.css';
 
 import { addRoute, initRouter } from './router.js';
 import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories, initSearchModal, renderSearchModal } from './components/Header.js';
-import { renderFaqChatbot, initFaqChatbot } from './components/FaqChatbot.js';
+import { initFaqChatbot } from './components/FaqChatbot.js';
 import { renderFooter } from './components/Footer.js';
 import { renderAboutSection } from './components/AboutSection.js';
 import { renderQuickViewModal } from './components/QuickViewModal.js';

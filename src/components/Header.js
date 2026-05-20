@@ -42,6 +42,9 @@ export function renderHeader(content) {
 
   const groupedCats = getCategoriesByGroup(_cachedCategories || []);
 
+  const firstGroup = exploreGroups[0];
+  const firstCats = groupedCats[firstGroup] || [];
+
   return `
     <div class="announcement-bar" id="announcement-bar">
       ${annItems.map(item => item.link
@@ -57,23 +60,37 @@ export function renderHeader(content) {
         <nav class="header-nav" aria-label="Main navigation">
           <div class="nav-explore-wrapper" id="nav-explore-wrapper">
             <button class="nav-explore-btn" id="nav-explore-btn">
-              Explore
+              All Categories
               <span class="material-symbols-outlined" style="font-size:16px;">expand_more</span>
             </button>
             <div class="explore-mega-menu" id="explore-mega-menu">
               <div class="explore-mega-inner">
-                ${exploreGroups.map(groupName => {
-                  const cats = groupedCats[groupName] || [];
-                  if (!cats.length) return '';
-                  return `
-                    <div class="explore-mega-group">
-                      <div class="explore-mega-group-title">${groupName}</div>
-                      ${cats.map(cat => `
-                        <a href="/shop?cat=${cat.slug}" class="explore-mega-link">${cat.name}</a>
-                      `).join('')}
-                    </div>
-                  `;
-                }).join('')}
+                <div class="explore-mega-sidebar">
+                  ${exploreGroups.map((groupName, i) => {
+                    const cats = groupedCats[groupName] || [];
+                    return `
+                      <button class="explore-mega-cat-btn ${i === 0 ? 'active' : ''}" data-group="${groupName}">
+                        ${groupName}
+                        ${cats.length > 0 ? '<span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>' : ''}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+                <div class="explore-mega-panels">
+                  ${exploreGroups.map((groupName, i) => {
+                    const cats = groupedCats[groupName] || [];
+                    return `
+                      <div class="explore-mega-panel ${i === 0 ? 'active' : ''}" data-panel="${groupName}">
+                        <div class="explore-mega-panel-title">${groupName}</div>
+                        <div class="explore-mega-panel-grid">
+                          ${cats.map(cat => `
+                            <a href="/shop?cat=${cat.slug}" class="explore-mega-link">${cat.name}</a>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               </div>
             </div>
           </div>
@@ -191,6 +208,19 @@ export function initHeaderEvents() {
       if (!exploreWrapper.contains(e.target)) {
         exploreWrapper.classList.remove('show-explore-menu');
       }
+    });
+
+    // Sidebar hover → show right panel
+    const sidebarBtns = exploreMenu.querySelectorAll('.explore-mega-cat-btn');
+    sidebarBtns.forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        sidebarBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const group = btn.dataset.group;
+        exploreMenu.querySelectorAll('.explore-mega-panel').forEach(p => {
+          p.classList.toggle('active', p.dataset.panel === group);
+        });
+      });
     });
   }
 

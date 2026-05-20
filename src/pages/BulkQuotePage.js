@@ -2,10 +2,46 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { navigateTo } from '../router.js';
 import { supabase } from '../lib/supabase.js';
 import { sendQuoteEmail } from '../lib/notify.js';
+import { generateEnquiryCode } from '../lib/enquiry-code.js';
+import { getQuoteList, clearQuoteList } from '../data/store.js';
+import { getProductById, formatPrice } from '../data/products.js';
 
-export function renderBulkQuotePage() {
+export async function renderBulkQuotePage() {
   const app = document.getElementById('app');
   const today = new Date().toISOString().slice(0, 10);
+
+  const quoteList = getQuoteList();
+  const quoteItems = (await Promise.all(
+    quoteList.map(async item => {
+      const product = await getProductById(item.productId);
+      return product ? { ...item, product } : null;
+    })
+  )).filter(Boolean);
+
+  const totalUnits = quoteItems.reduce((sum, item) => sum + item.qty, 0);
+
+  const productsHtml = quoteItems.length > 0 ? `
+    <div class="bulk-quote-products">
+      <h3>Products in Your Enquiry (${quoteItems.length} items, ${totalUnits} units)</h3>
+      <div class="quote-list-items" style="margin-bottom:var(--space-6);">
+        ${quoteItems.map(item => `
+          <div class="quote-item" style="padding:var(--space-3) 0;border-bottom:1px solid var(--color-border-light);">
+            <div style="display:flex;align-items:center;gap:var(--space-3);">
+              ${item.product.image ? `<img src="${item.product.image}" alt="${item.product.title}" style="width:48px;height:48px;object-fit:cover;border-radius:var(--radius-sm);">` : ''}
+              <div style="flex:1;">
+                <div style="font-weight:var(--fw-semibold);">${item.product.title}</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);">${item.product.sku || ''} ${item.product.material ? '• ' + item.product.material : ''}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:var(--fw-semibold);">${item.qty} units</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);">${formatPrice(item.product.price)}/ea</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
 
   app.innerHTML = `
     <div class="page-content">
@@ -34,6 +70,7 @@ export function renderBulkQuotePage() {
           </div>
 
           <div class="bulk-quote-form">
+            ${productsHtml}
             <h2 class="heading-3" style="margin-bottom:var(--space-6);">Tell Us About Your Needs</h2>
             <form id="bulk-quote-form" class="auth-form">
               <div class="form-row">
@@ -55,7 +92,7 @@ export function renderBulkQuotePage() {
                 </select>
               </div>
               <div class="form-row">
-                <div class="input-group"><label>Estimated Quantity *</label><input name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" required></div>
+                <div class="input-group"><label>Estimated Quantity *${quoteItems.length > 0 ? ` (${totalUnits} units from quote list)` : ''}</label><input name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" value="${totalUnits >= 25 ? totalUnits : ''}" required></div>
                 <div class="input-group"><label>Required By *</label><input name="required_by" type="date" class="input-field" min="${today}" required></div>
               </div>
               <div class="input-group">
@@ -94,6 +131,11 @@ export function renderBulkQuotePage() {
 
     if (!form.reportValidity()) return;
 
+    const enquiryCode = generateEnquiryCode('BQ');
+    const productSummary = quoteItems.map(item =>
+      `${item.product.title} (SKU: ${item.product.sku || 'N/A'}) × ${item.qty} units @ ${formatPrice(item.product.price)}/ea`
+    ).join('\n');
+
     const data = {
       name,
       email: form.email.value.trim(),
@@ -104,7 +146,10 @@ export function renderBulkQuotePage() {
       custom_requirements: [
         form.custom_requirements.value.trim(),
         form.required_by.value ? `Required by: ${form.required_by.value}` : '',
+        quoteItems.length > 0 ? `\n--- Products from Quote List ---\n${productSummary}` : '',
       ].filter(Boolean).join('\n') || null,
+      enquiry_code: enquiryCode,
+      product_names: quoteItems.map(i => `${i.product.title} ×${i.qty}`).join(', ') || null,
     };
 
     btn.disabled = true;
@@ -121,6 +166,7 @@ export function renderBulkQuotePage() {
     }
 
     sendQuoteEmail(data).catch(() => {});
+    clearQuoteList();
     navigateTo('/enquiry-success');
   });
 }
