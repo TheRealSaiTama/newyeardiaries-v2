@@ -615,7 +615,15 @@ async function openProductModal(container, product = null) {
           <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
           <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div>
         </div>
-        <div class="form-group"><label>Short Description</label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
+        <div class="form-group">
+          <label>Product Highlights</label>
+          <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);">
+            <label class="admin-cat-checkbox"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">🚚 Free Shipping</span></label>
+            <label class="admin-cat-checkbox"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">🛡️ 1-Year Warranty</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div>
+        <div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
         <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
         <div class="form-group">
           <label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label>
@@ -818,6 +826,9 @@ async function openProductModal(container, product = null) {
       in_stock: fd.get('in_stock') === 'on',
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
+      has_shipping_badge: fd.get('has_shipping_badge') === 'on',
+      has_warranty_badge: fd.get('has_warranty_badge') === 'on',
+      tags: fd.get('tags') || null,
     };
 
     let savedProduct;

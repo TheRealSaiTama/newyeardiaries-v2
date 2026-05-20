@@ -27,6 +27,9 @@ function normalize(p) {
     images: p.images || [],
     colors: p.colors || [],
     features: p.features || [],
+    hasShippingBadge: p.has_shipping_badge === true,
+    hasWarrantyBadge: p.has_warranty_badge === true,
+    tags: p.tags || '',
     minBulkOrder: p.min_bulk_order || 100,
     inStock: p.in_stock !== false,
     active: p.active !== false,
@@ -80,6 +83,32 @@ export async function getProductsByCategory(categorySlug) {
 
 export function formatPrice(price, currency = '₹') {
   return `${currency}${price.toLocaleString('en-IN')}`;
+}
+
+export async function getReviewsByProduct(productId) {
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('active', true)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data || [];
+}
+
+export async function addReview(productId, reviewerName, rating, reviewText) {
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .insert({ product_id: productId, reviewer_name: reviewerName, rating, review_text: reviewText })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getCategories() {
+  const { data } = await supabase.from('categories').select('id, name, slug').eq('active', true).order('sort_order');
+  return data || [];
 }
 
 export const filters = {

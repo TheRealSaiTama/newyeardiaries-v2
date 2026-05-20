@@ -23,6 +23,9 @@ function normalize(product) {
     images: product.images || [],
     colors: product.colors || [],
     features: product.features || [],
+    hasShippingBadge: product.has_shipping_badge === true,
+    hasWarrantyBadge: product.has_warranty_badge === true,
+    tags: product.tags || '',
     minBulkOrder: product.min_bulk_order || 100,
     inStock: product.in_stock !== false,
     active: product.active !== false,
@@ -68,6 +71,28 @@ export async function getProductBySlug(slug) {
   if (error) return null;
   return normalize(data);
 }
+
+export async function getReviewsByProduct(productId) {
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('active', true)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data || [];
+}
+
+export async function addReview(productId, reviewerName, rating, reviewText) {
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .insert({ product_id: productId, reviewer_name: reviewerName, rating, review_text: reviewText })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 
 const LOCAL_CAT_IMAGES = {
   'a-to-z-diary-collection': '/images/categories/note-book-diary.jpg',

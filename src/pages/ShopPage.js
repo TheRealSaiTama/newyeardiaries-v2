@@ -2,9 +2,9 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderFilterSidebar, initFilterEvents } from '../components/FilterSidebar.js';
 import { renderProductCard } from '../components/ProductCard.js';
 import { getProducts } from '../data/products.js';
-import { addToQuoteList } from '../data/store.js';
 import { CATEGORY_GROUPS } from '../lib/categories.js';
 
+const PRODUCTS_PER_PAGE = 12;
 const PAGE_TITLES = {
   Planners: { title: 'Planners', desc: 'Stay organized with our curated range of premium planners — crafted for focus, productivity, and style.' },
   Diaries: { title: 'Diaries', desc: 'Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.' },
@@ -16,9 +16,9 @@ export async function renderShopPage() {
   const catSlug = params.get('cat');
   const groupName = params.get('group');
   const searchQ = params.get('q');
+  const pageParam = parseInt(params.get('page')) || 1;
   const allProducts = await getProducts();
 
-  // Filter products based on ?cat=, ?group=, or ?q=
   let products;
   let pageTitle = 'The 2026 Diary Collection';
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
@@ -32,7 +32,8 @@ export async function renderShopPage() {
       (p.shortDescription || '').toLowerCase().includes(q) ||
       (p.categoryName || '').toLowerCase().includes(q) ||
       (p.badge || '').toLowerCase().includes(q) ||
-      (p.sku || '').toLowerCase().includes(q)
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.tags || '').toLowerCase().includes(q)
     );
     pageTitle = `Search: "${searchQ}"`;
     pageDesc = `${products.length} result${products.length !== 1 ? 's' : ''} found`;
@@ -51,6 +52,11 @@ export async function renderShopPage() {
   } else {
     products = allProducts;
   }
+
+  const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
+  const currentPage = Math.min(pageParam, totalPages);
+  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
 
   const app = document.getElementById('app');
 
@@ -86,21 +92,45 @@ export async function renderShopPage() {
           ${renderFilterSidebar()}
           <div class="shop-main">
             <div class="product-grid" id="product-grid">
-              ${products.length > 0 ? products.map(p => renderProductCard(p)).join('') : `
+              ${pageProducts.length > 0 ? pageProducts.map(p => renderProductCard(p)).join('') : `
                 <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
                   <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
                   <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
                 </div>
               `}
             </div>
+
+            ${totalPages > 1 ? `
+              <div class="shop-pagination">
+                <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                ${Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+                  <button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>
+                `).join('')}
+                <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            ` : ''}
           </div>
         </div>
       </div>
     </div>
+
+    <button id="go-top-btn" class="go-top-btn" aria-label="Go to top">
+      <span class="material-symbols-outlined">keyboard_arrow_up</span>
+    </button>
   `;
 
   initFilterEvents();
-  initShopEvents(products);
+  initShopEvents(products, currentPage, totalPages, searchQ);
+}
+
+function buildPageUrl(page) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('page', String(page));
+  return `/shop?${params.toString()}`;
 }
 
 function getActiveFilters() {
@@ -117,75 +147,111 @@ function getActiveFilters() {
 
 function applyFilters(allProducts) {
   const { material, size, price } = getActiveFilters();
-
   let filtered = allProducts;
-
-  if (material.length > 0) {
-    filtered = filtered.filter(p =>
-      material.some(m => (p.material || '').toLowerCase().includes(m.toLowerCase()))
-    );
-  }
-
-  if (size.length > 0) {
-    filtered = filtered.filter(p =>
-      size.some(s => (p.size || '').toUpperCase().includes(s.toUpperCase()))
-    );
-  }
-
-  if (price.length > 0) {
-    filtered = filtered.filter(p => {
-      const pPrice = Number(p.price) || 0;
-      return price.some(range => {
-        const [min, max] = range.split('-').map(Number);
-        return pPrice >= min && pPrice < max;
-      });
+  if (material.length > 0) filtered = filtered.filter(p => material.some(m => (p.material || '').toLowerCase().includes(m.toLowerCase())));
+  if (size.length > 0) filtered = filtered.filter(p => size.some(s => (p.size || '').toUpperCase().includes(s.toUpperCase())));
+  if (price.length > 0) filtered = filtered.filter(p => {
+    const pPrice = Number(p.price) || 0;
+    return price.some(range => {
+      const [min, max] = range.split('-').map(Number);
+      return pPrice >= min && pPrice < max;
     });
-  }
-
+  });
   return filtered;
 }
 
-function initShopEvents(products) {
+function initShopEvents(products, currentPage, totalPages, searchQ) {
   document.getElementById('filter-toggle')?.addEventListener('click', () => {
     document.getElementById('filter-sidebar')?.classList.toggle('mobile-active');
   });
 
-  // Sort handler
   document.getElementById('sort-select')?.addEventListener('change', (e) => {
     const sorted = applyFilters(products);
     const val = e.target.value;
     if (val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
     else if (val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
     else if (val.includes('Newest')) sorted.sort((a, b) => b.sortOrder - a.sortOrder);
-    renderFilteredGrid(sorted);
+    renderFilteredGrid(sorted, 1, Math.max(1, Math.ceil(sorted.length / PRODUCTS_PER_PAGE)), searchQ);
   });
 
-  // Filter checkbox handler
   document.querySelectorAll('.filter-sidebar input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', () => {
       const filtered = applyFilters(products);
-      // Re-apply current sort
       const sortVal = document.getElementById('sort-select')?.value || '';
       if (sortVal.includes('Low to High')) filtered.sort((a, b) => a.price - b.price);
       else if (sortVal.includes('High to Low')) filtered.sort((a, b) => b.price - a.price);
       else if (sortVal.includes('Newest')) filtered.sort((a, b) => b.sortOrder - a.sortOrder);
-      renderFilteredGrid(filtered);
+      renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), searchQ);
     });
+  });
+
+  document.getElementById('pag-prev')?.addEventListener('click', () => {
+    if (currentPage > 1) window.location.href = buildPageUrl(currentPage - 1);
+  });
+  document.getElementById('pag-next')?.addEventListener('click', () => {
+    if (currentPage < totalPages) window.location.href = buildPageUrl(currentPage + 1);
+  });
+  document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.href = buildPageUrl(parseInt(btn.dataset.page));
+    });
+  });
+
+  const goTopBtn = document.getElementById('go-top-btn');
+  window.addEventListener('scroll', () => {
+    if (goTopBtn) goTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+  }, { passive: true });
+  goTopBtn?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
-function renderFilteredGrid(filteredProducts) {
+function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) {
   const grid = document.getElementById('product-grid');
   if (!grid) return;
 
-  if (filteredProducts.length === 0) {
+  const PRODUCTS_PER_PAGE = 12;
+  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const pageProducts = filteredProducts.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+
+  if (pageProducts.length === 0) {
     grid.innerHTML = `
       <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
         <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
         <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p>
       </div>
     `;
-  } else {
-    grid.innerHTML = filteredProducts.map(p => renderProductCard(p)).join('');
+    return;
+  }
+
+  grid.innerHTML = pageProducts.map(p => renderProductCard(p)).join('');
+
+  const mainEl = document.querySelector('.shop-main');
+  const existingPag = mainEl?.querySelector('.shop-pagination');
+  if (existingPag) existingPag.remove();
+
+  if (totalPages > 1) {
+    const pagDiv = document.createElement('div');
+    pagDiv.className = 'shop-pagination';
+    pagDiv.innerHTML = `
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
+      ${Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+        <button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>
+      `).join('')}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
+    `;
+    grid.after(pagDiv);
+
+    document.getElementById('pag-prev')?.addEventListener('click', () => {
+      if (currentPage > 1) window.location.href = buildPageUrl(currentPage - 1);
+    });
+    document.getElementById('pag-next')?.addEventListener('click', () => {
+      if (currentPage < totalPages) window.location.href = buildPageUrl(currentPage + 1);
+    });
+    document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.location.href = buildPageUrl(parseInt(btn.dataset.page));
+      });
+    });
   }
 }
