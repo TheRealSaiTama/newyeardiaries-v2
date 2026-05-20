@@ -1040,6 +1040,72 @@
   padding: var(--space-2) 0;
 }
 
+/* Quantity Stepper (input-based) */
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.qty-step-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+.qty-step-btn:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-primary);
+}
+.qty-step-input {
+  width: 64px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-2) 0;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  -moz-appearance: textfield;
+}
+.qty-step-input::-webkit-inner-spin-button,
+.qty-step-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.qty-step-input:focus {
+  outline: none;
+  background: rgba(160, 82, 45, 0.04);
+}
+
+/* PDP qty + actions layout */
+.pdp-qty-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.pdp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.pdp-actions-btns {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
   .cart-item {
     grid-template-columns: 80px 1fr;

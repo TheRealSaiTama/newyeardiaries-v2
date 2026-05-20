@@ -101,14 +101,25 @@ export async function renderProductDetailPage(params) {
             ` : ''}
 
             <div class="pdp-actions">
-              <button class="btn btn--accent btn--lg" id="pdp-add-quote">
-                <span class="material-symbols-outlined" style="font-size:18px;">request_quote</span>
-                Add to Quote List
-              </button>
-              <button class="btn btn--secondary btn--lg" id="pdp-add-cart">
-                <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
-                Add to Cart
-              </button>
+              <div class="pdp-qty-wrap">
+                <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label>
+                <div class="qty-stepper">
+                  <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
+                  <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
+                  <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
+                </div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div>
+              </div>
+              <div class="pdp-actions-btns">
+                <button class="btn btn--accent btn--lg" id="pdp-add-quote">
+                  <span class="material-symbols-outlined" style="font-size:18px;">request_quote</span>
+                  Add to Quote List
+                </button>
+                <button class="btn btn--secondary btn--lg" id="pdp-add-cart">
+                  <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
+                  Add to Cart
+                </button>
+              </div>
             </div>
 
             <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-top:var(--space-2);">
@@ -133,8 +144,32 @@ export async function renderProductDetailPage(params) {
     </div>
   `;
 
-  document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id));
-  document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id));
+  document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, pdpMOQ));
+  document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, pdpMOQ));
+
+  let pdpMOQ = product.minBulkOrder;
+  const qtyInput = document.getElementById('pdp-qty');
+  const minusBtn = document.getElementById('qty-minus');
+  const plusBtn = document.getElementById('qty-plus');
+
+  function clampQty(val) {
+    return Math.max(pdpMOQ, val);
+  }
+
+  minusBtn?.addEventListener('click', () => {
+    const current = parseInt(qtyInput.value) || pdpMOQ;
+    qtyInput.value = clampQty(current - 1);
+  });
+  plusBtn?.addEventListener('click', () => {
+    const current = parseInt(qtyInput.value) || pdpMOQ;
+    qtyInput.value = current + 1;
+  });
+  qtyInput?.addEventListener('change', () => {
+    qtyInput.value = clampQty(parseInt(qtyInput.value) || pdpMOQ);
+  });
+  qtyInput?.addEventListener('input', () => {
+    pdpMOQ = clampQty(parseInt(qtyInput.value) || product.minBulkOrder);
+  });
 
   const mainImageEl = document.querySelector('.pdp-main-image');
   const thumbs = document.querySelectorAll('.pdp-thumb');

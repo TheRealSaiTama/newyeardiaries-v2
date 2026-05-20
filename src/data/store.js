@@ -41,7 +41,7 @@ export function addToCart(productId, qty = 1) {
   const cart = getCart();
   const existing = cart.find(item => item.productId === productId);
   if (existing) {
-    existing.qty += qty;
+    existing.qty = qty;
   } else {
     cart.push({ productId, qty });
   }
@@ -57,10 +57,10 @@ export function removeFromCart(productId) {
   updateHeaderCounts();
 }
 
-export function updateCartQty(productId, qty) {
+export function updateCartQty(productId, qty, minQty = 1) {
   const cart = getCart();
   const item = cart.find(i => i.productId === productId);
-  if (item) item.qty = Math.max(1, qty);
+  if (item) item.qty = Math.max(minQty, qty);
   localStorage.setItem('cart', JSON.stringify(cart));
   updateHeaderCounts();
 }
@@ -91,5 +91,5 @@ function showToast(message) {
 }
 
 // Global functions for inline onclick handlers
-window.__addToQuote = (id) => addToQuoteList(id);
-window.__addToCart = (id) => addToCart(id);
+window.__addToQuote = (id, qty) => addToQuoteList(id, qty);
+window.__addToCart = (id, qty) => addToCart(id, qty);
