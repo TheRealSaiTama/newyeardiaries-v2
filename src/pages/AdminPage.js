@@ -930,8 +930,8 @@ async function openCategoryModal(container, category = null) {
       <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Category</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
       <form class="admin-form" id="cat-form">
         <div class="form-row">
-          <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required></div>
-          <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required></div>
+          <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div>
+          <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
         <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
@@ -955,7 +955,12 @@ async function openCategoryModal(container, category = null) {
   document.getElementById('cat-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = { name: fd.get('name'), slug: fd.get('slug'), parent_id: null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+    const name = fd.get('name');
+    const rawSlug = fd.get('slug');
+    const slug = rawSlug ? rawSlug.trim() : generateSlug(name);
+    if (!name || !name.trim()) { showToast('Category name is required.', 'error'); return; }
+    if (!slug) { showToast('Slug is required.', 'error'); return; }
+    const payload = { name: name.trim(), slug, parent_id: null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
     const { error: catError } = isEdit
       ? await supabase.from('categories').update(payload).eq('id', category.id)
       : await supabase.from('categories').insert(payload);
@@ -968,6 +973,18 @@ async function openCategoryModal(container, category = null) {
     showToast(isEdit ? 'Category updated!' : 'Category added!');
     await renderCategories(container);
   };
+
+
+  const catNameInput = document.getElementById('cat-name');
+  const catSlugInput = document.getElementById('cat-slug');
+  catNameInput?.addEventListener('input', () => {
+    if (!isEdit && !catSlugInput.dataset.manual) {
+      catSlugInput.value = generateSlug(catNameInput.value);
+    }
+  });
+  catSlugInput?.addEventListener('input', () => {
+    if (catSlugInput.value) catSlugInput.dataset.manual = '1';
+  });
 }
 
 // ===== BANNERS =====
