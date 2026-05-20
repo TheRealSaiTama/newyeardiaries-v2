@@ -186,38 +186,62 @@
 .home-whatsapp-btn {
   position: fixed;
   right: 24px;
-  bottom: 24px;
-  top: auto;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 1000;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 132px;
-  min-height: 46px;
-  padding: 12px 20px;
-  border-radius: 30px;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 26px;
   background: #25d366;
   color: #fff;
-  font-family: var(--font-family-heading);
-  font-size: 15px;
-  font-weight: var(--fw-semibold);
-  line-height: 1.2;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-  transform: none;
-  transition: transform 0.2s ease, background 0.2s ease;
-  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
 }
 
 .home-whatsapp-btn:hover {
-  background: #1fb65a;
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+  width: 192px;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
 }
 
-.home-whatsapp-btn span {
-  display: block;
+.home-whatsapp-btn .whatsapp-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
 }
+
+.home-whatsapp-btn .whatsapp-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: #fff;
+}
+
+.home-whatsapp-btn .whatsapp-label {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  padding-right: 18px;
+  font-family: var(--font-family-heading);
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.25s ease 0.05s;
+}
+
+.home-whatsapp-btn:hover .whatsapp-label {
+  opacity: 1;
+}
+
 
 @media (max-width: 768px) {
   .ap-cat-section { padding: 40px 0; }
@@ -225,9 +249,7 @@
   .ap-cat-card { flex: 0 0 160px; }
   .ap-cat-img-wrapper { width: 160px; height: 160px; }
   .ap-cat-heading { font-size: 16px; }
-  .home-whatsapp-btn { right: 16px; bottom: 16px; min-width: 48px; width: 48px; height: 48px; padding: 0; border-radius: 50%; }
-  .home-whatsapp-btn span { display: none; }
-  .home-whatsapp-btn svg { margin-right: 0 !important; }
+  .home-whatsapp-btn { right: 16px; top: auto; bottom: 72px; transform: none; }
 }
 
 @media (max-width: 480px) {
