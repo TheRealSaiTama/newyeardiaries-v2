@@ -12,18 +12,32 @@ const PAGE_TITLES = {
 };
 
 export async function renderShopPage() {
-  const allProducts = await getProducts();
   const params = new URLSearchParams(window.location.search);
   const catSlug = params.get('cat');
   const groupName = params.get('group');
+  const searchQ = params.get('q');
+  const allProducts = await getProducts();
 
-  // Filter products based on ?cat= or ?group=
+  // Filter products based on ?cat=, ?group=, or ?q=
   let products;
   let pageTitle = 'The 2026 Diary Collection';
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
   let breadcrumbLabel = 'All Diaries';
 
-  if (catSlug) {
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    products = allProducts.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.shortDescription || '').toLowerCase().includes(q) ||
+      (p.categoryName || '').toLowerCase().includes(q) ||
+      (p.badge || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q)
+    );
+    pageTitle = `Search: "${searchQ}"`;
+    pageDesc = `${products.length} result${products.length !== 1 ? 's' : ''} found`;
+    breadcrumbLabel = `Search: "${searchQ}"`;
+  } else if (catSlug) {
     products = allProducts.filter(p => (p.category || '').toLowerCase() === catSlug.toLowerCase());
     pageTitle = catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     pageDesc = '';
@@ -72,7 +86,12 @@ export async function renderShopPage() {
           ${renderFilterSidebar()}
           <div class="shop-main">
             <div class="product-grid" id="product-grid">
-              ${products.map(p => renderProductCard(p)).join('')}
+              ${products.length > 0 ? products.map(p => renderProductCard(p)).join('') : `
+                <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
+                  <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
+                  <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
+                </div>
+              `}
             </div>
           </div>
         </div>

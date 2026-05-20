@@ -552,8 +552,25 @@ async function readMediaFiles(input, allowedTypes) {
   return readMediaFilesFromList(Array.from(input?.files || []), allowedTypes);
 }
 
+async function validateBannerImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const minW = 1920;
+      const minH = 720;
+      if (img.width < minW || img.height < minH) {
+        reject(new Error(`Banner image must be at least ${minW}×${minH} pixels (16:6 ratio). Current: ${img.width}×${img.height}`));
+      } else {
+        resolve();
+      }
+    };
+    img.onerror = () => reject(new Error('Invalid image file'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 function isVideoMedia(src, type = '') {
-  return type === 'video/mp4' || /\.mp4($|[?#])/i.test(src);
+  return type === 'video/mp4' || /\\.mp4($|[?#])/i.test(src);
 }
 
 async function openProductModal(container, product = null) {
@@ -1018,11 +1035,26 @@ async function renderBanners(container) {
 
 function openBannerModal(container, banner = null) {
   const isEdit = !!banner;
+  let selectedFile = null;
+  let previewUrl = null;
+  const BANNER_MIN_W = 1920;
+  const BANNER_MIN_H = 720;
+
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
+
+  const renderPreview = (src) => {
+    const preview = overlay.querySelector('#banner-preview');
+    if (preview) {
+      preview.innerHTML = src
+        ? `<img src="${src}" style="max-width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--color-border-light);">`
+        : `<div style="height:120px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);border:1px dashed var(--color-border)">No image selected</div>`;
+    }
+  };
+
   overlay.innerHTML = `
-    <div class="admin-modal">
+    <div class="admin-modal" style="max-width:540px">
       <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Banner</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
       <form class="admin-form" id="banner-form">
         <div class="form-group"><label>Title *</label><input name="title" value="${banner?.title || ''}" required></div>
@@ -1031,7 +1063,20 @@ function openBannerModal(container, banner = null) {
           <div class="form-group"><label>CTA Text</label><input name="cta_text" value="${banner?.cta_text || ''}"></div>
           <div class="form-group"><label>CTA Link</label><input name="cta_link" value="${banner?.cta_link || ''}"></div>
         </div>
-        <div class="form-group"><label>Image URL *</label><input name="image_url" value="${banner?.image_url || ''}" required placeholder="https://..."></div>
+        <div class="form-group">
+          <label>Banner Image *</label>
+          <div id="banner-preview">
+            ${banner?.image_url
+              ? `<img src="${banner.image_url}" style="max-width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--color-border-light);">`
+              : `<div style="height:120px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);border:1px dashed var(--color-border)">No image selected</div>`
+            }
+          </div>
+          <input name="image_file" type="file" id="banner-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="margin-top:var(--space-3)">
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">
+            Accepted: JPG, PNG, WebP &middot; Required size: ${BANNER_MIN_W}&times;${BANNER_MIN_H}px (16:6 ratio)
+          </small>
+          ${banner?.image_url ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave file empty to keep current image</small>' : ''}
+        </div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="active" type="checkbox" id="banner_active" ${banner?.active !== false ? 'checked' : ''}><label for="banner_active">Active</label></div>
           <div class="form-group"><label>Sort Order</label><input name="order_index" type="number" value="${banner?.order_index || 0}"></div>
@@ -1044,19 +1089,80 @@ function openBannerModal(container, banner = null) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  const fileInput = overlay.querySelector('#banner-file-input');
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    if (!IMAGE_TYPES.includes(file.type)) {
+      showToast('Invalid file type. Use JPG, PNG, or WebP.', 'error');
+      fileInput.value = '';
+      renderPreview(banner?.image_url || null);
+      return;
+    }
+
+    if (file.size > MAX_MEDIA_SIZE) {
+      showToast(`File too large. Max size is 8 MB.`, 'error');
+      fileInput.value = '';
+      renderPreview(banner?.image_url || null);
+      return;
+    }
+
+    try {
+      await validateBannerImage(file);
+      selectedFile = file;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+      renderPreview(previewUrl);
+    } catch (err) {
+      showToast(err.message, 'error');
+      fileInput.value = '';
+      selectedFile = null;
+      renderPreview(banner?.image_url || null);
+    }
+  });
+
+  overlay.querySelector('.admin-modal-close').onclick = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    closeModal();
+  };
+  overlay.querySelector('.modal-cancel').onclick = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    closeModal();
+  };
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      closeModal();
+    }
+  };
 
   document.getElementById('banner-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    let imageUrl = banner?.image_url || '';
+
+    if (selectedFile) {
+      try {
+        imageUrl = await readFileAsDataUrl(selectedFile);
+      } catch (err) {
+        showToast('Failed to process image.', 'error');
+        return;
+      }
+    }
+
+    if (!imageUrl) {
+      showToast('Banner image is required.', 'error');
+      return;
+    }
+
     const payload = {
       title: fd.get('title'),
       subtitle: fd.get('subtitle') || null,
       cta_text: fd.get('cta_text') || null,
       cta_link: fd.get('cta_link') || null,
-      image_url: fd.get('image_url'),
+      image_url: imageUrl,
       active: fd.get('active') === 'on',
       order_index: Number(fd.get('order_index')) || 0,
     };
@@ -1067,6 +1173,7 @@ function openBannerModal(container, banner = null) {
       showToast(`Failed: ${bannerError.message}`, 'error');
       return;
     }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     bustContentCache();
     closeModal();
     showToast(isEdit ? 'Banner updated!' : 'Banner added!');

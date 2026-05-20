@@ -5,7 +5,7 @@ import './styles/components.css';
 import './styles/pages.css';
 
 import { addRoute, initRouter } from './router.js';
-import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories } from './components/Header.js';
+import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories, initSearchModal } from './components/Header.js';
 import { renderFooter } from './components/Footer.js';
 import { renderAboutSection } from './components/AboutSection.js';
 import { renderQuickViewModal } from './components/QuickViewModal.js';
@@ -61,12 +61,14 @@ function setupShell() {
   shell.innerHTML = `
     <div id="header-area">${renderHeader(appContent)}</div>
     ${renderQuickViewModal()}
+    ${renderSearchModal()}
     <main id="app"></main>
     ${renderAboutSection()}
     <div id="footer-area">${renderFooter(appContent)}</div>
   `;
   initHeaderEvents();
   updateHeaderCounts();
+  initSearchModal();
 }
 
 function wrapPage(renderFn) {
