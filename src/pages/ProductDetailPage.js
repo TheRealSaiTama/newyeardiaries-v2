@@ -45,18 +45,18 @@ export async function renderProductDetailPage(params) {
           { label: product.title },
         ])}
 
-        <div class="pdp-layout">
+          <div class="pdp-layout">
           <div class="pdp-gallery">
-            <div class="pdp-main-image">
-              ${renderProductMedia(product.image, product.title)}
+            <div class="pdp-main-image" data-images='${JSON.stringify(product.images)}' data-alt="${product.title.replace(/'/g, "&#39;")}" data-current="0">
+              <div class="pdp-slide pdp-slide--active">${renderProductMedia(product.image, product.title)}</div>
             </div>
             <div class="pdp-thumbnails">
-              ${product.images.slice(0, 4).map((img, i) => `
-                <div class="pdp-thumb ${i === 0 ? 'active' : ''}">
+              ${product.images.slice(0, 8).map((img, i) => `
+                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
                   ${renderProductThumb(img, product.title)}
                 </div>
               `).join('') || Array(4).fill('').map((_, i) => `
-                <div class="pdp-thumb ${i === 0 ? 'active' : ''}">
+                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
                   <span class="material-symbols-outlined" style="font-size:20px;color:var(--color-accent);opacity:0.4;">menu_book</span>
                 </div>
               `).join('')}
@@ -135,4 +135,67 @@ export async function renderProductDetailPage(params) {
 
   document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id));
   document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id));
+
+  const mainImageEl = document.querySelector('.pdp-main-image');
+  const thumbs = document.querySelectorAll('.pdp-thumb');
+  const images = product.images;
+  let currentIdx = 0;
+  let slideshowInterval = null;
+  let slideshowActive = false;
+
+  function switchImage(idx) {
+    if (idx < 0 || idx >= images.length || idx === currentIdx) return;
+    const currentSlide = mainImageEl.querySelector('.pdp-slide--active');
+    const src = images[idx];
+    const alt = mainImageEl.dataset.alt;
+    const isVideo = src && (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4'));
+    const media = isVideo
+      ? `<video src="${src}" controls muted playsinline></video>`
+      : `<img src="${src}" alt="${alt}">`;
+
+    const nextSlide = document.createElement('div');
+    nextSlide.className = 'pdp-slide pdp-slide--next';
+    nextSlide.innerHTML = media;
+    mainImageEl.appendChild(nextSlide);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        nextSlide.classList.remove('pdp-slide--next');
+        nextSlide.classList.add('pdp-slide--active');
+        if (currentSlide) {
+          currentSlide.classList.remove('pdp-slide--active');
+          currentSlide.classList.add('pdp-slide--prev');
+        }
+        setTimeout(() => currentSlide?.remove(), 400);
+      });
+    });
+
+    thumbs.forEach(t => t.classList.toggle('active', parseInt(t.dataset.index) === idx));
+    currentIdx = idx;
+  }
+
+  thumbs.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const idx = parseInt(thumb.dataset.index);
+      switchImage(idx);
+    });
+  });
+
+  if (images.length > 1) {
+    mainImageEl.addEventListener('mouseenter', () => {
+      slideshowActive = true;
+      slideshowInterval = setInterval(() => {
+        if (!slideshowActive) return;
+        const nextIdx = (currentIdx + 1) % images.length;
+        switchImage(nextIdx);
+      }, 1500);
+    });
+
+    mainImageEl.addEventListener('mouseleave', () => {
+      slideshowActive = false;
+      clearInterval(slideshowInterval);
+      slideshowInterval = null;
+      switchImage(0);
+    });
+  }
 }
