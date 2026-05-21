@@ -180,6 +180,7 @@ function keywordMatch(product, keyword) {
     product.name,
     product.material,
     product.size,
+    product.shortDescription,
     product.description,
     product.longDescription,
     product.tagline,

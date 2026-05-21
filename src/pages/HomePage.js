@@ -170,12 +170,43 @@ function renderProductSliderSection(title, slug, products, idSuffix, bg) {
 function initHeroSlider() {
   const slides = document.querySelectorAll('.hero-slide');
   if (slides.length <= 1) return;
+
   let current = 0;
+
+  // Initialize: first active, others ready from right
+  slides.forEach((slide, i) => {
+    slide.style.transition = 'none'; // avoid initial jump
+    if (i === 0) {
+      slide.classList.add('active');
+      slide.style.transform = 'translateX(0)';
+    } else {
+      slide.style.transform = 'translateX(100%)';
+    }
+  });
+
+  // Force reflow then restore transition
+  requestAnimationFrame(() => {
+    slides.forEach(s => s.style.transition = 'transform 2s ease');
+  });
+
   setInterval(() => {
-    slides[current].classList.remove('active');
+    const prevIndex = current;
+
+    // Move current out to the left
+    slides[prevIndex].classList.remove('active');
+    slides[prevIndex].classList.add('prev');
+
+    // Next slide comes in from right
     current = (current + 1) % slides.length;
+    slides[current].classList.remove('prev');
     slides[current].classList.add('active');
-  }, 4000);
+
+    // Clean up after animation
+    setTimeout(() => {
+      slides[prevIndex].classList.remove('prev');
+      slides[prevIndex].style.transform = 'translateX(100%)';
+    }, 2000);
+  }, 5000);
 }
 
 function initProductCardEvents() {

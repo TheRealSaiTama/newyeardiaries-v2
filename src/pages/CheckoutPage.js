@@ -81,7 +81,7 @@ export async function renderCheckoutPage() {
   const cgst = subtotal * (gstRate / 2);
   const sgst = subtotal * (gstRate / 2);
   const shipping = subtotal >= 5000 ? 0 : 250;
-  const total = subtotal + (subtotal * gstRate) + shipping;
+  const total = subtotal + (subtotal * gstRate);
 
   const isShipping = step === 'shipping';
   const isPayment = step === 'payment';
@@ -133,7 +133,6 @@ export async function renderCheckoutPage() {
       <div class="order-summary-row"><span>Subtotal</span><span id="checkout-subtotal">${formatPrice(subtotal)}</span></div>
       <div class="order-summary-row gst-row"><span>CGST (9%)</span><span id="checkout-cgst">${formatPrice(cgst)}</span></div>
       <div class="order-summary-row gst-row"><span>SGST (9%)</span><span id="checkout-sgst">${formatPrice(sgst)}</span></div>
-      <div class="order-summary-row"><span>Shipping</span><span id="checkout-shipping">${shipping > 0 ? '₹' + shipping : 'Free'}</span></div>
       <div class="order-summary-total"><span>Total (incl. GST)</span><span id="checkout-total">${formatPrice(total)}</span></div>
     </div>
   `;
@@ -295,13 +294,11 @@ export async function renderCheckoutPage() {
       const newGst = newSub * gstRate;
       const newCgst = newGst / 2;
       const newSgst = newGst / 2;
-      const newShipping = newSub >= 5000 ? 0 : 250;
-      const newTotal = newSub + newGst + newShipping;
+      const newTotal = newSub + newGst;
 
       document.getElementById('checkout-subtotal').textContent = formatPrice(newSub);
       document.getElementById('checkout-cgst').textContent = formatPrice(newCgst);
       document.getElementById('checkout-sgst').textContent = formatPrice(newSgst);
-      document.getElementById('checkout-shipping').textContent = newShipping > 0 ? '₹' + newShipping : 'Free';
       document.getElementById('checkout-total').textContent = formatPrice(newTotal);
     }
 

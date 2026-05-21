@@ -3,6 +3,8 @@ import { renderProductCard, initProductCardSlideshows } from '../components/Prod
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
 import { addToQuoteList, addToCart } from '../data/store.js';
+import { navigateTo } from '../router.js';
+import { supabase } from '../lib/supabase.js';
 
 function renderProductMedia(src, alt) {
   if (!src) return `<span class="placeholder-icon material-symbols-outlined">menu_book</span>`;
@@ -39,9 +41,53 @@ export async function renderProductDetailPage(params) {
     return;
   }
 
-  const productCategories = (categories || []).filter(c =>
-    c.id === product.category || (product.categoryName && c.name === product.categoryName)
-  ).map(c => c.name);
+  let productCategoryList = [];
+  if (product.id) {
+    const { data: links } = await supabase.from('product_categories').select('categories(name)').eq('product_id', product.id);
+    productCategoryList = (links || []).map(l => l.categories?.name).filter(Boolean);
+  }
+
+  const reviewsListHtml = reviews.length ? reviews.map(r => `
+              <div class="pdp-review-item">
+                <div class="pdp-review-header">
+                  <div class="pdp-reviewer-info">
+                    <strong>${r.reviewer_name}</strong>
+                    <div class="pdp-review-stars">${renderStars(r.rating)}</div>
+                  </div>
+                  <span class="pdp-review-date">${new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+                ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
+                ${r.verified_purchase ? `<span class="badge badge-reviewed" style="margin-top:var(--space-2);">Verified Purchase</span>` : ''}
+              </div>
+            `).join('') : '<p style="color:var(--color-text-tertiary);">No reviews yet. Be the first to review this product!</p>';
+  const reviewsContent = `
+            <div class="pdp-review-form-wrap" style="box-shadow:none;margin-bottom:0;">
+              <h3 style="font-size:var(--fs-lg);margin-bottom:var(--space-4);">Write a Review</h3>
+              <form id="review-form" class="pdp-review-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Your Name *</label>
+                    <input type="text" name="reviewer_name" required placeholder="Rajesh Sharma">
+                  </div>
+                  <div class="form-group">
+                    <label>Rating *</label>
+                    <div class="rating-input-wrap" id="rating-input-wrap">
+                      ${[1,2,3,4,5].map(n => `<button type="button" class="rating-star-btn" data-rating="${n}"><span class="material-symbols-outlined">star</span></button>`).join('')}
+                      <input type="hidden" name="rating" id="review-rating-val" value="0">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Your Review *</label>
+                  <textarea name="review_text" required placeholder="Share your experience with this product..." rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn--accent">Submit Review</button>
+              </form>
+            </div>
+            <div id="pdp-reviews-list">
+              ${reviewsListHtml}
+            </div>
+          `;
 
   const related = allProducts.filter(p => p.id !== product.id && p.categoryId === product.categoryId).slice(0, 3);
 
@@ -73,7 +119,7 @@ export async function renderProductDetailPage(params) {
           </div>
 
           <div class="pdp-info">
-            ${productCategories.length ? `<div class="label">${productCategories.join(', ')} ${product.sku ? '• ' + product.sku : ''}</div>` : ''}
+            ${productCategoryList.length ? `<div class="label">${productCategoryList.join(', ')} ${product.sku ? '• ' + product.sku : ''}</div>` : ''}
             <h1 class="pdp-title">${product.title}</h1>
             <div class="pdp-price">
               ${formatPrice(product.price)}
@@ -134,17 +180,33 @@ export async function renderProductDetailPage(params) {
             </div>
 
             <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-top:var(--space-2);">
-              Min. bulk order: ${product.minBulkOrder} units &nbsp;•&nbsp; <a href="/bulk-quote" style="color:var(--color-accent);font-weight:var(--fw-medium);">Request custom pricing →</a>
+              Min. bulk order: ${product.minBulkOrder} units &nbsp;•&nbsp; <a href="/quote-list" id="pdp-request-custom" style="color:var(--color-accent);font-weight:var(--fw-medium);">Request custom pricing →</a>
             </div>
           </div>
         </div>
 
-        ${product.description ? `
-          <div class="pdp-long-desc">
-            <h3 class="heading-3">Product Details</h3>
-            <p>${product.description}</p>
+        <div class="pdp-detail-tabs">
+          <div class="pdp-tab-bar">
+            <button type="button" class="pdp-tab active" data-tab="desc">Description</button>
+            <button type="button" class="pdp-tab" data-tab="tags">Tags</button>
+            <button type="button" class="pdp-tab" data-tab="reviews">Reviews (${reviews.length})</button>
           </div>
-        ` : ''}
+          <div id="pdp-tab-desc" class="pdp-tab-panel">
+            ${(productCategoryList.length || product.tags) ? `
+              <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-bottom:var(--space-4);line-height:1.5;">
+                ${productCategoryList.length ? `<div><strong>Categories:</strong> ${productCategoryList.join(', ')}</div>` : ''}
+                ${product.tags ? `<div><strong>Tags:</strong> ${product.tags}</div>` : ''}
+              </div>
+            ` : ''}
+            ${product.description ? `<div class="pdp-long-desc" style="margin:0;">${product.description}</div>` : '<p style="color:var(--color-text-tertiary);">No description available.</p>'}
+          </div>
+          <div id="pdp-tab-tags" class="pdp-tab-panel" style="display:none;">
+            ${product.tags ? product.tags.split(',').map(t=>t.trim()).filter(Boolean).join(', ') : 'No tags.'}
+          </div>
+          <div id="pdp-tab-reviews" class="pdp-tab-panel" style="display:none;">
+            ${reviewsContent}
+          </div>
+        </div>
 
       </div>
 
@@ -159,51 +221,6 @@ export async function renderProductDetailPage(params) {
         </section>
       ` : ''}
 
-      <section class="pdp-reviews-section">
-        <div class="container">
-          <h2 class="heading-3" style="margin-bottom:var(--space-6);">Customer Reviews</h2>
-
-          <div class="pdp-review-form-wrap">
-            <h3 style="font-size:var(--fs-lg);margin-bottom:var(--space-4);">Write a Review</h3>
-            <form id="review-form" class="pdp-review-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Your Name *</label>
-                  <input type="text" name="reviewer_name" required placeholder="Rajesh Sharma">
-                </div>
-                <div class="form-group">
-                  <label>Rating *</label>
-                  <div class="rating-input-wrap" id="rating-input-wrap">
-                    ${[1,2,3,4,5].map(n => `<button type="button" class="rating-star-btn" data-rating="${n}"><span class="material-symbols-outlined">star</span></button>`).join('')}
-                    <input type="hidden" name="rating" id="review-rating-val" value="0">
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Your Review *</label>
-                <textarea name="review_text" required placeholder="Share your experience with this product..." rows="4"></textarea>
-              </div>
-              <button type="submit" class="btn btn--accent">Submit Review</button>
-            </form>
-          </div>
-
-          <div id="pdp-reviews-list">
-            ${reviews.length ? reviews.map(r => `
-              <div class="pdp-review-item">
-                <div class="pdp-review-header">
-                  <div class="pdp-reviewer-info">
-                    <strong>${r.reviewer_name}</strong>
-                    <div class="pdp-review-stars">${renderStars(r.rating)}</div>
-                  </div>
-                  <span class="pdp-review-date">${new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                </div>
-                ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
-                ${r.verified_purchase ? `<span class="badge badge-reviewed" style="margin-top:var(--space-2);">Verified Purchase</span>` : ''}
-              </div>
-            `).join('') : '<p style="color:var(--color-text-tertiary);">No reviews yet. Be the first to review this product!</p>'}
-          </div>
-        </div>
-      </section>
     </div>
   `;
 
@@ -221,6 +238,19 @@ export async function renderProductDetailPage(params) {
 
   document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, parseInt(qtyInput.value) || pdpMOQ));
   document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qtyInput.value) || pdpMOQ));
+
+  // Custom pricing link: add current product (at selected qty) to quote list, then go to quote-list page
+  // so user can adjust qty (incl. below MOQ) and proceed to bulk enquiry with this product included.
+  document.getElementById('pdp-request-custom')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const qty = parseInt(qtyInput?.value) || pdpMOQ;
+    addToQuoteList(product.id, qty);
+    navigateTo('/quote-list');
+  });
+
+  const tabBtns = document.querySelectorAll('.pdp-tab');
+  const tabPanels = {desc:document.getElementById('pdp-tab-desc'),tags:document.getElementById('pdp-tab-tags'),reviews:document.getElementById('pdp-tab-reviews')};
+  tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{tabBtns.forEach(b=>b.classList.remove('active'));btn.classList.add('active');Object.values(tabPanels).forEach(p=>{if(p)p.style.display='none';});const tab=btn.dataset.tab;if(tabPanels[tab])tabPanels[tab].style.display='';});});
 
   // Rating stars
   let selectedRating = 0;

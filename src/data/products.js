@@ -113,7 +113,7 @@ export async function getCategories() {
 }
 
 export const filters = {
-  material: ['Full-grain Leather', 'Italian PU Leather', 'Vegan Leather', 'Woven Linen', 'Hardbound'],
+  material: ['Leather', 'PU Leather', 'Vegan Leather', 'Linen', 'Hardbound'],
   size: ['A4', 'A5', 'B5'],
   priceRange: [
     { label: 'Under ₹100', min: 0, max: 100 },
