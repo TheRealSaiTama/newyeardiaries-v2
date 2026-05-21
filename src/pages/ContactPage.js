@@ -41,8 +41,8 @@ export function renderContactPage() {
                 <div class="input-group"><label>Full Name *</label><input name="name" type="text" class="input-field" required></div>
                 <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
               </div>
-              <div class="input-group"><label>Subject *</label><input name="subject" type="text" class="input-field" required></div>
-              <div class="input-group"><label>Message</label><textarea name="message" class="input-field textarea-field" placeholder="How can we help you?"></textarea></div>
+               <div class="input-group"><label>Subject *</label><input name="subject" type="text" class="input-field" required></div>
+               <div class="input-group"><label>Message *</label><textarea name="message" class="input-field textarea-field" placeholder="How can we help you?" required></textarea></div>
               <button type="submit" class="btn btn--accent btn--lg btn--full" id="contact-submit-btn">Send Message</button>
             </form>
           </div>
@@ -61,7 +61,7 @@ export function renderContactPage() {
       name: form.name.value.trim(),
       email: form.email.value.trim(),
       subject: form.subject.value.trim(),
-      message: form.message.value.trim() || null,
+      message: form.message.value.trim() || '',
       enquiry_code: generateEnquiryCode('CT'),
     };
 

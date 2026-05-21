@@ -24,3 +24,36 @@ CREATE POLICY "Allow delete site_settings" ON site_settings FOR DELETE TO anon U
 -- Fix: admin should see ALL products (not just active ones)
 DROP POLICY IF EXISTS "Public read products" ON products;
 CREATE POLICY "Public read products" ON products FOR SELECT TO anon USING (true);
+
+-- Public form submissions (contact, bulk quote, legacy enquiries)
+-- Required for ContactPage.js + BulkQuotePage.js inserts (anon client) and admin visibility
+DROP POLICY IF EXISTS "Allow public inserts contact_submissions" ON contact_submissions;
+CREATE POLICY "Allow public inserts contact_submissions" ON contact_submissions FOR INSERT TO anon WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public inserts quote_requests" ON quote_requests;
+CREATE POLICY "Allow public inserts quote_requests" ON quote_requests FOR INSERT TO anon WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public inserts enquiries" ON enquiries;
+CREATE POLICY "Allow public inserts enquiries" ON enquiries FOR INSERT TO anon WITH CHECK (true);
+
+-- Also ensure anon can read/update/delete them (matches 007)
+DROP POLICY IF EXISTS "Allow anon read contact_submissions" ON contact_submissions;
+CREATE POLICY "Allow anon read contact_submissions" ON contact_submissions FOR SELECT TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon update contact_submissions" ON contact_submissions;
+CREATE POLICY "Allow anon update contact_submissions" ON contact_submissions FOR UPDATE TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon delete contact_submissions" ON contact_submissions;
+CREATE POLICY "Allow anon delete contact_submissions" ON contact_submissions FOR DELETE TO anon USING (true);
+
+DROP POLICY IF EXISTS "Allow anon read quote_requests" ON quote_requests;
+CREATE POLICY "Allow anon read quote_requests" ON quote_requests FOR SELECT TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon update quote_requests" ON quote_requests;
+CREATE POLICY "Allow anon update quote_requests" ON quote_requests FOR UPDATE TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon delete quote_requests" ON quote_requests;
+CREATE POLICY "Allow anon delete quote_requests" ON quote_requests FOR DELETE TO anon USING (true);
+
+DROP POLICY IF EXISTS "Allow anon read enquiries" ON enquiries;
+CREATE POLICY "Allow anon read enquiries" ON enquiries FOR SELECT TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon update enquiries" ON enquiries;
+CREATE POLICY "Allow anon update enquiries" ON enquiries FOR UPDATE TO anon USING (true);
+DROP POLICY IF EXISTS "Allow anon delete enquiries" ON enquiries;
+CREATE POLICY "Allow anon delete enquiries" ON enquiries FOR DELETE TO anon USING (true);
