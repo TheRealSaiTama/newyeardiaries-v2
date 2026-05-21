@@ -69,6 +69,8 @@ export async function renderHomePage() {
         </div>
       </section>
 
+      ${renderAnnouncementMarquee(content.announcements || [])}
+
       <section class="section--sm">
         <div class="container">
           ${renderTrustBadges()}
@@ -123,6 +125,24 @@ export async function renderHomePage() {
   initProductCardEvents();
   initHeroSlider();
   initProductCardSlideshows();
+}
+
+function renderAnnouncementMarquee(announcements) {
+  if (!announcements.length) return '';
+  const items = announcements.map(a =>
+    `<span class="announcement-marquee-item">${a.link ? `<a href="${a.link}">${a.text}</a>` : a.text}</span>`
+  ).join('<span class="announcement-marquee-dot">•</span>');
+  return `
+    <section class="announcement-marquee-section">
+      <div class="announcement-marquee">
+        <div class="announcement-marquee-track">
+          ${items}
+          <span class="announcement-marquee-dot">•</span>
+          ${items}
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderProductSliderSection(title, slug, products, idSuffix, bg) {

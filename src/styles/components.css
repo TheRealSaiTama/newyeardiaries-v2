@@ -1979,3 +1979,54 @@
 }
 .search-view-all:hover { background: rgba(160, 82, 45, 0.06); }
 .search-view-all .material-symbols-outlined { font-size: 16px; }
+
+/* Announcement Marquee */
+.announcement-marquee-section {
+  background: var(--color-primary);
+  color: #fff;
+  overflow: hidden;
+  padding: 10px 0;
+}
+
+.announcement-marquee {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.announcement-marquee-track {
+  display: flex;
+  align-items: center;
+  animation: marquee-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+.announcement-marquee-item {
+  padding: 0 32px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.announcement-marquee-item a {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.announcement-marquee-item a:hover {
+  opacity: 0.85;
+}
+
+.announcement-marquee-dot {
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  user-select: none;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
