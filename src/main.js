@@ -101,6 +101,7 @@ function wrapPage(renderFn) {
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
     initHeaderEvents();
     updateHeaderCounts();
+    initSearchModal();
   };
 }
 
