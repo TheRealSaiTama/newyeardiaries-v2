@@ -469,7 +469,7 @@
 .pdp-description {
   font-size: var(--fs-base);
   line-height: var(--lh-relaxed);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
 }
 .pdp-features {
   display: flex;
@@ -1027,7 +1027,7 @@
 /* PDP Short Description (highlights text) */
 .pdp-short-desc {
   font-size: var(--fs-base);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   line-height: 1.6;
   border-left: 3px solid var(--color-primary);
   padding-left: var(--space-4);
@@ -1062,7 +1062,7 @@
 .pdp-long-desc h3 { margin-bottom: var(--space-4); }
 .pdp-long-desc p {
   font-size: var(--fs-base);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   line-height: 1.8;
   white-space: pre-line;
 }

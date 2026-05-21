@@ -88,13 +88,7 @@ export async function renderProductDetailPage(params) {
               </div>
             ` : ''}
 
-            ${product.shortDescription ? `
-              <div class="pdp-short-desc">
-                <span>${product.shortDescription}</span>
-              </div>
-            ` : ''}
-
-            <p class="pdp-description">${product.description}</p>
+            <p class="pdp-description">${product.shortDescription || product.description}</p>
 
             <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
               ${product.material ? `<strong>Material:</strong> ${product.material} &nbsp;|&nbsp;` : ''}
@@ -146,10 +140,10 @@ export async function renderProductDetailPage(params) {
           </div>
         </div>
 
-        ${product.longDescription && product.longDescription !== product.description ? `
+        ${product.description ? `
           <div class="pdp-long-desc">
             <h3 class="heading-3">Product Details</h3>
-            <p>${product.longDescription}</p>
+            <p>${product.description}</p>
           </div>
         ` : ''}
 
