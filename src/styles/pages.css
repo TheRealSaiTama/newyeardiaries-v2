@@ -1139,6 +1139,40 @@
   line-height: 1.6;
   margin-top: var(--space-2);
 }
+.pdp-detail-tabs {
+  margin-top: var(--space-8);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.pdp-tab-bar {
+  display: flex;
+  background: #f9f6f1;
+  padding: 4px;
+}
+.pdp-tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: all .15s ease;
+}
+.pdp-tab.active {
+  background: white;
+  color: var(--color-text-primary);
+  font-weight: var(--fw-semibold);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.pdp-tab-panel {
+  padding: var(--space-5);
+}
 
 /* Shop Pagination */
 .shop-pagination {
@@ -1177,6 +1211,16 @@
   border-color: var(--color-primary);
 }
 .shop-pag-btn .material-symbols-outlined { font-size: 18px; }
+.shop-pag-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 40px;
+  color: var(--color-text-tertiary);
+  font-size: var(--fs-base);
+  user-select: none;
+}
 
 /* Go to Top Button */
 .go-top-btn {

@@ -5,6 +5,30 @@ import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS } from '../lib/categories.js';
 
 const PRODUCTS_PER_PAGE = 12;
+const MAX_VISIBLE_PAGES = 5; // pages to show around current
+
+function getPaginationItems(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const items = [];
+  items.push(1);
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  if (start > 2) items.push('...');
+  for (let i = start; i <= end; i++) items.push(i);
+  if (end < totalPages - 1) items.push('...');
+  items.push(totalPages);
+  return items;
+}
+
+function renderPaginationButtons(currentPage, totalPages) {
+  const items = getPaginationItems(currentPage, totalPages);
+  return items.map(p => {
+    if (p === '...') return `<span class="shop-pag-ellipsis">…</span>`;
+    return `<button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+  }).join('');
+}
 const PAGE_TITLES = {
   'Corporate Gift Sets': { title: 'Corporate Gift Sets', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
   'Business Gifts': { title: 'Business Gifts', desc: 'Professional business gifting — eco-friendly, practical, and memorable.' },
@@ -111,9 +135,7 @@ export async function renderShopPage() {
                 <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
                   <span class="material-symbols-outlined">chevron_left</span>
                 </button>
-                ${Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
-                  <button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>
-                `).join('')}
+                ${renderPaginationButtons(currentPage, totalPages)}
                 <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
                   <span class="material-symbols-outlined">chevron_right</span>
                 </button>
@@ -258,9 +280,7 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
     pagDiv.className = 'shop-pagination';
     pagDiv.innerHTML = `
       <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
-      ${Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
-        <button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>
-      `).join('')}
+      ${renderPaginationButtons(currentPage, totalPages)}
       <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
     `;
     grid.after(pagDiv);
