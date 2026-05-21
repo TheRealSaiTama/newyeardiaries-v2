@@ -6,12 +6,21 @@ export async function renderCartPage() {
   const app = document.getElementById('app');
   const cart = getCart();
 
-  const cartItems = (await Promise.all(
+  let cartItems = (await Promise.all(
     cart.map(async item => {
       const product = await getProductById(item.productId);
       return product ? { ...item, product } : null;
     })
   )).filter(Boolean);
+
+  // Enforce MOQ on existing cart items
+  cartItems.forEach(item => {
+    const moq = item.product.minBulkOrder || 1;
+    if (item.qty < moq) {
+      updateCartQty(item.productId, moq, moq);
+      item.qty = moq;
+    }
+  });
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
 
@@ -31,7 +40,9 @@ export async function renderCartPage() {
         ` : `
           <div class="cart-layout">
             <div>
-              ${cartItems.map(item => `
+              ${cartItems.map(item => {
+                const moq = item.product.minBulkOrder || 1;
+                return `
                 <div class="cart-item" data-product-id="${item.product.id}">
                   <div class="cart-item-image">
                     ${item.product.image
@@ -40,9 +51,9 @@ export async function renderCartPage() {
                   </div>
                   <div class="cart-item-details">
                     <div class="cart-item-title">${item.product.title}</div>
-                    <div class="cart-item-variant">${item.product.material} ${item.product.size ? '• ' + item.product.size : ''}</div>
+                    <div class="cart-item-variant">${item.product.material} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
                     <div class="qty-selector">
-                      <button class="qty-minus" data-id="${item.product.id}">−</button>
+                      <button class="qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
                       <span class="qty-value">${item.qty}</span>
                       <button class="qty-plus" data-id="${item.product.id}">+</button>
                     </div>
@@ -50,7 +61,8 @@ export async function renderCartPage() {
                   </div>
                   <div class="cart-item-price">${formatPrice(item.product.price * item.qty)}</div>
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
               <div style="margin-top:var(--space-6);">
                 <a href="/shop" class="btn btn--secondary"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Continue Curating</a>
               </div>
@@ -74,8 +86,9 @@ export async function renderCartPage() {
   document.querySelectorAll('.qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
+      const moq = parseInt(btn.dataset.moq) || 1;
       const item = cart.find(i => i.productId === id);
-      if (item && item.qty > 1) { updateCartQty(id, item.qty - 1); renderCartPage(); }
+      if (item && item.qty > moq) { updateCartQty(id, item.qty - 1, moq); renderCartPage(); }
     });
   });
   document.querySelectorAll('.qty-plus').forEach(btn => {

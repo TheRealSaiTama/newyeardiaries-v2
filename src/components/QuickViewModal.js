@@ -20,6 +20,7 @@ export async function openQuickView(productId) {
   const content = document.getElementById('quick-view-content');
   const modal = document.getElementById('quick-view-modal');
   const overlay = document.getElementById('quick-view-overlay');
+  const moq = product.minBulkOrder || 1;
 
   if (content) {
     content.innerHTML = `
@@ -36,6 +37,15 @@ export async function openQuickView(productId) {
         <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
           ${[product.material, product.size, product.pages ? product.pages + ' pages' : null].filter(Boolean).join(' • ')}
         </div>
+        <div style="margin-top:var(--space-2);">
+          <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);display:block;margin-bottom:var(--space-1);">Quantity</label>
+          <div class="qty-stepper">
+            <button class="qty-step-btn" id="qv-qty-minus" aria-label="Decrease">−</button>
+            <input type="number" class="qty-step-input" id="qv-qty" value="${moq}" min="${moq}" step="1">
+            <button class="qty-step-btn" id="qv-qty-plus" aria-label="Increase">+</button>
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${moq} units</div>
+        </div>
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:auto;">
           <button class="btn btn--accent btn--lg" style="flex:1;" id="qv-add-quote">Add to Quote</button>
           <button class="btn btn--secondary btn--lg" style="flex:1;" id="qv-add-cart">Add to Cart</button>
@@ -48,6 +58,15 @@ export async function openQuickView(productId) {
   modal?.classList.add('active');
   overlay?.classList.add('active');
 
-  document.getElementById('qv-add-quote')?.addEventListener('click', () => addToQuoteList(product.id));
-  document.getElementById('qv-add-cart')?.addEventListener('click', () => addToCart(product.id));
+  const qvQty = document.getElementById('qv-qty');
+  const qvMinus = document.getElementById('qv-qty-minus');
+  const qvPlus = document.getElementById('qv-qty-plus');
+
+  function clampQv(val) { return Math.max(moq, val); }
+  qvMinus?.addEventListener('click', () => { if (qvQty) qvQty.value = clampQv((parseInt(qvQty.value) || moq) - 1); });
+  qvPlus?.addEventListener('click', () => { if (qvQty) qvQty.value = (parseInt(qvQty.value) || moq) + 1; });
+  qvQty?.addEventListener('change', () => { qvQty.value = clampQv(parseInt(qvQty.value) || moq); });
+
+  document.getElementById('qv-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, parseInt(qvQty?.value) || moq));
+  document.getElementById('qv-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qvQty?.value) || moq));
 }

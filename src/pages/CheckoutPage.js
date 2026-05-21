@@ -5,12 +5,21 @@ export async function renderCheckoutPage() {
   const app = document.getElementById('app');
   const cart = getCart();
 
-  const cartItems = (await Promise.all(
+  let cartItems = (await Promise.all(
     cart.map(async item => {
       const product = await getProductById(item.productId);
       return product ? { ...item, product } : null;
     })
   )).filter(Boolean);
+
+  // Enforce MOQ on existing cart items
+  cartItems.forEach(item => {
+    const moq = item.product.minBulkOrder || 1;
+    if (item.qty < moq) {
+      updateCartQty(item.productId, moq, moq);
+      item.qty = moq;
+    }
+  });
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
   const gstRate = 0.18;
@@ -119,6 +128,8 @@ export async function renderCheckoutPage() {
       newSub += lineTotal;
       const subtotalEl = el.querySelector('.checkout-item-subtotal');
       if (subtotalEl) subtotalEl.textContent = formatPrice(lineTotal);
+      const detailEl = el.querySelector('.checkout-item-subtotal + div');
+      if (detailEl) detailEl.textContent = `₹${Number(price).toLocaleString()} × ${item.qty}`;
     });
 
     const newGst = newSub * gstRate;

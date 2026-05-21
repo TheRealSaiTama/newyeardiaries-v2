@@ -227,8 +227,8 @@ export async function renderProductDetailPage(params) {
   plusBtn?.addEventListener('click', () => { qtyInput.value = (parseInt(qtyInput.value) || pdpMOQ) + 1; });
   qtyInput?.addEventListener('change', () => { qtyInput.value = clampQty(parseInt(qtyInput.value) || pdpMOQ); });
 
-  document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, pdpMOQ));
-  document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, pdpMOQ));
+  document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, parseInt(qtyInput.value) || pdpMOQ));
+  document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qtyInput.value) || pdpMOQ));
 
   // Rating stars
   let selectedRating = 0;
