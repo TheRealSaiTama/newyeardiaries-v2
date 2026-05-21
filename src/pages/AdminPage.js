@@ -881,11 +881,12 @@ function renderCategoryTable(cats, groupName) {
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Name</th><th>Slug</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Slug</th><th>Group</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
           <tbody>
             ${cats.map(c => `<tr class="cat-row" data-id="${c.id}">
               <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
               <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
+              <td><span class="badge badge-new">${groupName}</span></td>
               <td>${c.sort_order || 0}</td>
               <td><span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Active' : 'Inactive'}</span></td>
               <td class="col-actions">
@@ -960,8 +961,17 @@ async function renderCategories(container) {
   });
 }
 
+function getCategoryGroups(slug) {
+  const groups = [];
+  for (const [groupName, slugs] of Object.entries(CATEGORY_GROUPS)) {
+    if (slugs.includes(slug)) groups.push(groupName);
+  }
+  return groups;
+}
+
 async function openCategoryModal(container, category = null) {
   const isEdit = !!category;
+  const groups = isEdit ? getCategoryGroups(category.slug) : [];
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
@@ -973,6 +983,7 @@ async function openCategoryModal(container, category = null) {
           <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
+        ${isEdit && groups.length ? `<div class="form-group"><label>Group</label><input value="${groups.join(', ')}" readonly style="background:var(--color-surface-alt);color:var(--color-text-secondary);cursor:not-allowed;"></div>` : ''}
         <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
         <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
