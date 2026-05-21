@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
 import { bustContentCache } from '../lib/content.js';
+import { CATEGORY_GROUPS, getCategoriesByGroup } from '../lib/categories.js';
 
 let currentTab = 'products';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
@@ -618,8 +619,8 @@ async function openProductModal(container, product = null) {
         <div class="form-group">
           <label>Product Highlights</label>
           <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);">
-            <label class="admin-cat-checkbox"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">🚚 Free Shipping</span></label>
-            <label class="admin-cat-checkbox"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">🛡️ 1-Year Warranty</span></label>
+            <label class="admin-cat-checkbox"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">moq restriction</span></label>
+            <label class="admin-cat-checkbox"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">no COD</span></label>
           </div>
         </div>
         <div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div>
@@ -870,8 +871,42 @@ async function openProductModal(container, product = null) {
 }
 
 // ===== CATEGORIES =====
+function renderCategoryTable(cats, groupName) {
+  if (!cats?.length) return '';
+  return `
+    <div class="admin-card" style="margin-bottom:var(--space-6);" data-group="${groupName}">
+      <div style="padding:var(--space-4) var(--space-6);border-bottom:1px solid var(--color-border-light);background:var(--color-surface-alt);border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+        <h3 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin:0;">${groupName}</h3>
+        <span style="font-size:var(--fs-sm);color:var(--color-text-tertiary);">${cats.length} item${cats.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Name</th><th>Slug</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody>
+            ${cats.map(c => `<tr class="cat-row" data-id="${c.id}">
+              <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
+              <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
+              <td>${c.sort_order || 0}</td>
+              <td><span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Active' : 'Inactive'}</span></td>
+              <td class="col-actions">
+                <button class="edit-btn"><span class="material-symbols-outlined">edit</span></button>
+                <button class="delete delete-btn"><span class="material-symbols-outlined">delete</span></button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 async function renderCategories(container) {
   const { data: categories } = await supabase.from('categories').select('*').order('sort_order');
+  const grouped = getCategoriesByGroup(categories || []);
+
+  // Find uncategorized
+  const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
+  const uncategorized = (categories || []).filter(c => !allGroupedSlugs.has(c.slug));
 
   container.innerHTML = `
     <div class="admin-header">
@@ -889,22 +924,9 @@ async function renderCategories(container) {
         </button>
       </div>
     </div>
-    <div class="admin-card">
-      ${categories?.length ? `<div class="admin-table-wrap"><table class="admin-table">
-        <thead><tr><th>Name</th><th>Slug</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-        <tbody id="cats-tbody">
-          ${categories.map(c => `<tr class="cat-row" data-id="${c.id}">
-            <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
-            <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
-            <td>${c.sort_order || 0}</td>
-            <td><span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Active' : 'Inactive'}</span></td>
-            <td class="col-actions">
-              <button class="edit-btn"><span class="material-symbols-outlined">edit</span></button>
-              <button class="delete delete-btn"><span class="material-symbols-outlined">delete</span></button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>` : `<div class="empty-state"><span class="material-symbols-outlined">category</span><p>No categories found</p></div>`}
+    <div id="cats-container">
+      ${Object.keys(CATEGORY_GROUPS).map(group => renderCategoryTable(grouped[group], group)).join('')}
+      ${uncategorized.length ? renderCategoryTable(uncategorized, 'Uncategorized') : ''}
     </div>
   `;
 
@@ -912,7 +934,13 @@ async function renderCategories(container) {
     const q = e.target.value.toLowerCase();
     document.querySelectorAll('.cat-row').forEach(row => {
       const name = row.querySelector('.col-name strong')?.textContent.toLowerCase() || '';
+      const groupCard = row.closest('.admin-card');
       row.style.display = name.includes(q) ? '' : 'none';
+      // Hide empty group cards
+      if (groupCard) {
+        const visible = groupCard.querySelectorAll('.cat-row:not([style*="none"])').length;
+        groupCard.style.display = visible > 0 ? '' : 'none';
+      }
     });
   });
 
