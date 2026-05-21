@@ -27,7 +27,7 @@ function normalize(product) {
     hasShippingBadge: product.has_shipping_badge === true,
     hasWarrantyBadge: product.has_warranty_badge === true,
     tags: product.tags || '',
-    minBulkOrder: product.min_bulk_order || 100,
+    minBulkOrder: product.min_bulk_order ?? 100,
     inStock: product.in_stock !== false,
     active: product.active !== false,
     sortOrder: product.sort_order || 0,
