@@ -70,6 +70,11 @@ export function updateCartQty(productId, qty, minQty = 1) {
   updateHeaderCounts();
 }
 
+export function clearCart() {
+  localStorage.removeItem('cart');
+  updateHeaderCounts();
+}
+
 // Toast notification
 function showToast(message) {
   let toast = document.getElementById('toast-notification');
