@@ -57,3 +57,14 @@ DROP POLICY IF EXISTS "Allow anon update enquiries" ON enquiries;
 CREATE POLICY "Allow anon update enquiries" ON enquiries FOR UPDATE TO anon USING (true);
 DROP POLICY IF EXISTS "Allow anon delete enquiries" ON enquiries;
 CREATE POLICY "Allow anon delete enquiries" ON enquiries FOR DELETE TO anon USING (true);
+
+-- Product categories junction (multi-select in admin product modal)
+-- Admin does DELETE + INSERT here on every product save. Needs full anon write + read.
+DROP POLICY IF EXISTS "Public read product_categories" ON product_categories;
+CREATE POLICY "Public read product_categories" ON product_categories FOR SELECT TO anon USING (true);
+
+DROP POLICY IF EXISTS "Allow insert product_categories" ON product_categories;
+CREATE POLICY "Allow insert product_categories" ON product_categories FOR INSERT TO anon WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow delete product_categories" ON product_categories;
+CREATE POLICY "Allow delete product_categories" ON product_categories FOR DELETE TO anon USING (true);

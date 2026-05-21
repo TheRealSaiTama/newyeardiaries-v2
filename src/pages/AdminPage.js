@@ -384,8 +384,11 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
 
   const catMapByProduct = {};
   (pcRows || []).forEach(r => {
-    if (!catMapByProduct[r.product_id]) catMapByProduct[r.product_id] = [];
-    catMapByProduct[r.product_id].push(r.categories?.name || '');
+    const name = r.categories?.name || r.category?.name;
+    if (name) {
+      if (!catMapByProduct[r.product_id]) catMapByProduct[r.product_id] = [];
+      if (!catMapByProduct[r.product_id].includes(name)) catMapByProduct[r.product_id].push(name);
+    }
   });
   const totalPages = Math.ceil((count || 0) / PRODUCTS_PER_PAGE);
 
