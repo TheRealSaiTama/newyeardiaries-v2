@@ -1,5 +1,4 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
-import { renderTrustBadges } from '../components/TrustBadges.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
@@ -81,14 +80,14 @@ export async function renderProductDetailPage(params) {
               ${product.originalPrice ? `<span style="font-size:var(--fs-md);color:var(--color-text-tertiary);text-decoration:line-through;margin-left:var(--space-3);">${formatPrice(product.originalPrice)}</span>` : ''}
             </div>
 
+            <p class="pdp-description">${product.shortDescription || product.description}</p>
+
             ${product.hasShippingBadge || product.hasWarrantyBadge ? `
-              <div class="pdp-highlights">
-                ${product.hasShippingBadge ? `<span class="highlight-badge highlight-shipping">🚚 Free Shipping</span>` : ''}
-                ${product.hasWarrantyBadge ? `<span class="highlight-badge highlight-warranty">🛡️ 1-Year Warranty</span>` : ''}
+              <div style="margin-top:var(--space-1);font-size:var(--fs-sm);">
+                ${product.hasShippingBadge ? `<span style="color:#e53935">moq restriction</span>` : ''}
+                ${product.hasWarrantyBadge ? `${product.hasShippingBadge ? ' &nbsp;•&nbsp; ' : ''}<span style="color:#1565c0">no COD</span>` : ''}
               </div>
             ` : ''}
-
-            <p class="pdp-description">${product.shortDescription || product.description}</p>
 
             <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
               ${product.material ? `<strong>Material:</strong> ${product.material} &nbsp;|&nbsp;` : ''}
@@ -147,7 +146,6 @@ export async function renderProductDetailPage(params) {
           </div>
         ` : ''}
 
-        ${renderTrustBadges()}
       </div>
 
       ${related.length ? `
