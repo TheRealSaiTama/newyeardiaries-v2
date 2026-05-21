@@ -972,7 +972,7 @@ async function openCategoryModal(container, category = null) {
     const slug = rawSlug ? rawSlug.trim() : generateSlug(name);
     if (!name || !name.trim()) { showToast('Category name is required.', 'error'); return; }
     if (!slug) { showToast('Slug is required.', 'error'); return; }
-    const payload = { name: name.trim(), slug, parent_id: null, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+    const payload = { name: name.trim(), slug, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
     const { error: catError } = isEdit
       ? await supabase.from('categories').update(payload).eq('id', category.id)
       : await supabase.from('categories').insert(payload);
