@@ -1,6 +1,6 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderFilterSidebar, initFilterEvents } from '../components/FilterSidebar.js';
-import { renderProductCard } from '../components/ProductCard.js';
+import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS } from '../lib/categories.js';
 
@@ -131,6 +131,7 @@ export async function renderShopPage() {
 
   initFilterEvents();
   initShopEvents(products, currentPage, totalPages, searchQ);
+  initProductCardSlideshows();
 }
 
 function buildPageUrl(page) {
@@ -246,6 +247,7 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
   }
 
   grid.innerHTML = pageProducts.map(p => renderProductCard(p)).join('');
+  initProductCardSlideshows(grid);
 
   const mainEl = document.querySelector('.shop-main');
   const existingPag = mainEl?.querySelector('.shop-pagination');

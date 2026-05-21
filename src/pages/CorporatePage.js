@@ -1,6 +1,6 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderFilterSidebar, initFilterEvents } from '../components/FilterSidebar.js';
-import { renderProductCard } from '../components/ProductCard.js';
+import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { getProducts, formatPrice } from '../data/products.js';
 import { addToQuoteList } from '../data/store.js';
 
@@ -38,6 +38,7 @@ export async function renderCorporatePage() {
   `;
 
   initFilterEvents();
+  initProductCardSlideshows();
   document.querySelectorAll('.quick-view-trigger').forEach(btn => {
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openQuickView(btn.dataset.productId); });
   });

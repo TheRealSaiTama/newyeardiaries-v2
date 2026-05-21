@@ -1,5 +1,5 @@
 import { renderTrustBadges } from '../components/TrustBadges.js';
-import { renderProductCard } from '../components/ProductCard.js';
+import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { addToQuoteList } from '../data/store.js';
 import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
@@ -122,6 +122,7 @@ export async function renderHomePage() {
 
   initProductCardEvents();
   initHeroSlider();
+  initProductCardSlideshows();
 }
 
 function renderProductSliderSection(title, slug, products, idSuffix, bg) {

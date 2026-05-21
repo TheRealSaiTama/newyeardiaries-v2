@@ -1,6 +1,6 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderTrustBadges } from '../components/TrustBadges.js';
-import { renderProductCard } from '../components/ProductCard.js';
+import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
 import { addToQuoteList, addToCart } from '../data/store.js';
@@ -214,6 +214,8 @@ export async function renderProductDetailPage(params) {
       </section>
     </div>
   `;
+
+  initProductCardSlideshows();
 
   // Qty stepper
   let pdpMOQ = product.minBulkOrder;
