@@ -129,9 +129,12 @@ export async function renderProductDetailPage(params) {
             <p class="pdp-description">${product.shortDescription || product.description}</p>
 
             ${product.hasShippingBadge || product.hasWarrantyBadge ? `
-              <div style="margin-top:var(--space-1);font-size:var(--fs-sm);">
-                ${product.hasShippingBadge ? `<span style="color:#e53935">moq restriction</span>` : ''}
-                ${product.hasWarrantyBadge ? `${product.hasShippingBadge ? ' &nbsp;•&nbsp; ' : ''}<span style="color:#1565c0">no COD</span>` : ''}
+              <div style="margin-top:var(--space-4);font-size:var(--fs-sm);line-height:1.6;display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4);">
+                ${product.hasWarrantyBadge ? `<div style="color:#1565c0;font-weight:var(--fw-medium);">" COD facility not available for this product "</div>` : ''}
+                ${product.hasShippingBadge ? `
+                  <div style="color:#e53935;font-weight:var(--fw-medium);">*This product has minimum order quantity restriction.</div>
+                  <div style="color:#e53935;font-weight:var(--fw-medium);">** If your order quantity is little less than MOQ then please write us.</div>
+                ` : ''}
               </div>
             ` : ''}
 
