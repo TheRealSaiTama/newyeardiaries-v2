@@ -42,7 +42,7 @@ export async function getProducts() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
   const { data } = await supabase
     .from('products')
-    .select('*, category:categories(name)')
+    .select('*, category:categories!products_category_id_fkey(name)')
     .eq('active', true)
     .order('created_at', { ascending: false });
   _cache = (data || []).map(normalize);
@@ -75,7 +75,7 @@ export async function getProductsByCategory(categorySlug) {
   if (!ids.length) return [];
   const { data } = await supabase
     .from('products')
-    .select('*, category:categories(name)')
+    .select('*, category:categories!products_category_id_fkey(name)')
     .in('id', ids)
     .eq('active', true)
     .order('sort_order');

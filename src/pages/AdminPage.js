@@ -351,7 +351,7 @@ const PRODUCTS_PER_PAGE = 20;
 async function renderProducts(container, page = 1, search = '', filterCategory = '', filterActive = '') {
   let query = supabase
     .from('products')
-    .select('*, category:categories(name)', { count: 'exact' })
+    .select('*, category:categories!products_category_id_fkey(name)', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (search) {

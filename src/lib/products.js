@@ -37,7 +37,7 @@ function normalize(product) {
 export async function getProducts({ categoryId, limit, offset = 0, search } = {}) {
   let query = supabase
     .from('products')
-    .select('*, category:categories(name)')
+    .select('*, category:categories!products_category_id_fkey(name)')
     .eq('active', true)
     .order('created_at', { ascending: false });
 
@@ -66,7 +66,7 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
 export async function getProductBySlug(slug) {
   const { data, error } = await supabase
     .from('products')
-    .select('*, category:categories(name)')
+    .select('*, category:categories!products_category_id_fkey(name)')
     .eq('slug', slug)
     .single();
   if (error) return null;
