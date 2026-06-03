@@ -38,6 +38,8 @@ let appContent = null;
 async function loadContent() {
   try {
     appContent = await getContent();
+    const siteTitle = appContent?.siteSettings?.site_title || 'New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct';
+    document.title = siteTitle;
   } catch (e) {
     console.warn('Failed to load content, using defaults', e);
   }
