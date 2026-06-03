@@ -195,11 +195,13 @@ function initHeroSlider() {
     // Move current out to the left
     slides[prevIndex].classList.remove('active');
     slides[prevIndex].classList.add('prev');
+    slides[prevIndex].style.transform = 'translateX(-100%)';
 
     // Next slide comes in from right
     current = (current + 1) % slides.length;
     slides[current].classList.remove('prev');
     slides[current].classList.add('active');
+    slides[current].style.transform = 'translateX(0)';
 
     // Clean up after animation
     setTimeout(() => {
