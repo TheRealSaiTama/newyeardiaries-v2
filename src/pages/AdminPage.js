@@ -847,6 +847,10 @@ async function openProductModal(container, product = null) {
       has_shipping_badge: fd.get('has_shipping_badge') === 'on',
       has_warranty_badge: fd.get('has_warranty_badge') === 'on',
       tags: fd.get('tags') || null,
+      meta_title: fd.get('meta_title') || null,
+      meta_description: fd.get('meta_description') || null,
+      meta_keywords: fd.get('meta_keywords') || null,
+      og_image_url: fd.get('og_image_url') || null,
     };
 
     let savedProduct;
