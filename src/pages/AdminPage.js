@@ -630,10 +630,20 @@ async function openProductModal(container, product = null) {
         <div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
         <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
         <div class="form-group">
-          <label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label>
-          <input name="primary_image_url" value="${primaryImage}" placeholder="https://example.com/product.jpg">
-          <input name="primary_image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+          <label>SEO / Meta Tags <small style="color:var(--color-text-tertiary)">(for product detail page & social)</small></label>
+          <input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (≤60 chars)">
+          <textarea name="meta_description" placeholder="Meta description (150-160 chars)" style="min-height:60px">${product?.meta_description || ''}</textarea>
+          <input name="meta_keywords" value="${product?.meta_keywords || ''}" placeholder="Keywords (comma separated)">
+          <input name="og_image_url" value="${product?.og_image_url || ''}" placeholder="OG image URL (optional)">
         </div>
+         <div class="form-group">
+           <label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label>
+           <input name="primary_image_url" value="${primaryImage && primaryImage.startsWith('http') ? primaryImage : ''}" placeholder="https://example.com/product.jpg">
+           <input name="primary_image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+           ${primaryImage ? `<input type="hidden" name="existing_primary_image" value="${primaryImage}">` : ''}
+           ${primaryImage ? `<img src="${primaryImage}" style="max-width:120px;max-height:120px;object-fit:cover;border-radius:4px;border:1px solid var(--color-border-light);margin-top:4px;">` : ''}
+           ${primaryImage ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave URL/file empty to keep current image</small>' : ''}
+         </div>
         <div class="form-group">
           <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(one URL per line, jpg/png/webp/mp4)</small></label>
           <div class="admin-media-picker">
@@ -809,7 +819,11 @@ async function openProductModal(container, product = null) {
       return;
     }
 
-    const primaryImages = [...uploadedPrimary, ...parseMediaList(fd.get('primary_image_url'))];
+    let primaryImages = [...uploadedPrimary, ...parseMediaList(fd.get('primary_image_url'))];
+    if (!primaryImages.length) {
+      const existing = fd.get('existing_primary_image');
+      if (existing) primaryImages = [existing];
+    }
     const secondaryMedia = [...parseMediaList(fd.get('secondary_images')), ...uploadedSecondary];
     const images = [...primaryImages.slice(0, 1), ...secondaryMedia];
 
