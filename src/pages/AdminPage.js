@@ -1919,10 +1919,22 @@ async function renderFooterSection(container) {
             <div class="form-group"><label>Phone 2</label><input name="phone2" value="${get('contact_phone2')}"></div>
           </div>
           <div class="form-group"><label>Email</label><input name="email" value="${get('contact_email')}" type="email"></input></div>
-          <div class="form-group"><label>Business Hours</label><input name="hours" value="${get('footer_hours')}"></div>
+           <div class="form-group"><label>Business Hours</label><input name="hours" value="${get('footer_hours')}"></div>
+         </div>
+        <div class="form-group">
+          <label>About Left Paragraph</label>
+          <textarea name="footer_about_left" style="min-height:120px">${content.footerSections?.about_left?.content || ''}</textarea>
         </div>
-        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2>
+        <div class="form-group">
+          <label>Exporter Right Paragraph</label>
+          <textarea name="footer_exporter_right" style="min-height:120px">${content.footerSections?.exporter_right?.content || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Services / Products List</label>
+          <textarea name="footer_services_list" style="min-height:120px">${content.footerSections?.services_list?.content || ''}</textarea>
+        </div>
+         <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+           <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2>
           <div class="form-group"><label>Facebook URL</label><input name="facebook_url" value="${get('facebook_url')}" placeholder="https://facebook.com/..."></div>
           <div class="form-group"><label>Instagram URL</label><input name="instagram_url" value="${get('instagram_url')}" placeholder="https://instagram.com/..."></div>
           <div class="form-group"><label>Twitter/X URL</label><input name="twitter_url" value="${get('twitter_url')}" placeholder="https://twitter.com/..."></div>
@@ -1973,6 +1985,17 @@ async function renderFooterSection(container) {
           showToast(`Failed to save ${formKey}: ${error.message}`, 'error');
           return;
         }
+      }
+    }
+    const footerKeys = ['about_left', 'exporter_right', 'services_list'];
+    for (const key of footerKeys) {
+      const val = fd.get(`footer_${key}`);
+      if (val !== null) {
+        await supabase.from('footer_sections').upsert({
+          section_key: key,
+          content: val,
+          active: true
+        }, { onConflict: 'section_key' });
       }
     }
     bustContentCache();
