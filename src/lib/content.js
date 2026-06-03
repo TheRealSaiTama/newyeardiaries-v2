@@ -17,12 +17,14 @@ export async function getContent() {
     { data: siteContent },
     { data: homepageSections },
     { data: announcements },
+    { data: footerSections },
     { data: banners },
   ] = await Promise.all([
     supabase.from('site_settings').select('*'),
     supabase.from('site_content').select('*'),
     supabase.from('homepage_sections').select('*').order('sort_order'),
     supabase.from('announcements').select('*').order('created_at'),
+    supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
     supabase.from('banners').select('*').eq('active', true).order('order_index'),
   ]);
 
@@ -31,6 +33,7 @@ export async function getContent() {
     siteContent: Object.fromEntries((siteContent || []).map(s => [`${s.section}.${s.key}`, s.value])),
     homepageSections: Object.fromEntries((homepageSections || []).map(s => [s.section_key, s])),
     announcements: (announcements || []).filter(a => a.active),
+    footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
     banners: banners || [],
   };
   _fetchedAt = Date.now();
