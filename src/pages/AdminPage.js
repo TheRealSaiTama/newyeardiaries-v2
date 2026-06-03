@@ -1287,6 +1287,7 @@ async function renderSettings(container) {
           <div style="display:flex;flex-direction:column;gap:var(--space-4)">
             <div class="form-group"><label>Site Name</label><input name="site_name" value="${getSetting('site_name')}"></div>
             <div class="form-group"><label>Tagline</label><input name="tagline" value="${getSetting('tagline')}"></div>
+            <div class="form-group"><label>Site Title (browser tab)</label><input name="site_title" value="${getSetting('site_title')}" placeholder="New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct"></div>
           </div>
         </div>
         <div class="settings-section">
@@ -1310,6 +1311,7 @@ async function renderSettings(container) {
     const fields = [
       { key: 'site_name', value: fd.get('site_name') },
       { key: 'tagline', value: fd.get('tagline') },
+      { key: 'site_title', value: fd.get('site_title') },
       { key: 'contact_email', value: fd.get('contact_email') },
       { key: 'contact_phone', value: fd.get('contact_phone') },
       { key: 'contact_address', value: fd.get('contact_address') },
