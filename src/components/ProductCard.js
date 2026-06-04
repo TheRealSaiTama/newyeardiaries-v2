@@ -33,7 +33,7 @@ export function renderProductCard(product) {
           ${product.originalPrice && product.originalPrice > product.price
             ? `<span class="ap-price-sale">₹${product.originalPrice}</span>`
             : ''}
-          <span class="ap-price-current">₹${product.price}</span>
+          <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">₹${product.price}</span>
         </div>
       </div>
     </a>
