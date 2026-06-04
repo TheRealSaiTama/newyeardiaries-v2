@@ -144,10 +144,12 @@ export function initFaqChatbot() {
     input.value = '';
     addMsg(body, question, 'user');
 
-    const typingMsg = addMsg(body, 'Typing...', 'bot');
-
-    const reply = await askLLM(question);
-    typingMsg.textContent = reply;
-    body.scrollTop = body.scrollHeight;
+    const res = await fetch('/functions/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: question }),
+    });
+    const { reply } = await res.json();
+    addMsg(body, reply || 'Sorry, no reply.', 'bot');
   });
 }
