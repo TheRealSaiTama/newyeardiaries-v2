@@ -1501,6 +1501,11 @@
   font-size: 13px;
 }
 
+.ap-price--discounted {
+  color: #c0392b;
+  font-weight: 700;
+}
+
 /* Badges */
 .ap-badge {
   position: absolute;
