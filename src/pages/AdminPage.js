@@ -1352,8 +1352,8 @@ async function renderEnquiries(container, tab = 'contact') {
     .from('enquiries')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false });
-  const { data: quotes, count: quoteCount } = await supabase
-    .from('quote_requests')
+  const { data: orders, count: orderCount } = await supabase
+    .from('orders')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false });
 
@@ -1399,27 +1399,24 @@ async function renderEnquiries(container, tab = 'contact') {
       </tbody>
     </table>` : '<div class="empty-state"><p>No bulk enquiries</p></div>');
 
-  const renderQuoteTable = () => (quotes?.length ? `
+  const renderOrdersTable = () => (orders?.length ? `
     <table class="admin-table">
-      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>Product</th><th>Quantity</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <thead><tr><th>Order #</th><th>Name</th><th>Email</th><th>Phone</th><th>Total</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
-        ${quotes.map(q => `<tr data-id="${q.id}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${q.enquiry_code || '—'}</code></td>
-          <td>${q.name}</td>
-          <td><a href="mailto:${q.email}">${q.email}</a></td>
-          <td>${q.phone || '—'}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.product_names || q.product_type || '—'}</td>
-          <td>${q.quantity || '—'}</td>
-          <td>${new Date(q.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${q.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${q.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
+        ${orders.map(o => `<tr data-id="${o.id}">
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${o.order_number || '—'}</code></td>
+          <td>${o.first_name} ${o.last_name}</td>
+          <td><a href="mailto:${o.email}">${o.email}</a></td>
+          <td>${o.phone || '—'}</td>
+          <td>₹${o.total}</td>
+          <td>${new Date(o.created_at).toLocaleDateString()}</td>
+          <td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${o.status || 'Pending'}</span></td>
           <td class="col-actions">
             <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${q.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${q.status === 'reviewed' ? 'undo' : 'check'}</span></button>
-            <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
           </td>
         </tr>`).join('')}
       </tbody>
-    </table>` : '<div class="empty-state"><p>No quote requests</p></div>');
+    </table>` : '<div class="empty-state"><p>No orders yet</p></div>');
 
   container.innerHTML = `
     <div class="admin-header">
@@ -1436,9 +1433,9 @@ async function renderEnquiries(container, tab = 'contact') {
         <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Bulk Enquiries</div>
         <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${enquiryCount || enquiries?.length || 0}</div>
       </div>
-      <div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-quotes">
-        <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Quote Requests</div>
-        <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${quoteCount || quotes?.length || 0}</div>
+      <div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-orders">
+        <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Orders</div>
+        <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${orderCount || orders?.length || 0}</div>
       </div>
     </div>
 
@@ -1449,20 +1446,20 @@ async function renderEnquiries(container, tab = 'contact') {
       <button class="enquiry-tab ${tab === 'enquiry' ? 'active' : ''}" data-etab="enquiry">
         Bulk Enquiries <span class="count-badge">${enquiryCount || enquiries?.length || 0}</span>
       </button>
-      <button class="enquiry-tab ${tab === 'quote' ? 'active' : ''}" data-etab="quote">
-        Quote Requests <span class="count-badge">${quoteCount || quotes?.length || 0}</span>
+      <button class="enquiry-tab ${tab === 'orders' ? 'active' : ''}" data-etab="orders">
+        Orders <span class="count-badge">${orderCount || orders?.length || 0}</span>
       </button>
     </div>
 
     <div class="admin-card">
-      ${tab === 'contact' ? renderContactTable() : tab === 'enquiry' ? renderEnquiryTable() : renderQuoteTable()}
+      ${tab === 'contact' ? renderContactTable() : tab === 'enquiry' ? renderEnquiryTable() : renderOrdersTable()}
     </div>
   `;
 
   // Stat card navigation
   document.getElementById('stat-contacts')?.addEventListener('click', () => renderEnquiries(container, 'contact'));
   document.getElementById('stat-enquiries')?.addEventListener('click', () => renderEnquiries(container, 'enquiry'));
-  document.getElementById('stat-quotes')?.addEventListener('click', () => renderEnquiries(container, 'quote'));
+  document.getElementById('stat-orders')?.addEventListener('click', () => renderEnquiries(container, 'orders'));
 
   // Tab switching
   document.querySelectorAll('.enquiry-tab').forEach(btn => {
@@ -1470,8 +1467,8 @@ async function renderEnquiries(container, tab = 'contact') {
   });
 
   // Action handlers
-  const currentData = tab === 'contact' ? contacts : tab === 'enquiry' ? enquiries : quotes;
-  const tableName = tab === 'contact' ? 'contact_submissions' : tab === 'enquiry' ? 'enquiries' : 'quote_requests';
+  const currentData = tab === 'contact' ? contacts : tab === 'enquiry' ? enquiries : orders;
+  const tableName = tab === 'contact' ? 'contact_submissions' : tab === 'enquiry' ? 'enquiries' : 'orders';
 
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.onclick = () => {

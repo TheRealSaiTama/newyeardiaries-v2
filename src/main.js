@@ -19,7 +19,7 @@ import { renderProductDetailPage } from './pages/ProductDetailPage.js';
 import { renderCartPage } from './pages/CartPage.js';
 import { renderCheckoutPage } from './pages/CheckoutPage.js';
 import { renderBulkQuotePage } from './pages/BulkQuotePage.js';
-import { renderQuoteListPage } from './pages/QuoteListPage.js';
+
 import { renderEnquirySuccessPage } from './pages/EnquirySuccessPage.js';
 import { renderOrderSuccessPage } from './pages/OrderSuccessPage.js';
 import { renderLoginPage } from './pages/LoginPage.js';
@@ -115,7 +115,6 @@ addRoute('/product/:slug', wrapPage(renderProductDetailPage));
 addRoute('/cart', wrapPage(renderCartPage));
 addRoute('/checkout', wrapPage(renderCheckoutPage));
 addRoute('/bulk-quote', wrapPage(renderBulkQuotePage));
-addRoute('/quote-list', wrapPage(renderQuoteListPage));
 addRoute('/enquiry-success', wrapPage(renderEnquirySuccessPage));
 addRoute('/order-success', wrapPage(renderOrderSuccessPage));
 addRoute('/login', wrapPage(renderLoginPage));

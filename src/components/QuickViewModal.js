@@ -1,5 +1,5 @@
 import { formatPrice, getProductById } from '../data/products.js';
-import { addToQuoteList, addToCart } from '../data/store.js';
+import { addToCart } from '../data/store.js';
 
 export function renderQuickViewModal() {
   return `
@@ -47,8 +47,7 @@ export async function openQuickView(productId) {
           <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${moq} units</div>
         </div>
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:auto;">
-          <button class="btn btn--accent btn--lg" style="flex:1;" id="qv-add-quote">Add to Quote</button>
-          <button class="btn btn--secondary btn--lg" style="flex:1;" id="qv-add-cart">Add to Cart</button>
+          <button class="btn btn--accent btn--lg" style="flex:1;" id="qv-add-cart">Add to Cart</button>
         </div>
         <a href="/product/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
       </div>
@@ -67,6 +66,5 @@ export async function openQuickView(productId) {
   qvPlus?.addEventListener('click', () => { if (qvQty) qvQty.value = (parseInt(qvQty.value) || moq) + 1; });
   qvQty?.addEventListener('change', () => { qvQty.value = clampQv(parseInt(qvQty.value) || moq); });
 
-  document.getElementById('qv-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, parseInt(qvQty?.value) || moq));
   document.getElementById('qv-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qvQty?.value) || moq));
 }

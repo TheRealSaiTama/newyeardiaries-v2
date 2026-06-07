@@ -2,7 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderFilterSidebar, initFilterEvents } from '../components/FilterSidebar.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { getProducts, formatPrice } from '../data/products.js';
-import { addToQuoteList } from '../data/store.js';
+
 
 export async function renderCorporatePage() {
   const products = await getProducts();
@@ -42,7 +42,5 @@ export async function renderCorporatePage() {
   document.querySelectorAll('.quick-view-trigger').forEach(btn => {
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openQuickView(btn.dataset.productId); });
   });
-  document.querySelectorAll('.add-to-quote-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); addToQuoteList(parseInt(btn.dataset.productId)); });
-  });
+
 }

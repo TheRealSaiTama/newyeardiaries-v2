@@ -2,8 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
-import { addToQuoteList, addToCart } from '../data/store.js';
-import { navigateTo } from '../router.js';
+import { addToCart } from '../data/store.js';
 import { supabase } from '../lib/supabase.js';
 
 function renderProductMedia(src, alt) {
@@ -163,27 +162,19 @@ export async function renderProductDetailPage(params) {
             <div class="pdp-actions">
               <div class="pdp-qty-wrap">
                 <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label>
-                <div class="qty-stepper">
-                  <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
-                  <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
-                  <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
+                <div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);">
+                  <div style="display:flex;align-items:center;">
+                    <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
+                    <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
+                    <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
+                  </div>
+                  <button class="btn btn--accent btn--lg" id="pdp-add-cart">
+                    <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
+                    Add to Cart
+                  </button>
                 </div>
                 <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div>
               </div>
-              <div class="pdp-actions-btns">
-                <button class="btn btn--accent btn--lg" id="pdp-add-quote">
-                  <span class="material-symbols-outlined" style="font-size:18px;">request_quote</span>
-                  Add to Quote List
-                </button>
-                <button class="btn btn--secondary btn--lg" id="pdp-add-cart">
-                  <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-
-            <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-top:var(--space-2);">
-              Min. bulk order: ${product.minBulkOrder} units &nbsp;•&nbsp; <a href="/quote-list" id="pdp-request-custom" style="color:var(--color-accent);font-weight:var(--fw-medium);">Request custom pricing →</a>
             </div>
           </div>
         </div>
@@ -239,17 +230,7 @@ export async function renderProductDetailPage(params) {
   plusBtn?.addEventListener('click', () => { qtyInput.value = (parseInt(qtyInput.value) || pdpMOQ) + 1; });
   qtyInput?.addEventListener('change', () => { qtyInput.value = clampQty(parseInt(qtyInput.value) || pdpMOQ); });
 
-  document.getElementById('pdp-add-quote')?.addEventListener('click', () => addToQuoteList(product.id, parseInt(qtyInput.value) || pdpMOQ));
   document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qtyInput.value) || pdpMOQ));
-
-  // Custom pricing link: add current product (at selected qty) to quote list, then go to quote-list page
-  // so user can adjust qty (incl. below MOQ) and proceed to bulk enquiry with this product included.
-  document.getElementById('pdp-request-custom')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const qty = parseInt(qtyInput?.value) || pdpMOQ;
-    addToQuoteList(product.id, qty);
-    navigateTo('/quote-list');
-  });
 
   const tabBtns = document.querySelectorAll('.pdp-tab');
   const tabPanels = {desc:document.getElementById('pdp-tab-desc'),tags:document.getElementById('pdp-tab-tags'),reviews:document.getElementById('pdp-tab-reviews')};

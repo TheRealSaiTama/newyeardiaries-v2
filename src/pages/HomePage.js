@@ -1,6 +1,6 @@
 import { renderTrustBadges } from '../components/TrustBadges.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
-import { addToQuoteList } from '../data/store.js';
+
 import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
 import { getContent, getHeroContent } from '../lib/content.js';

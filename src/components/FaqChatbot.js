@@ -12,7 +12,7 @@ Key facts:
 - Payment: For customized items 50% advance, balance before dispatch. Non-customized: full payment upfront
 - Delivery: 5-10 working days via road/lorry, air and train also available
 - Colors: Exact color match not guaranteed due to heat transfer process
-- To order: Add items to quote list, submit enquiry, our team contacts you
+- To order: Add items to cart and checkout, or contact us for bulk orders
 
 Keep answers short, friendly, and helpful. If asked about pricing, direct them to submit a bulk quote or contact via phone/email. Answer only about New Year Diaries and their products/services.`;
 
@@ -25,7 +25,7 @@ const FAQS = [
   { q: 'Can you print my logo?', a: 'Yes! Select and order your product, then send your design/logo via email to newyeardiaries@gmail.com with your order details.' },
   { q: 'Will printed colors match my design?', a: 'Exact color match is not guaranteed as the process involves heat transfer where some color loss is normal.' },
   { q: 'How long does delivery take?', a: 'Normally 5-10 working days via road/lorry service. Air and train options also available.' },
-  { q: 'How do I place an order?', a: 'Select items and add to quote list, submit your enquiry, and our customer executive will contact you to finalize.' },
+  { q: 'How do I place an order?', a: 'Add items to cart and proceed to checkout, or contact us via phone/email for bulk orders.' },
 ];
 
 let isOpen = false;

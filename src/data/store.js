@@ -1,42 +1,5 @@
-// ===== Store — Cart & Quote List (localStorage) =====
+// ===== Store — Cart (localStorage) =====
 import { updateHeaderCounts } from '../components/Header.js';
-
-export function getQuoteList() {
-  return JSON.parse(localStorage.getItem('quoteList') || '[]');
-}
-
-export function addToQuoteList(productId, qty = 50) {
-  const list = getQuoteList();
-  const existing = list.find(item => item.productId === productId);
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    list.push({ productId, qty });
-  }
-  localStorage.setItem('quoteList', JSON.stringify(list));
-  updateHeaderCounts();
-  showToast('Added to Quote List');
-}
-
-export function removeFromQuoteList(productId) {
-  let list = getQuoteList();
-  list = list.filter(item => String(item.productId) !== String(productId));
-  localStorage.setItem('quoteList', JSON.stringify(list));
-  updateHeaderCounts();
-}
-
-export function updateQuoteQty(productId, qty) {
-  const list = getQuoteList();
-  const item = list.find(i => String(i.productId) === String(productId));
-  if (item) item.qty = qty;
-  localStorage.setItem('quoteList', JSON.stringify(list));
-  updateHeaderCounts();
-}
-
-export function clearQuoteList() {
-  localStorage.removeItem('quoteList');
-  updateHeaderCounts();
-}
 
 export function getCart() {
   return JSON.parse(localStorage.getItem('cart') || '[]');
@@ -100,6 +63,5 @@ function showToast(message) {
   }, 2500);
 }
 
-// Global functions for inline onclick handlers
-window.__addToQuote = (id, qty) => addToQuoteList(id, qty);
+// Global function for inline onclick handlers
 window.__addToCart = (id, qty) => addToCart(id, qty);
