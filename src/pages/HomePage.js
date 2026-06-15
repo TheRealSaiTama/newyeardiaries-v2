@@ -66,6 +66,9 @@ export async function renderHomePage() {
           <div class="hero-slide" style="background-image:url('/images/banner3.jpg')"></div>
           <div class="hero-slide" style="background-image:url('/images/banner4.jpg')"></div>
           `}
+          <button class="hero-arrow hero-arrow--prev" id="heroPrev" aria-label="Previous slide">&#8249;</button>
+          <button class="hero-arrow hero-arrow--next" id="heroNext" aria-label="Next slide">&#8250;</button>
+          <div class="hero-dots" id="heroDots"></div>
         </div>
       </section>
 
@@ -167,47 +170,90 @@ function renderProductSliderSection(title, slug, products, idSuffix, bg) {
 }
 
 function initHeroSlider() {
+  const slider = document.getElementById('hero-slider');
   const slides = document.querySelectorAll('.hero-slide');
-  if (slides.length <= 1) return;
+  if (!slider || slides.length <= 1) return;
+
+  // Kill any previous instance (prevents stacked intervals → glitch)
+  if (window.__heroSlider) {
+    clearInterval(window.__heroSlider.timer);
+  }
 
   let current = 0;
+  let timer = null;
+  let animating = false;
+  const SLIDE_MS = 5000;
+  const TRANSITION_MS = 800;
 
-  // Initialize: first active, others ready from right
+  // Build dots
+  const dotsContainer = document.getElementById('heroDots');
+  if (dotsContainer) {
+    dotsContainer.innerHTML = slides.map((_, i) =>
+      `<button class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}" aria-label="Go to slide ${i + 1}"></button>`
+    ).join('');
+  }
+
+  // Init positions
   slides.forEach((slide, i) => {
-    slide.style.transition = 'none'; // avoid initial jump
-    if (i === 0) {
-      slide.classList.add('active');
-      slide.style.transform = 'translateX(0)';
-    } else {
-      slide.style.transform = 'translateX(100%)';
-    }
+    slide.style.transition = `transform ${TRANSITION_MS}ms ease`;
+    slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
+    slide.classList.toggle('active', i === 0);
   });
 
-  // Force reflow then restore transition
-  requestAnimationFrame(() => {
-    slides.forEach(s => s.style.transition = 'transform 2s ease');
+  function goTo(nextIdx, direction) {
+    if (animating || nextIdx === current) return;
+    animating = true;
+
+    const prev = current;
+    const dir = direction || (nextIdx > current ? 1 : -1);
+
+    // Snap incoming slide to correct side instantly (handles wrap-around)
+    const incoming = slides[nextIdx];
+    incoming.style.transition = 'none';
+    incoming.style.transform = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+    void incoming.offsetWidth; // force reflow
+
+    // Animate
+    incoming.style.transition = `transform ${TRANSITION_MS}ms ease`;
+    slides[prev].classList.remove('active');
+    slides[prev].style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+    incoming.classList.add('active');
+    incoming.style.transform = 'translateX(0)';
+
+    // Update dots
+    document.querySelectorAll('.hero-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === nextIdx);
+    });
+
+    current = nextIdx;
+
+    setTimeout(() => { animating = false; }, TRANSITION_MS);
+    resetTimer();
+  }
+
+  function next() { goTo((current + 1) % slides.length, 1); }
+  function prev() { goTo((current - 1 + slides.length) % slides.length, -1); }
+
+  function resetTimer() {
+    clearInterval(timer);
+    timer = setInterval(next, SLIDE_MS);
+  }
+
+  // Wire arrows
+  const prevBtn = document.getElementById('heroPrev');
+  const nextBtn = document.getElementById('heroNext');
+  if (prevBtn) prevBtn.onclick = prev;
+  if (nextBtn) nextBtn.onclick = next;
+
+  // Wire dots
+  document.querySelectorAll('.hero-dot').forEach(d => {
+    d.onclick = () => goTo(parseInt(d.dataset.idx));
   });
 
-  setInterval(() => {
-    const prevIndex = current;
+  resetTimer();
 
-    // Move current out to the left
-    slides[prevIndex].classList.remove('active');
-    slides[prevIndex].classList.add('prev');
-    slides[prevIndex].style.transform = 'translateX(-100%)';
-
-    // Next slide comes in from right
-    current = (current + 1) % slides.length;
-    slides[current].classList.remove('prev');
-    slides[current].classList.add('active');
-    slides[current].style.transform = 'translateX(0)';
-
-    // Clean up after animation
-    setTimeout(() => {
-      slides[prevIndex].classList.remove('prev');
-      slides[prevIndex].style.transform = 'translateX(100%)';
-    }, 2000);
-  }, 5000);
+  // Store for cleanup
+  window.__heroSlider = { timer, goTo, next, prev };
 }
 
 function initProductCardEvents() {

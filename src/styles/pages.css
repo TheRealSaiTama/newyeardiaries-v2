@@ -17,16 +17,60 @@
   background-position: center;
   background-repeat: no-repeat;
   transform: translateX(100%);
-  transition: transform 2s ease;
   z-index: 1;
 }
 .hero-slide.active {
   transform: translateX(0);
   z-index: 2;
 }
-.hero-slide.prev {
-  transform: translateX(-100%);
-  z-index: 1;
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--color-primary, #A0522D);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+  opacity: 0.7;
+}
+.hero-arrow:hover {
+  background: #fff;
+  opacity: 1;
+}
+.hero-arrow--prev { left: 20px; }
+.hero-arrow--next { right: 20px; }
+.hero-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+.hero-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.hero-dot.active {
+  background: #fff;
+  transform: scale(1.3);
 }
 .hero-content {
   position: relative;
