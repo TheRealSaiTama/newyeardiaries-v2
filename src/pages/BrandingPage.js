@@ -54,27 +54,27 @@ export function renderBrandingPage() {
 
       <section class="b-hero">
         <div class="container b-hero__inner">
-          <span class="b-hero__eyebrow">Custom Branding Studio</span>
-          <h1>Your Brand,<br>Our Craft.</h1>
-          <p>From classic debossing to full-colour digital printing, every branding method is executed in-house at our Delhi facility — for quality you can see and feel.</p>
+          <span class="b-hero__eyebrow b-anim" style="--d:0s">Custom Branding Studio</span>
+          <h1 class="b-anim" style="--d:.15s">Your Brand,<br>Our Craft.</h1>
+          <p class="b-anim" style="--d:.3s">From classic debossing to full-colour digital printing, every branding method is executed in-house at our Delhi facility — for quality you can see and feel.</p>
         </div>
       </section>
 
       <section class="b-methods">
         <div class="container">
-          <header class="b-head">
+          <header class="b-head b-reveal">
             <span class="b-head__eyebrow">What we do</span>
             <h2>Branding Methods We Offer</h2>
           </header>
 
-          <div class="b-note">
+          <div class="b-note b-reveal">
             <span class="material-symbols-outlined">info</span>
             <p><strong>Please note:</strong> All trademarks, logos and brand names are the property of their respective owners. All company, product and service names used on this website are for identification purposes only. Use of these names, trademarks and brands does not imply endorsement.</p>
           </div>
 
           <div class="b-tiles">
-            ${BRANDING_METHODS.map(m => `
-              <article class="b-tile" style="--tile:${m.color}">
+            ${BRANDING_METHODS.map((m, i) => `
+              <article class="b-tile b-reveal" style="--tile:${m.color};--ri:${i}" data-delay="${i * 120}">
                 <div class="b-tile__media">
                   <span class="material-symbols-outlined b-tile__watermark">${m.icon}</span>
                 </div>
@@ -105,15 +105,15 @@ export function renderBrandingPage() {
 
       <section class="b-how" id="b-how">
         <div class="container">
-          <header class="b-head">
+          <header class="b-head b-reveal">
             <span class="b-head__eyebrow">The process</span>
             <h2>How It Works</h2>
             <p>Four simple steps from artwork to delivery. Scroll to follow the journey.</p>
           </header>
 
           <div class="b-how__track">
-            ${HOW_STEPS.map(s => `
-              <article class="b-how__tile" data-step="${s.num}">
+            ${HOW_STEPS.map((s, i) => `
+              <article class="b-how__tile b-reveal" data-step="${s.num}" data-delay="${i * 150}">
                 <div class="b-how__num">${s.num}</div>
                 <h4>${s.title}</h4>
                 <p>${s.desc}</p>
@@ -125,7 +125,7 @@ export function renderBrandingPage() {
 
       <section class="b-cta">
         <div class="container">
-          <div class="b-cta__inner">
+          <div class="b-cta__inner b-reveal">
             <div class="b-cta__text">
               <span class="b-cta__eyebrow">Ready to brand?</span>
               <h2>Let's put your logo on something worth keeping.</h2>
@@ -159,6 +159,22 @@ function setupBrandingInteractions() {
   if (window.__bHowCleanup) {
     window.__bHowCleanup();
     window.__bHowCleanup = null;
+  }
+
+  // ===== Fade-in on scroll (IntersectionObserver) =====
+  const revealEls = document.querySelectorAll('.b-reveal');
+  if (revealEls.length) {
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const delay = parseInt(entry.target.dataset.delay || '0');
+          setTimeout(() => entry.target.classList.add('is-visible'), delay);
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    revealEls.forEach(el => observer.observe(el));
   }
 
   const tiles = document.querySelectorAll('.b-tile');
