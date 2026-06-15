@@ -129,7 +129,7 @@ export function renderBrandingPage() {
             <div class="b-cta__text">
               <span class="b-cta__eyebrow">Ready to brand?</span>
               <h2>Let's put your logo on something worth keeping.</h2>
-              <p>Browse our catalogue of diaries, planners, and corporate gifts — then tell us how you'd like them branded. Minimum order of 50 units applies for custom branding.</p>
+              <p>Browse our catalogue of diaries, planners, and corporate gifts — then tell us how you'd like them branded.</p>
               <div class="b-cta__btns">
                 <a href="/shop" class="btn btn--primary btn--lg">
                   <span class="material-symbols-outlined" style="font-size:20px">storefront</span>
