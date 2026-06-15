@@ -1445,7 +1445,6 @@
   color: var(--color-text-tertiary);
   margin-top: 2px;
 }
-.pdp-review-stars--lg .material-symbols-outlined { font-size: 20px; }
 .pdp-reviews-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -1509,12 +1508,29 @@
   gap: var(--space-3);
   margin-top: 4px;
 }
-.pdp-review-stars { display: flex; gap: 1px; }
+.pdp-review-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
 .pdp-review-stars .material-symbols-outlined {
   font-size: 16px;
+  line-height: 1;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   color: #d0d0d0;
 }
 .pdp-review-stars .material-symbols-outlined.filled { color: #f59e0b; }
+.pdp-review-stars--lg .material-symbols-outlined {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
 .pdp-review-date {
   font-size: var(--fs-xs);
   color: var(--color-text-tertiary);
