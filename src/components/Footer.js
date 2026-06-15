@@ -59,7 +59,7 @@ export function renderFooter(content) {
 
           <div class="nyd-footer__col nyd-footer__map-col">
             <h4 class="nyd-footer__heading">Find Us</h4>
-            <iframe class="nyd-footer__map" src="https://www.google.com/maps?q=Bawana+Industrial+Area+Delhi+110039&output=embed" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="New Year Diaries location"></iframe>
+            <img class="nyd-footer__map" src="/images/footer-map.png" alt="New Year Diaries location map" loading="lazy">
           </div>
         </div>
 
