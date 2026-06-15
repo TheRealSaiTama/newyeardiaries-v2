@@ -1894,6 +1894,8 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
 async function renderFooterSection(container) {
   const { data: rows } = await supabase.from('site_settings').select('*');
   const get = (key, fallback = '') => rows?.find(r => r.key === key)?.value || fallback;
+  const { data: footerRows } = await supabase.from('footer_sections').select('*');
+  const footerSections = Object.fromEntries((footerRows || []).map(s => [s.section_key, s]));
 
   container.innerHTML = `
     <div class="admin-header">
@@ -1922,15 +1924,15 @@ async function renderFooterSection(container) {
          </div>
         <div class="form-group">
           <label>About Left Paragraph</label>
-          <textarea name="footer_about_left" style="min-height:120px">${content.footerSections?.about_left?.content || ''}</textarea>
+          <textarea name="footer_about_left" style="min-height:120px">${footerSections?.about_left?.content || ''}</textarea>
         </div>
         <div class="form-group">
           <label>Exporter Right Paragraph</label>
-          <textarea name="footer_exporter_right" style="min-height:120px">${content.footerSections?.exporter_right?.content || ''}</textarea>
+          <textarea name="footer_exporter_right" style="min-height:120px">${footerSections?.exporter_right?.content || ''}</textarea>
         </div>
         <div class="form-group">
           <label>Services / Products List</label>
-          <textarea name="footer_services_list" style="min-height:120px">${content.footerSections?.services_list?.content || ''}</textarea>
+          <textarea name="footer_services_list" style="min-height:120px">${footerSections?.services_list?.content || ''}</textarea>
         </div>
          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
            <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2>

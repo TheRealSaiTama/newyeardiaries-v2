@@ -114,8 +114,7 @@ export async function renderHomePage() {
             Get manufacturer-direct pricing on bulk orders of 25+ units. Custom branding with debossing, foil stamping, and bespoke packaging.
           </p>
           <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;">
-            <a href="/bulk-quote" class="btn btn--accent btn--lg">Request a Bulk Quote</a>
-            <a href="/contact" class="btn btn--secondary btn--lg">Contact Sales Team</a>
+            <a href="/contact" class="btn btn--accent btn--lg">Contact Us</a>
           </div>
         </div>
       </section>

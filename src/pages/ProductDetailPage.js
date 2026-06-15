@@ -26,6 +26,34 @@ function renderStars(rating) {
   ).join('');
 }
 
+function reviewItemHtml(r) {
+  const initials = r.reviewer_name.trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+  const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `
+    <article class="pdp-review-card">
+      <div class="pdp-review-card__head">
+        <span class="pdp-review-avatar">${initials || 'A'}</span>
+        <div class="pdp-review-card__who">
+          <div class="pdp-review-card__namerow">
+            <strong>${r.reviewer_name}</strong>
+            ${r.verified_purchase ? `<span class="pdp-review-verified"><span class="material-symbols-outlined">verified</span> Verified Purchase</span>` : ''}
+          </div>
+          <div class="pdp-review-card__sub">
+            <span class="pdp-review-stars">${renderStars(r.rating)}</span>
+            <span class="pdp-review-date">${date}</span>
+          </div>
+        </div>
+      </div>
+      ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
+    </article>`;
+}
+
+function reviewsListHtml(reviews) {
+  return reviews.length
+    ? reviews.map(reviewItemHtml).join('')
+    : `<div class="pdp-reviews-empty"><span class="material-symbols-outlined">rate_review</span><p>No reviews yet. Be the first to share your experience!</p></div>`;
+}
+
 export async function renderProductDetailPage(params) {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page-content"><div class="container section">${renderPDPSkeleton()}</div></div>`;
@@ -46,21 +74,22 @@ export async function renderProductDetailPage(params) {
     productCategoryList = (links || []).map(l => l.categories?.name).filter(Boolean);
   }
 
-  const reviewsListHtml = reviews.length ? reviews.map(r => `
-              <div class="pdp-review-item">
-                <div class="pdp-review-header">
-                  <div class="pdp-reviewer-info">
-                    <strong>${r.reviewer_name}</strong>
-                    <div class="pdp-review-stars">${renderStars(r.rating)}</div>
-                  </div>
-                  <span class="pdp-review-date">${new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                </div>
-                ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
-                ${r.verified_purchase ? `<span class="badge badge-reviewed" style="margin-top:var(--space-2);">Verified Purchase</span>` : ''}
-              </div>
-            `).join('') : '<p style="color:var(--color-text-tertiary);">No reviews yet. Be the first to review this product!</p>';
+  const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
   const reviewsContent = `
-            <div class="pdp-review-form-wrap" style="box-shadow:none;margin-bottom:0;">
+            <div class="pdp-reviews-summary">
+              <div class="pdp-reviews-summary__score">
+                <span class="pdp-reviews-summary__num">${avgRating.toFixed(1)}</span>
+                <div>
+                  <span class="pdp-review-stars pdp-review-stars--lg">${renderStars(Math.round(avgRating))}</span>
+                  <span class="pdp-reviews-summary__count">Based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn--secondary btn--sm" id="pdp-write-review-btn">Write a Review</button>
+            </div>
+            <div id="pdp-reviews-list" class="pdp-reviews-list">
+              ${reviewsListHtml(reviews)}
+            </div>
+            <div class="pdp-review-form-wrap" id="pdp-review-form-wrap">
               <h3 style="font-size:var(--fs-lg);margin-bottom:var(--space-4);">Write a Review</h3>
               <form id="review-form" class="pdp-review-form">
                 <div class="form-row">
@@ -82,9 +111,6 @@ export async function renderProductDetailPage(params) {
                 </div>
                 <button type="submit" class="btn btn--accent">Submit Review</button>
               </form>
-            </div>
-            <div id="pdp-reviews-list">
-              ${reviewsListHtml}
             </div>
           `;
 
@@ -238,6 +264,10 @@ export async function renderProductDetailPage(params) {
 
   // Rating stars
   let selectedRating = 0;
+  document.getElementById('pdp-write-review-btn')?.addEventListener('click', () => {
+    document.getElementById('pdp-review-form-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelector('#review-form input[name="reviewer_name"]')?.focus();
+  });
   document.querySelectorAll('.rating-star-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedRating = parseInt(btn.dataset.rating);
@@ -266,19 +296,7 @@ export async function renderProductDetailPage(params) {
       const newReviews = await getReviewsByProduct(product.id);
       const list = document.getElementById('pdp-reviews-list');
       if (list) {
-        list.innerHTML = newReviews.length ? newReviews.map(r => `
-          <div class="pdp-review-item">
-            <div class="pdp-review-header">
-              <div class="pdp-reviewer-info">
-                <strong>${r.reviewer_name}</strong>
-                <div class="pdp-review-stars">${renderStars(r.rating)}</div>
-              </div>
-              <span class="pdp-review-date">${new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-            </div>
-            ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
-            ${r.verified_purchase ? `<span class="badge badge-reviewed" style="margin-top:var(--space-2);">Verified Purchase</span>` : ''}
-          </div>
-        `).join('') : '<p style="color:var(--color-text-tertiary);">No reviews yet. Be the first to review this product!</p>';
+        list.innerHTML = reviewsListHtml(newReviews);
       }
     } catch (err) {
       showToast('Failed to submit review.', 'error');
