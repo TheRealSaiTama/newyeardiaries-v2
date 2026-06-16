@@ -16,7 +16,9 @@
     <div class="loader-wrap">
       <img class="loader-logo" src="/logo-big-transparent.png" alt="New Year Diaries">
       <div class="loader-diary" aria-hidden="true">
-        <div class="loader-cover"></div>
+        <div class="loader-cover">
+          <img class="loader-emboss" src="/logo-big-transparent.png" alt="">
+        </div>
         <div class="loader-page loader-page-one"></div>
         <div class="loader-page loader-page-two"></div>
         <div class="loader-ribbon"></div>
@@ -35,13 +37,12 @@
     .loader-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:20px;width:min(88vw,420px);padding:36px 28px;text-align:center;font-family:Poppins,sans-serif;color:#34302b}
     .loader-logo{width:min(70vw,320px);height:auto;object-fit:contain;filter:drop-shadow(0 10px 18px rgba(72,45,28,.12))}
     .loader-diary{position:relative;width:112px;height:138px;perspective:420px}
-    .loader-cover{position:absolute;inset:0;border-radius:10px 16px 16px 10px;background:linear-gradient(135deg,#7b2f2a,#b9653d 58%,#d2a064);box-shadow:0 22px 42px rgba(71,38,22,.24),inset 9px 0 0 rgba(255,255,255,.16),inset -4px 0 0 rgba(57,25,18,.18)}
-    .loader-cover:before{content:"2026";position:absolute;top:24px;left:22px;font-size:18px;font-weight:500;letter-spacing:0;color:#ffe7bd}
-    .loader-cover:after{content:"";position:absolute;left:20px;right:22px;top:58px;height:2px;background:rgba(255,231,189,.7);box-shadow:0 16px 0 rgba(255,231,189,.52),0 32px 0 rgba(255,231,189,.35)}
+    .loader-cover{position:absolute;inset:0;border-radius:10px 16px 16px 10px;background:linear-gradient(135deg,#7b2f2a,#b9653d 58%,#d2a064);box-shadow:0 22px 42px rgba(71,38,22,.24),inset 9px 0 0 rgba(255,255,255,.16),inset -4px 0 0 rgba(57,25,18,.18);overflow:hidden}
+    .loader-emboss{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:44px;height:auto;object-fit:contain;opacity:.92;filter:grayscale(1) brightness(1.7) sepia(1) saturate(2.4) hue-rotate(2deg) drop-shadow(0 1px 1px rgba(60,32,14,.55))}
     .loader-page{position:absolute;inset:8px 8px 8px 14px;border-radius:7px 13px 13px 7px;background:#fffaf2;transform-origin:left center;box-shadow:0 8px 18px rgba(48,32,22,.14)}
     .loader-page-one{animation:pageFlip 1.55s ease-in-out infinite}
     .loader-page-two{animation:pageFlip 1.55s ease-in-out infinite .32s}
-    .loader-ribbon{position:absolute;left:56px;top:0;width:9px;height:128px;background:#245f58;border-radius:0 0 8px 8px;box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+    .loader-ribbon{position:absolute;left:14px;top:0;width:9px;height:128px;background:#245f58;border-radius:0 0 8px 8px;box-shadow:0 0 0 1px rgba(255,255,255,.18)}
     .loader-copy{display:flex;flex-direction:column;gap:7px}
     .loader-copy strong{font-size:clamp(18px,4vw,24px);font-weight:500;letter-spacing:0}
     .loader-copy span{font-size:14px;line-height:1.6;color:#756b61}
