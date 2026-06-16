@@ -231,6 +231,28 @@ export function renderAdminPage() {
     /* Confirm dialog */
     .confirm-dialog { max-width: 400px; }
     .confirm-dialog p { font-size: var(--fs-base); color: var(--color-text-secondary); margin: 0; }
+
+    /* ===== Products filesystem directory ===== */
+    .fs-breadcrumb { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-3) var(--space-4); background: var(--color-surface-alt); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); margin-bottom: var(--space-5); font-size: var(--fs-sm); }
+    .fs-back { display: inline-flex; align-items: center; gap: 4px; padding: var(--space-1) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: var(--transition-fast); }
+    .fs-back:hover:not(:disabled) { background: var(--color-surface); color: var(--color-primary); border-color: var(--color-primary); }
+    .fs-back:disabled { opacity: .4; cursor: not-allowed; }
+    .fs-back .material-symbols-outlined { font-size: 18px; }
+    .fs-path { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+    .fs-crumb { background: none; border: none; padding: var(--space-1) var(--space-2); color: var(--color-text-secondary); cursor: pointer; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium); border-radius: var(--radius-sm); transition: var(--transition-fast); }
+    .fs-crumb:hover:not(:disabled) { color: var(--color-primary); background: var(--color-surface-alt); }
+    .fs-crumb:disabled { color: var(--color-text-primary); font-weight: var(--fw-semibold); cursor: default; }
+    .fs-crumb-sep { color: var(--color-text-tertiary); font-size: 16px; }
+    .fs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4); }
+    .fs-folder { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); cursor: pointer; transition: var(--transition-fast); text-align: left; font-family: inherit; min-height: 130px; }
+    .fs-folder:hover { border-color: var(--color-primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .fs-folder__icon { font-size: 40px; color: var(--color-accent); line-height: 1; }
+    .fs-folder--system .fs-folder__icon { color: var(--color-text-tertiary); }
+    .fs-folder__name { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--color-text-primary); line-height: 1.3; }
+    .fs-folder__meta { font-size: var(--fs-xs); color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: var(--ls-wider); margin-top: auto; }
+    .fs-folder__count { position: absolute; top: var(--space-3); right: var(--space-3); min-width: 24px; height: 24px; padding: 0 var(--space-2); display: inline-flex; align-items: center; justify-content: center; background: var(--color-surface-alt); border: 1px solid var(--color-border-light); border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--color-text-secondary); }
+    .fs-empty { text-align: center; padding: var(--space-12) var(--space-6); color: var(--color-text-tertiary); }
+    .fs-empty .material-symbols-outlined { font-size: 48px; opacity: .4; margin-bottom: var(--space-3); }
     </style>
   `;
 }
@@ -348,7 +370,205 @@ function showConfirmDialog(message, onConfirm) {
 // ===== PRODUCTS =====
 const PRODUCTS_PER_PAGE = 20;
 
-async function renderProducts(container, page = 1, search = '', filterCategory = '', filterActive = '') {
+// ===== PRODUCTS — Filesystem Directory =====
+// 3-level nav: Root → Group → Category → Products
+// Search box overrides to global flat search across all products.
+async function renderProducts(container, page = 1, search = '', filterActive = '', nav = { level: 'root', group: null, category: null }) {
+  // Persist nav across re-renders via container dataset
+  if (container.dataset.fsNav) {
+    try { nav = JSON.parse(container.dataset.fsNav); } catch {}
+  }
+  container.dataset.fsNav = JSON.stringify(nav);
+
+  const toolbar = `
+    <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;justify-content:flex-end">
+      <div class="admin-search-wrap">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" class="admin-search" id="product-search" placeholder="Search all products by name, slug, SKU..." value="${search}">
+      </div>
+      <select class="admin-filter-select" id="filter-active">
+        <option value="" ${filterActive === '' ? 'selected' : ''}>All Status</option>
+        <option value="true" ${filterActive === 'true' ? 'selected' : ''}>Active</option>
+        <option value="false" ${filterActive === 'false' ? 'selected' : ''}>Inactive</option>
+      </select>
+      <button class="admin-btn admin-btn-primary" id="add-product-btn">
+        <span class="material-symbols-outlined">add</span> Add Product
+      </button>
+    </div>
+  `;
+
+  const header = `
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <h1>Products</h1>
+        <span class="admin-header-stats">Browse by category folder</span>
+      </div>
+      ${toolbar}
+    </div>
+  `;
+
+  // Search-override: if search term present, show global flat results (ignore folder nav)
+  if (search && search.trim()) {
+    await renderProductRows(container, header, { search, filterActive, page });
+    return;
+  }
+
+  const level = nav.level;
+  const breadcrumb = renderFsBreadcrumb(nav);
+
+  if (level === 'root') {
+    await renderFolderGrid(container, header, breadcrumb, { type: 'groups' });
+  } else if (level === 'group') {
+    await renderFolderGrid(container, header, breadcrumb, { type: 'categories', group: nav.group });
+  } else if (level === 'category') {
+    await renderProductRows(container, header, { filterCategory: nav.category, filterActive, page }, breadcrumb);
+  }
+}
+
+// Breadcrumb: Root › Group › Category
+function renderFsBreadcrumb(nav) {
+  const crumbs = [{ label: 'Products', nav: { level: 'root', group: null, category: null } }];
+  if (nav.level !== 'root' && nav.group) {
+    crumbs.push({ label: nav.group, nav: { level: 'group', group: nav.group, category: null } });
+  }
+  if (nav.level === 'category' && nav.categoryName) {
+    crumbs.push({ label: nav.categoryName, nav });
+  }
+  return `
+    <div class="fs-breadcrumb">
+      <button class="fs-back" ${nav.level === 'root' ? 'disabled' : ''} id="fs-back">
+        <span class="material-symbols-outlined">arrow_back</span> Back
+      </button>
+      <div class="fs-path">
+        ${crumbs.map((c, i) => `
+          <button class="fs-crumb" data-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''}>${c.label}</button>
+          ${i < crumbs.length - 1 ? '<span class="material-symbols-outlined fs-crumb-sep">chevron_right</span>' : ''}
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Folder grid view (root shows Groups, group-level shows Categories)
+async function renderFolderGrid(container, header, breadcrumb, opts) {
+  // Fetch all categories + product_categories counts (single query each, no N+1)
+  const [{ data: categories }, { data: pcRows }] = await Promise.all([
+    supabase.from('categories').select('id, name, slug, active').order('name'),
+    supabase.from('product_categories').select('category_id'),
+  ]);
+  const countByCat = new Map();
+  (pcRows || []).forEach(r => countByCat.set(r.category_id, (countByCat.get(r.category_id) || 0) + 1));
+  const activeCats = (categories || []).filter(c => c.active !== false);
+  const catBySlug = new Map(activeCats.map(c => [c.slug, c]));
+
+  let folders = [];
+  let totalProducts = 0;
+
+  if (opts.type === 'groups') {
+    // One folder per Category Group, plus an Uncategorized system folder
+    folders = Object.keys(CATEGORY_GROUPS).map(groupName => {
+      const slugs = CATEGORY_GROUPS[groupName];
+      const cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+      const productCount = cats.reduce((sum, c) => sum + (countByCat.get(c.id) || 0), 0);
+      totalProducts += productCount;
+      return {
+        key: groupName,
+        name: groupName,
+        count: productCount,
+        meta: `${cats.length} categor${cats.length === 1 ? 'y' : 'ies'}`,
+        icon: 'folder',
+        nav: { level: 'group', group: groupName, category: null },
+        system: false,
+      };
+    });
+    // Uncategorized = products whose category_id is null OR not in any group
+    const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
+    const groupedCatIds = new Set(activeCats.filter(c => allGroupedSlugs.has(c.slug)).map(c => c.id));
+    const uncatCount = (pcRows || []).filter(r => !groupedCatIds.has(r.category_id)).length;
+    if (uncatCount > 0) {
+      folders.push({
+        key: '__uncategorized',
+        name: 'Uncategorized',
+        count: uncatCount,
+        meta: 'unassigned',
+        icon: 'folder_off',
+        nav: { level: 'group', group: '__uncategorized', category: null },
+        system: true,
+      });
+    }
+  } else if (opts.type === 'categories') {
+    const groupName = opts.group;
+    if (groupName === '__uncategorized') {
+      // Show categories not in any group (or products with no category)
+      const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
+      const cats = activeCats.filter(c => !allGroupedSlugs.has(c.slug));
+      folders = cats.map(c => ({
+        key: c.id,
+        name: c.name,
+        count: countByCat.get(c.id) || 0,
+        meta: 'category',
+        icon: 'folder',
+        nav: { level: 'category', group: groupName, category: c.id, categoryName: c.name },
+        system: false,
+      }));
+    } else {
+      const slugs = CATEGORY_GROUPS[groupName] || [];
+      folders = slugs.map(s => catBySlug.get(s)).filter(Boolean).map(c => ({
+        key: c.id,
+        name: c.name,
+        count: countByCat.get(c.id) || 0,
+        meta: 'category',
+        icon: 'folder',
+        nav: { level: 'category', group: groupName, category: c.id, categoryName: c.name },
+        system: false,
+      }));
+    }
+    totalProducts = folders.reduce((sum, f) => sum + f.count, 0);
+  }
+
+  const body = folders.length ? `
+    <div class="fs-grid">
+      ${folders.map(f => `
+        <button class="fs-folder${f.system ? ' fs-folder--system' : ''}" data-nav='${JSON.stringify(f.nav)}'>
+          <span class="material-symbols-outlined fs-folder__icon">${f.icon}</span>
+          <span class="fs-folder__name">${f.name}</span>
+          <span class="fs-folder__meta">${f.meta}</span>
+          <span class="fs-folder__count">${f.count}</span>
+        </button>
+      `).join('')}
+    </div>
+  ` : `
+    <div class="fs-empty">
+      <span class="material-symbols-outlined">folder_off</span>
+      <p>No folders here yet.</p>
+    </div>
+  `;
+
+  container.innerHTML = header + breadcrumb + body;
+
+  wireFsShared(container);
+  document.querySelectorAll('.fs-folder').forEach(btn => {
+    btn.onclick = () => {
+      const next = JSON.parse(btn.dataset.nav);
+      container.dataset.fsNav = JSON.stringify(next);
+      renderProducts(container, 1, '', '');
+    };
+  });
+  document.getElementById('fs-back')?.addEventListener('click', () => fsGoBack(container, opts.type === 'groups' ? { level: 'root' } : null));
+  document.querySelectorAll('.fs-crumb').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+      const next = JSON.parse(btn.dataset.nav);
+      container.dataset.fsNav = JSON.stringify(next);
+      renderProducts(container, 1, '', '');
+    };
+  });
+}
+
+// Product rows view (inside a category folder, or global search)
+async function renderProductRows(container, header, opts, breadcrumb = '') {
+  const { search, filterCategory, filterActive, page } = opts;
+
   let query = supabase
     .from('products')
     .select('*, category:categories!products_category_id_fkey(name)', { count: 'exact' })
@@ -377,10 +597,9 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
   const { data: products, error, count } = await query;
 
   const productIds = (products || []).map(p => p.id);
-  const [{ data: categories }, { data: pcRows }] = await Promise.all([
-    supabase.from('categories').select('id, name').order('name'),
-    productIds.length ? supabase.from('product_categories').select('product_id, category_id, categories(name)').in('product_id', productIds) : Promise.resolve({ data: [] }),
-  ]);
+  const { data: pcRows } = productIds.length
+    ? await supabase.from('product_categories').select('product_id, category_id, categories(name)').in('product_id', productIds)
+    : { data: [] };
 
   const catMapByProduct = {};
   (pcRows || []).forEach(r => {
@@ -392,31 +611,15 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
   });
   const totalPages = Math.ceil((count || 0) / PRODUCTS_PER_PAGE);
 
-  container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Products</h1>
-        <span class="admin-header-stats">${count || 0} items${totalPages > 1 ? ` — Page ${page} of ${totalPages}` : ''}</span>
-      </div>
-      <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <div class="admin-search-wrap">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="admin-search" id="product-search" placeholder="Search by name, slug, SKU..." value="${search}">
-        </div>
-        <select class="admin-filter-select" id="filter-category" style="min-width:140px">
-          <option value="">All Categories</option>
-          ${categories.map(c => `<option value="${c.id}" ${filterCategory === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-        </select>
-        <select class="admin-filter-select" id="filter-active">
-          <option value="" ${filterActive === '' ? 'selected' : ''}>All Status</option>
-          <option value="true" ${filterActive === 'true' ? 'selected' : ''}>Active</option>
-          <option value="false" ${filterActive === 'false' ? 'selected' : ''}>Inactive</option>
-        </select>
-        <button class="admin-btn admin-btn-primary" id="add-product-btn">
-          <span class="material-symbols-outlined">add</span> Add Product
-        </button>
-      </div>
+  const searchBanner = search ? `
+    <div class="fs-breadcrumb">
+      <span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">search</span>
+      <span style="color:var(--color-text-secondary)">${count || 0} result${count === 1 ? '' : 's'} for "<strong>${search}</strong>"</span>
+      <button class="fs-back" id="fs-search-clear" style="margin-left:auto"><span class="material-symbols-outlined">close</span> Clear</button>
     </div>
+  ` : '';
+
+  container.innerHTML = header + searchBanner + breadcrumb + `
     <div class="admin-card">
       ${(products?.length && !error) ? `<div class="admin-table-wrap"><table class="admin-table">
         <thead><tr>
@@ -438,7 +641,7 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
             </tr>
           `).join('')}
         </tbody>
-      </table></div>` : `<div class="empty-state"><span class="material-symbols-outlined">inventory_2</span><p>${error ? 'Error loading products' : 'No products found'}</p></div>`}
+      </table></div>` : `<div class="fs-empty"><span class="material-symbols-outlined">inventory_2</span><p>${error ? 'Error loading products' : 'No products in this folder'}</p></div>`}
     </div>
     ${totalPages > 1 ? `
     <div class="admin-pagination">
@@ -456,6 +659,8 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
     </div>` : ''}
   `;
 
+  wireFsShared(container);
+
   // Image lightbox
   document.querySelectorAll('.col-image img').forEach(img => {
     img.addEventListener('click', () => {
@@ -467,26 +672,21 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
     });
   });
 
-  // Search with debounce — use mutable variable to avoid stale closure
-  let searchTimeout;
-  let searchTerm = search;
-  document.getElementById('product-search')?.addEventListener('input', (e) => {
-    searchTerm = e.target.value;
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      renderProducts(container, 1, searchTerm, document.getElementById('filter-category')?.value || '', document.getElementById('filter-active')?.value || '');
-    }, 350);
+  // Search-clear returns to folder view
+  document.getElementById('fs-search-clear')?.addEventListener('click', () => {
+    renderProducts(container, 1, '', '');
   });
 
-  document.getElementById('filter-category')?.addEventListener('change', (e) => {
-    renderProducts(container, 1, document.getElementById('product-search')?.value || '', e.target.value, document.getElementById('filter-active')?.value || '');
-  });
+  document.getElementById('fs-back')?.addEventListener('click', () => fsGoBack(container));
 
-  document.getElementById('filter-active')?.addEventListener('change', (e) => {
-    renderProducts(container, 1, document.getElementById('product-search')?.value || '', document.getElementById('filter-category')?.value || '', e.target.value);
+  document.querySelectorAll('.fs-crumb').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+      const next = JSON.parse(btn.dataset.nav);
+      container.dataset.fsNav = JSON.stringify(next);
+      renderProducts(container, 1, '', '');
+    };
   });
-
-  document.getElementById('add-product-btn').onclick = () => openProductModal(container);
 
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.onclick = () => {
@@ -502,23 +702,69 @@ async function renderProducts(container, page = 1, search = '', filterCategory =
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
         await supabase.from('products').delete().eq('id', id);
         showToast('Product deleted!');
-        await renderProducts(container);
+        const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
+        renderProducts(container, 1, document.getElementById('product-search')?.value || '', document.getElementById('filter-active')?.value || '', nav);
       });
     };
   });
 
-  // Pagination buttons
+  // Pagination
   document.getElementById('page-prev')?.addEventListener('click', () => {
-    renderProducts(container, page - 1, search, filterCategory, filterActive);
+    rerenderRows(container, header, opts, breadcrumb, page - 1);
   });
   document.getElementById('page-next')?.addEventListener('click', () => {
-    renderProducts(container, page + 1, search, filterCategory, filterActive);
+    rerenderRows(container, header, opts, breadcrumb, page + 1);
   });
   document.querySelectorAll('.admin-pagination button[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
-      renderProducts(container, parseInt(btn.dataset.page), search, filterCategory, filterActive);
+      rerenderRows(container, header, opts, breadcrumb, parseInt(btn.dataset.page));
     });
   });
+}
+
+// Re-render just the rows view at a new page (preserves search/nav context)
+function rerenderRows(container, header, opts, breadcrumb, newPage) {
+  const search = document.getElementById('product-search')?.value || '';
+  const filterActive = document.getElementById('filter-active')?.value || '';
+  if (search && search.trim()) {
+    renderProductRows(container, header, { search, filterActive, page: newPage });
+  } else {
+    const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
+    renderProductRows(container, header, { filterCategory: nav.category, filterActive, page: newPage }, breadcrumb);
+  }
+}
+
+// Navigate one level up
+function fsGoBack(container, fallbackNav) {
+  const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
+  let next;
+  if (fallbackNav) next = fallbackNav;
+  else if (nav.level === 'category') next = { level: 'group', group: nav.group, category: null };
+  else if (nav.level === 'group') next = { level: 'root', group: null, category: null };
+  else next = { level: 'root' };
+  container.dataset.fsNav = JSON.stringify(next);
+  renderProducts(container, 1, '', '');
+}
+
+// Shared event wiring for search + add button + status filter (on every render)
+function wireFsShared(container) {
+  let searchTimeout;
+  const searchInput = document.getElementById('product-search');
+  searchInput?.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const val = e.target.value;
+    const filterActive = document.getElementById('filter-active')?.value || '';
+    searchTimeout = setTimeout(() => {
+      renderProducts(container, 1, val, filterActive);
+    }, 350);
+  });
+
+  document.getElementById('filter-active')?.addEventListener('change', (e) => {
+    const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
+    renderProducts(container, 1, document.getElementById('product-search')?.value || '', e.target.value, nav);
+  });
+
+  document.getElementById('add-product-btn').onclick = () => openProductModal(container);
 }
 
 function generateSlug(name) {
