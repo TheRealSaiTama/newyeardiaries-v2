@@ -265,8 +265,15 @@ export function initSearchModal() {
 
   if (!searchBtn || !overlay) return;
 
+  // Idempotency guard — wrapPage() re-runs this on every navigation.
+  // Without it, input/keydown listeners stack up and race each other,
+  // causing the "shows results then reverts" glitch.
+  if (searchBtn.dataset.bound === '1') return;
+  searchBtn.dataset.bound = '1';
+
   let allProducts = [];
   let debounceTimer;
+  let searchToken = 0; // monotonically increasing token; stale renders bail out
 
   async function loadProducts() {
     if (!allProducts.length) {
@@ -287,6 +294,7 @@ export function initSearchModal() {
     document.body.style.overflow = '';
     if (input) input.value = '';
     if (resultsEl) resultsEl.innerHTML = '<p class="search-hint">Start typing to search...</p>';
+    searchToken++; // invalidate any in-flight search
   }
 
   searchBtn.addEventListener('click', openSearch);
@@ -309,19 +317,23 @@ export function initSearchModal() {
     }
   });
 
-  input?.addEventListener('input', async (e) => {
+  input?.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     clearTimeout(debounceTimer);
 
     if (!q) {
+      searchToken++;
       resultsEl.innerHTML = '<p class="search-hint">Start typing to search...</p>';
       return;
     }
 
     resultsEl.innerHTML = '<p class="search-loading">Searching...</p>';
+    const myToken = ++searchToken;
 
     debounceTimer = setTimeout(async () => {
       const products = await loadProducts();
+      // Stale guard: bail if a newer keystroke/close superseded this one
+      if (myToken !== searchToken) return;
       const matched = products.filter(p =>
         p.name.toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
