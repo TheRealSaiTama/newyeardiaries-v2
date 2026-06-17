@@ -58,6 +58,17 @@ function hideLoader() {
     loader.style.opacity = '0';
     setTimeout(() => loader.remove(), 300);
   }
+  // Graceful content reveal — fade the shell in after loader clears
+  const shell = document.getElementById('shell');
+  if (shell) {
+    shell.style.opacity = '0';
+    requestAnimationFrame(() => {
+      shell.style.transition = 'opacity 0.4s ease';
+      requestAnimationFrame(() => {
+        shell.style.opacity = '1';
+      });
+    });
+  }
 }
 
 const WHATSAPP_NUMBER = '919899223130';
@@ -100,11 +111,12 @@ function setupShell() {
 
 function wrapPage(renderFn) {
   return (params) => {
-    renderFn(params, appContent);
+    const result = renderFn(params, appContent);
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
     initHeaderEvents();
     updateHeaderCounts();
     initSearchModal();
+    return result; // may be a Promise (async page) — awaited on first load
   };
 }
 
@@ -133,11 +145,16 @@ addRoute('/admin', (params) => {
   initAdminPage();
 });
 
-loadContent().then(() => {
-  preloadCategories().then(() => {
-    setupShell();
-    initFaqChatbot();
-    hideLoader();
-    initRouter();
-  });
+loadContent().then(async () => {
+  await preloadCategories();
+  setupShell();
+  initFaqChatbot();
+  // Resolve the first route and WAIT for the async page to finish rendering
+  // before hiding the loader — prevents the empty-shell / About-section flash.
+  const firstRender = initRouter();
+  if (firstRender && typeof firstRender.then === 'function') {
+    await firstRender;
+  }
+  // Small delay lets layout settle (images, fonts) for a clean reveal.
+  setTimeout(hideLoader, 100);
 });

@@ -27,7 +27,7 @@ export function navigateTo(path) {
 
 export function resolveRoute() {
   const path = window.location.pathname;
-  
+
   // Cleanup previous page if needed
   if (currentCleanup && typeof currentCleanup === 'function') {
     currentCleanup();
@@ -49,6 +49,7 @@ export function resolveRoute() {
         if (typeof result === 'function') {
           currentCleanup = result;
         }
+        return result; // pass through (may be a Promise from an async page)
       }
       return;
     }
@@ -57,7 +58,7 @@ export function resolveRoute() {
   // 404 fallback — show homepage
   const fallback = routes.find(r => r.path === '/');
   if (fallback) {
-    fallback.handler({});
+    return fallback.handler({});
   }
 }
 
@@ -69,11 +70,11 @@ export function initRouter() {
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a[href]');
     if (!link) return;
-    
+
     const href = link.getAttribute('href');
-    
+
     // Skip external links, hash links, and special protocols
-    if (!href || href.startsWith('http') || href.startsWith('mailto:') || 
+    if (!href || href.startsWith('http') || href.startsWith('mailto:') ||
         href.startsWith('tel:') || href.startsWith('#') || link.target === '_blank') {
       return;
     }
@@ -82,6 +83,7 @@ export function initRouter() {
     navigateTo(href);
   });
 
-  // Resolve initial route
-  resolveRoute();
+  // Resolve initial route — return the result so the caller can await
+  // the first (async) page render before revealing the app.
+  return resolveRoute();
 }
