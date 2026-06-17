@@ -3,12 +3,12 @@
 // (e.g. .ap-product-card, .ap-product-image-wrapper) so the layout matches
 // exactly. Only the inner elements use .skeleton for the shimmer effect.
 
+// Returns skeleton card fragments ONLY (no grid wrapper). The caller drops
+// these directly into the existing grid container (#product-grid or
+// .ap-product-grid). Adding a wrapper here would double-nest the grid and
+// collapse the cards into a single column — see ShopPage usage.
 export function renderProductCardSkeleton(count = 6) {
-  return `
-    <div class="ap-product-grid">
-      ${Array(count).fill('').map(() => renderProductCardSkeletonItem()).join('')}
-    </div>
-  `;
+  return Array(count).fill('').map(() => renderProductCardSkeletonItem()).join('');
 }
 
 // One skeleton card. Uses .ap-product-card + .ap-product-image-wrapper so it
