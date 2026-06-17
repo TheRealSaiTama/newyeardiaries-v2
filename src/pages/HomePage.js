@@ -249,6 +249,12 @@ function initHeroSlider() {
   function resetTimer() {
     if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(next, SLIDE_MS);
+    // Tiny console signal so it's obvious auto-slide is running.
+    // (Comment out if too chatty.)
+    if (!window.__heroSliderLogged) {
+      window.__heroSliderLogged = true;
+      console.log('[hero] auto-slide started,', slides.length, 'slides @', SLIDE_MS, 'ms');
+    }
   }
 
   function stopTimer() {
