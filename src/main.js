@@ -145,16 +145,32 @@ addRoute('/admin', (params) => {
   initAdminPage();
 });
 
-loadContent().then(async () => {
-  await preloadCategories();
-  setupShell();
-  initFaqChatbot();
-  // Resolve the first route and WAIT for the async page to finish rendering
-  // before hiding the loader — prevents the empty-shell / About-section flash.
-  const firstRender = initRouter();
-  if (firstRender && typeof firstRender.then === 'function') {
-    await firstRender;
+// Safety net: no matter what fails, the loader MUST hide — never leave the
+// user stuck on the splash. Hard cap at 6s.
+let loaderHidden = false;
+function hideLoaderOnce() {
+  if (loaderHidden) return;
+  loaderHidden = true;
+  hideLoader();
+}
+setTimeout(hideLoaderOnce, 6000);
+
+(async () => {
+  try {
+    await loadContent();
+    await preloadCategories();
+    setupShell();
+    initFaqChatbot();
+    // Resolve the first route and WAIT for the async page to finish rendering
+    // before hiding the loader — prevents the empty-shell / About-section flash.
+    const firstRender = initRouter();
+    if (firstRender && typeof firstRender.then === 'function') {
+      await firstRender;
+    }
+    // Small delay lets layout settle (images, fonts) for a clean reveal.
+    setTimeout(hideLoaderOnce, 100);
+  } catch (e) {
+    console.error('Boot failed — revealing app anyway:', e);
+    hideLoaderOnce();
   }
-  // Small delay lets layout settle (images, fonts) for a clean reveal.
-  setTimeout(hideLoader, 100);
-});
+})();
