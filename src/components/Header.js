@@ -32,7 +32,13 @@ export function renderHeader(content) {
     { label: 'Branding', path: '/branding' },
   ];
 
-  const exploreGroups = Object.keys(CATEGORY_GROUPS);
+  // Build the explore-group list from the categories the cache actually has,
+  // ordered by the DB's sort_order. Falls back to the hardcoded map if the
+  // cache is cold (e.g. server-side render or before boot completes).
+  const groupedCats = getCategoriesByGroup(_cachedCategories || []);
+  const exploreGroups = Object.keys(groupedCats).length
+    ? Object.keys(groupedCats)
+    : Object.keys(CATEGORY_GROUPS);
 
   const annParts = fallback.split('|').map(s => s.trim()).filter(Boolean);
   const annItems = annParts.map((text, i) => {
@@ -40,7 +46,6 @@ export function renderHeader(content) {
     return { text: main || text, link: i === annParts.length - 1 ? link : null };
   });
 
-  const groupedCats = getCategoriesByGroup(_cachedCategories || []);
 
   const firstGroup = exploreGroups[0];
   const firstCats = groupedCats[firstGroup] || [];

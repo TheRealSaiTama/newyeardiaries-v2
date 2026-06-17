@@ -3,7 +3,7 @@ import { renderFilterSidebar, initFilterEvents } from '../components/FilterSideb
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderProductCardSkeleton } from '../components/Skeleton.js';
 import { getProducts } from '../data/products.js';
-import { CATEGORY_GROUPS } from '../lib/categories.js';
+import { CATEGORY_GROUPS, fetchCategories, getCategorySlugsByGroupName } from '../lib/categories.js';
 
 const PRODUCTS_PER_PAGE = 12;
 const MAX_VISIBLE_PAGES = 5; // pages to show around current
@@ -60,9 +60,10 @@ export async function renderShopPage() {
   } else if (catSlug) {
     pageTitle = catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     breadcrumbLabel = pageTitle;
-  } else if (groupName && CATEGORY_GROUPS[groupName]) {
+  } else if (groupName) {
     const meta = PAGE_TITLES[groupName];
     if (meta) { pageTitle = meta.title; pageDesc = meta.desc; }
+    else { pageTitle = groupName; }
     breadcrumbLabel = groupName;
   }
 
@@ -113,6 +114,12 @@ export async function renderShopPage() {
   initGoTopButton();
 
   // ===== Step 2: fetch products and re-render the grid in place =====
+  // Warm the categories cache so the group filter can resolve slugs from
+  // the DB (admin changes propagate within the cache TTL).
+  const allCategories = await fetchCategories();
+  // Expose for downstream consumers (mega menu in Header re-uses the same).
+  window.__cachedCategories = allCategories;
+
   const allProducts = await getProducts();
 
   // A product matches a category slug if it's the primary category OR it appears
@@ -145,9 +152,15 @@ export async function renderShopPage() {
     );
   } else if (catSlug) {
     products = allProducts.filter(p => productInCategory(p, catSlug));
-  } else if (groupName && CATEGORY_GROUPS[groupName]) {
-    const slugs = CATEGORY_GROUPS[groupName];
-    products = allProducts.filter(p => productInGroup(p, slugs));
+  } else if (groupName) {
+    // Resolve the group's slugs from the DB cache (warmed by Header on boot,
+    // refreshed by the post-load background fetcher). Falls back to the
+    // hardcoded map only if the cache is empty AND the group is known.
+    let slugs = getCategorySlugsByGroupName(groupName);
+    if (!slugs.length && CATEGORY_GROUPS[groupName]) slugs = CATEGORY_GROUPS[groupName];
+    products = slugs.length
+      ? allProducts.filter(p => productInGroup(p, slugs))
+      : [];
   } else {
     products = allProducts;
   }

@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
 import { bustContentCache } from '../lib/content.js';
-import { CATEGORY_GROUPS, getCategoriesByGroup } from '../lib/categories.js';
+import { CATEGORY_GROUPS, getCategoriesByGroup, fetchCategories, fetchCategoryGroups, bustCategoriesCache } from '../lib/categories.js';
 
 let currentTab = 'products';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
@@ -1138,73 +1138,139 @@ async function openProductModal(container, product = null) {
 }
 
 // ===== CATEGORIES =====
-function renderCategoryTable(cats, groupName) {
-  if (!cats?.length) return '';
+// ===== CATEGORIES (collapsible groups, DB-backed) =====
+function renderCategoryTable(cats, group, opts = {}) {
+  const groupName = group?.name || opts.fallbackName || 'Uncategorized';
+  const groupId = group?.id || '';
+  const collapsed = opts.collapsed || false;
+  const hasCategories = (cats?.length || 0) > 0;
   return `
-    <div class="admin-card" style="margin-bottom:var(--space-6);" data-group="${groupName}">
-      <div style="padding:var(--space-4) var(--space-6);border-bottom:1px solid var(--color-border-light);background:var(--color-surface-alt);border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
-        <h3 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin:0;">${groupName}</h3>
-        <span style="font-size:var(--fs-sm);color:var(--color-text-tertiary);">${cats.length} item${cats.length !== 1 ? 's' : ''}</span>
+    <div class="admin-card admin-cat-group" style="margin-bottom:var(--space-4);" data-group-id="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}">
+      <div class="admin-cat-group-header" style="padding:var(--space-4) var(--space-6);border-bottom:${hasCategories ? '1px solid var(--color-border-light)' : 'none'};background:var(--color-surface-alt);border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;align-items:center;gap:var(--space-3);">
+        <button class="admin-cat-toggle" data-group="${groupName.replace(/"/g, '&quot;')}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} group" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);">
+          <span class="material-symbols-outlined admin-cat-toggle-icon" style="transition:transform 0.2s ease;${collapsed ? 'transform:rotate(-90deg);' : ''}">expand_more</span>
+        </button>
+        <div style="flex:1;min-width:0;">
+          <h3 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin:0;">${groupName}</h3>
+          <span style="font-size:var(--fs-sm);color:var(--color-text-tertiary);">${cats?.length || 0} item${(cats?.length || 0) !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="admin-cat-group-actions" style="display:flex;gap:var(--space-2);flex-shrink:0;">
+          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" title="Add subcategory to ${groupName}">
+            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+            <span>Add</span>
+          </button>
+          ${groupId ? `<button class="admin-btn admin-btn-ghost admin-btn-sm" data-rename-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Rename group">
+            <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+          </button>` : ''}
+          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-delete-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Delete group (subcategories move to Uncategorized)" style="color:var(--color-error, #c0392b);">
+            <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+          </button>
+        </div>
       </div>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead><tr><th>Name</th><th>Slug</th><th>Group</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-          <tbody>
-            ${cats.map(c => `<tr class="cat-row" data-id="${c.id}">
-              <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
-              <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
-              <td><span class="badge badge-new">${groupName}</span></td>
-              <td>${c.sort_order || 0}</td>
-              <td><span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Active' : 'Inactive'}</span></td>
-              <td class="col-actions">
-                <button class="edit-btn"><span class="material-symbols-outlined">edit</span></button>
-                <button class="delete delete-btn"><span class="material-symbols-outlined">delete</span></button>
-              </td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
+      ${hasCategories ? `
+      <div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};">
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Slug</th><th>Group</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody>
+              ${cats.map(c => `<tr class="cat-row" data-id="${c.id}">
+                <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
+                <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
+                <td><span class="badge badge-new">${groupName}</span></td>
+                <td>${c.sort_order || 0}</td>
+                <td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td>
+                <td class="col-actions">
+                  <button class="edit-btn" title="Edit category"><span class="material-symbols-outlined">edit</span></button>
+                  <button class="delete delete-btn" title="Delete category"><span class="material-symbols-outlined">delete</span></button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>` : `<div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};padding:var(--space-6);text-align:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);">
+        No subcategories yet. <button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" style="margin-left:var(--space-2);"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">add</span> Add one</button>
+      </div>`}
     </div>
   `;
 }
 
 async function renderCategories(container) {
-  const { data: categories } = await supabase.from('categories').select('*').order('sort_order');
-  const grouped = getCategoriesByGroup(categories || []);
+  // Always read fresh from the DB (with 60s cache inside fetchCategories)
+  const [categories, groups] = await Promise.all([
+    fetchCategories(),
+    fetchCategoryGroups(),
+  ]);
 
-  // Find uncategorized
-  const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
-  const uncategorized = (categories || []).filter(c => !allGroupedSlugs.has(c.slug));
+  const grouped = getCategoriesByGroup(categories || []);
+  const uncategorized = (categories || []).filter(c => !c.group_name);
+
+  // Preserve collapsed state across re-renders
+  const collapsedSet = new Set(
+    JSON.parse(sessionStorage.getItem('admin_cat_collapsed') || '[]')
+  );
+
+  // Preserve add-to-group scroll/focus intent if the caller asked for it
+  const expandGroup = sessionStorage.getItem('admin_cat_expand_once') || null;
+  if (expandGroup) {
+    collapsedSet.delete(expandGroup);
+    sessionStorage.removeItem('admin_cat_expand_once');
+    sessionStorage.setItem('admin_cat_collapsed', JSON.stringify([...collapsedSet]));
+  }
 
   container.innerHTML = `
     <div class="admin-header">
       <div class="admin-header-left">
         <h1>Categories</h1>
-        <span class="admin-header-stats">${categories?.length || 0} items</span>
+        <span class="admin-header-stats">${categories?.length || 0} items in ${groups.length} group${groups.length !== 1 ? 's' : ''}</span>
       </div>
-      <div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end">
+      <div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end;flex-wrap:wrap;">
         <div class="admin-search-wrap">
           <span class="material-symbols-outlined">search</span>
           <input type="text" class="admin-search" id="cat-search" placeholder="Search categories...">
         </div>
+        <button class="admin-btn admin-btn-ghost" id="add-group-btn" title="Create a new category group">
+          <span class="material-symbols-outlined">create_new_folder</span>
+          New Group
+        </button>
         <button class="admin-btn admin-btn-primary" id="add-cat-btn">
-          <span class="material-symbols-outlined">add</span> Add Category
+          <span class="material-symbols-outlined">add</span>
+          Add Category
         </button>
       </div>
     </div>
     <div id="cats-container">
-      ${Object.keys(CATEGORY_GROUPS).map(group => renderCategoryTable(grouped[group], group)).join('')}
-      ${uncategorized.length ? renderCategoryTable(uncategorized, 'Uncategorized') : ''}
+      ${groups.map(g => renderCategoryTable(grouped[g.name], g, {
+        collapsed: collapsedSet.has(g.name),
+        fallbackName: g.name,
+      })).join('')}
+      ${uncategorized.length ? renderCategoryTable(uncategorized, { id: '', name: 'Uncategorized' }, {
+        collapsed: collapsedSet.has('Uncategorized'),
+      }) : ''}
+      ${groups.length === 0 && uncategorized.length === 0 ? `
+        <div class="admin-card" style="padding:var(--space-12);text-align:center;">
+          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">category</span>
+          <h3 style="margin-top:var(--space-4);">No categories yet</h3>
+          <p style="color:var(--color-text-tertiary);">Create your first group to organize the navigation menu.</p>
+          <button class="admin-btn admin-btn-primary" id="add-group-btn-empty" style="margin-top:var(--space-4);">
+            <span class="material-symbols-outlined">create_new_folder</span> Create First Group
+          </button>
+        </div>
+      ` : ''}
     </div>
   `;
 
+  const persistCollapsed = () => {
+    sessionStorage.setItem('admin_cat_collapsed', JSON.stringify([...collapsedSet]));
+  };
+
+  // ===== Wire interactions =====
   document.getElementById('cat-search')?.addEventListener('input', (e) => {
     const q = e.target.value.toLowerCase();
     document.querySelectorAll('.cat-row').forEach(row => {
       const name = row.querySelector('.col-name strong')?.textContent.toLowerCase() || '';
-      const groupCard = row.closest('.admin-card');
-      row.style.display = name.includes(q) ? '' : 'none';
-      // Hide empty group cards
+      const slug = row.querySelector('.col-name span')?.textContent.toLowerCase() || '';
+      const groupCard = row.closest('.admin-cat-group');
+      row.style.display = (name.includes(q) || slug.includes(q)) ? '' : 'none';
       if (groupCard) {
         const visible = groupCard.querySelectorAll('.cat-row:not([style*="none"])').length;
         groupCard.style.display = visible > 0 ? '' : 'none';
@@ -1212,33 +1278,128 @@ async function renderCategories(container) {
     });
   });
 
-  document.getElementById('add-cat-btn').onclick = () => openCategoryModal(container);
+  // Collapse/expand toggle
+  document.querySelectorAll('.admin-cat-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const name = btn.dataset.group;
+      const card = btn.closest('.admin-cat-group');
+      const body = card?.querySelector('.admin-cat-group-body');
+      const icon = btn.querySelector('.admin-cat-toggle-icon');
+      if (!body) return;
+      const isCollapsed = body.style.display === 'none';
+      if (isCollapsed) {
+        body.style.display = 'block';
+        if (icon) icon.style.transform = '';
+        collapsedSet.delete(name);
+      } else {
+        body.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(-90deg)';
+        collapsedSet.add(name);
+      }
+      btn.setAttribute('aria-expanded', String(isCollapsed));
+      persistCollapsed();
+    };
+  });
+
+  // Add to specific group (sets the group in the modal)
+  document.querySelectorAll('[data-add-to-group]').forEach(btn => {
+    btn.onclick = () => openCategoryModal(container, null, btn.dataset.addToGroup);
+  });
+
+  // Rename group
+  document.querySelectorAll('[data-rename-group]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.renameGroup;
+      const oldName = btn.dataset.groupName;
+      const newName = prompt('Rename group:', oldName);
+      if (!newName || newName.trim() === oldName) return;
+      const { error } = await supabase.from('category_groups').update({ name: newName.trim() }).eq('id', id);
+      if (error) { showToast(`Rename failed: ${error.message}`, 'error'); return; }
+      bustCategoriesCache();
+      showToast('Group renamed.');
+      await renderCategories(container);
+    };
+  });
+
+  // Delete group (moves its categories to Uncategorized, then deletes the group)
+  document.querySelectorAll('[data-delete-group]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.deleteGroup;
+      const name = btn.dataset.groupName;
+      if (!id) { showToast('Cannot delete an unsaved group.', 'error'); return; }
+      showConfirmDialog(
+        `Delete group "${name}"? Subcategories will move to Uncategorized.`,
+        async () => {
+          // Clear group_id on any categories in this group, then delete the group
+          await supabase.from('categories').update({ group_id: null }).eq('group_id', id);
+          const { error } = await supabase.from('category_groups').delete().eq('id', id);
+          if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
+          bustCategoriesCache();
+          showToast('Group deleted.');
+          await renderCategories(container);
+        }
+      );
+    };
+  });
+
+  // New group
+  const onAddGroup = async () => {
+    const name = prompt('New group name:');
+    if (!name || !name.trim()) return;
+    // Compute next sort_order
+    const nextOrder = (groups[groups.length - 1]?.sort_order || 0) + 1;
+    const { error } = await supabase.from('category_groups').insert({ name: name.trim(), sort_order: nextOrder });
+    if (error) { showToast(`Create failed: ${error.message}`, 'error'); return; }
+    bustCategoriesCache();
+    showToast('Group created.');
+    // Expand the new group so the user can immediately add subcategories
+    sessionStorage.setItem('admin_cat_expand_once', name.trim());
+    await renderCategories(container);
+  };
+  document.getElementById('add-group-btn')?.addEventListener('click', onAddGroup);
+  document.getElementById('add-group-btn-empty')?.addEventListener('click', onAddGroup);
+
+  // Add category (no group preselected)
+  document.getElementById('add-cat-btn')?.addEventListener('click', () => openCategoryModal(container, null, null));
+
+  // Per-row actions
   document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.onclick = () => { const id = btn.closest('tr').dataset.id; openCategoryModal(container, categories.find(c => c.id === id)); };
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      const cat = categories.find(c => c.id === id);
+      openCategoryModal(container, cat, cat?.group_name || null);
+    };
   });
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
-      showConfirmDialog('Delete this category?', async () => {
-        await supabase.from('categories').delete().eq('id', id);
-        showToast('Category deleted!');
-        await renderCategories(container);
-      });
+      const cat = categories.find(c => c.id === id);
+      showConfirmDialog(
+        `Delete category "${cat?.name}"?${
+          cat?.image_url ? ' This will not delete the image file (base64 is in the row).' : ''
+        }`,
+        async () => {
+          // Also clean up product_categories junction rows pointing here
+          await supabase.from('product_categories').delete().eq('category_id', id);
+          const { error } = await supabase.from('categories').delete().eq('id', id);
+          if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
+          bustCategoriesCache();
+          showToast('Category deleted.');
+          await renderCategories(container);
+        }
+      );
     };
   });
 }
 
-function getCategoryGroups(slug) {
-  const groups = [];
-  for (const [groupName, slugs] of Object.entries(CATEGORY_GROUPS)) {
-    if (slugs.includes(slug)) groups.push(groupName);
-  }
-  return groups;
-}
-
-async function openCategoryModal(container, category = null) {
+async function openCategoryModal(container, category = null, presetGroupName = null) {
   const isEdit = !!category;
-  const groups = isEdit ? getCategoryGroups(category.slug) : [];
+  // Always read groups fresh so the dropdown reflects the current DB state
+  const groups = await fetchCategoryGroups();
+  const currentGroup = isEdit
+    ? (category?.group_name || null)
+    : (presetGroupName || null);
+
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
@@ -1250,7 +1411,14 @@ async function openCategoryModal(container, category = null) {
           <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
-        ${isEdit && groups.length ? `<div class="form-group"><label>Group</label><input value="${groups.join(', ')}" readonly style="background:var(--color-surface-alt);color:var(--color-text-secondary);cursor:not-allowed;"></div>` : ''}
+        <div class="form-group">
+          <label>Group</label>
+          <select name="group_id" id="cat-group-select">
+            <option value="">— Uncategorized —</option>
+            ${groups.map(g => `<option value="${g.id}" ${g.name === currentGroup ? 'selected' : ''}>${g.name}</option>`).join('')}
+          </select>
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which menu group this category appears under on the live site.</small>
+        </div>
         <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
         <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
@@ -1278,7 +1446,25 @@ async function openCategoryModal(container, category = null) {
     const slug = rawSlug ? rawSlug.trim() : generateSlug(name);
     if (!name || !name.trim()) { showToast('Category name is required.', 'error'); return; }
     if (!slug) { showToast('Slug is required.', 'error'); return; }
-    const payload = { name: name.trim(), slug, icon: fd.get('icon') || null, description: fd.get('description') || null, image_url: fd.get('image_url') || null, active: fd.get('active') === 'on', sort_order: Number(fd.get('sort_order')) || 0 };
+
+    // Resolve group_id from the selected option. If the user picks an
+    // existing group, we use its id; if they pick a different group than the
+    // current one, the slug may no longer match the old mapping — we don't
+    // auto-migrate, we just save the new mapping.
+    const groupIdRaw = fd.get('group_id');
+    const groupId = groupIdRaw && groupIdRaw !== '' ? groupIdRaw : null;
+
+    const payload = {
+      name: name.trim(),
+      slug,
+      group_id: groupId,
+      icon: fd.get('icon') || null,
+      description: fd.get('description') || null,
+      image_url: fd.get('image_url') || null,
+      active: fd.get('active') === 'on',
+      sort_order: Number(fd.get('sort_order')) || 0,
+    };
+
     const { error: catError } = isEdit
       ? await supabase.from('categories').update(payload).eq('id', category.id)
       : await supabase.from('categories').insert(payload);
@@ -1287,11 +1473,11 @@ async function openCategoryModal(container, category = null) {
       showToast(`Failed: ${catError.message}`, 'error');
       return;
     }
+    bustCategoriesCache();
     closeModal();
     showToast(isEdit ? 'Category updated!' : 'Category added!');
     await renderCategories(container);
   };
-
 
   const catNameInput = document.getElementById('cat-name');
   const catSlugInput = document.getElementById('cat-slug');
