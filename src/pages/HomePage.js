@@ -130,7 +130,7 @@ export async function renderHomePage() {
 }
 
 function renderAnnouncementMarquee(announcements) {
-  if (!announcements.length) return '';
+  if (!Array.isArray(announcements) || announcements.length === 0) return '';
   const items = announcements.map(a =>
     `<span class="announcement-marquee-item">${a.link ? `<a href="${a.link}">${a.text}</a>` : a.text}</span>`
   ).join('<span class="announcement-marquee-dot">•</span>');
@@ -171,7 +171,9 @@ function renderProductSliderSection(title, slug, products, idSuffix, bg) {
 
 function initHeroSlider() {
   const slider = document.getElementById('hero-slider');
-  const slides = document.querySelectorAll('.hero-slide');
+  // Array.from() so .map/.filter always work (NodeList.map is not in every
+  // browser — notably some embedded WebViews on Android).
+  const slides = Array.from(document.querySelectorAll('.hero-slide'));
   const prevBtn = document.getElementById('heroPrev');
   const nextBtn = document.getElementById('heroNext');
   const dotsContainer = document.getElementById('heroDots');
