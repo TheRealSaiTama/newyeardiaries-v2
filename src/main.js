@@ -10,6 +10,7 @@ import { initFaqChatbot } from './components/FaqChatbot.js';
 import { renderFooter } from './components/Footer.js';
 import { renderAboutSection } from './components/AboutSection.js';
 import { renderQuickViewModal } from './components/QuickViewModal.js';
+import { renderHomeSkeleton } from './components/Skeleton.js';
 import { getContent } from './lib/content.js';
 
 import { renderHomePage } from './pages/HomePage.js';
@@ -194,12 +195,22 @@ function raceWithTimeout(promise, ms, label) {
 }
 
 (async () => {
-  // Step 1: bring up the empty shell + a fallback homepage IMMEDIATELY so the
-  // user is never staring at a splash while Supabase warms up.
+  // Step 1: bring up the empty shell + a HOMEPAGE SKELETON IMMEDIATELY so
+  // the main area is never empty (which would expose the About section
+  // from the shell as the apparent page content while the route loads).
   try {
     setupShell();
   } catch (e) {
     console.error('[boot] setupShell failed:', e);
+  }
+  try {
+    const path = window.location.pathname || '/';
+    if (path === '/' || path === '/index.html') {
+      const app = document.getElementById('app');
+      if (app) app.innerHTML = renderHomeSkeleton();
+    }
+  } catch (e) {
+    console.warn('[boot] home skeleton failed:', e);
   }
 
   // Step 2: kick off the first route. wrapPage() returns the (possibly Promise)
