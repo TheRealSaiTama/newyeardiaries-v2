@@ -1413,6 +1413,7 @@ a.explore-mega-cat-btn.active {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 32px 24px;
+  align-items: start; /* prevent skeleton/real cards stretching to row height */
 }
 
 @media (max-width: 1100px) {
