@@ -1,6 +1,8 @@
 import { getCart, updateCartQty, clearCart } from '../data/store.js';
 import { getProductById, formatPrice } from '../data/products.js';
 import { navigateTo } from '../router.js';
+import { supabase } from '../lib/supabase.js';
+import { sendOrderEmail } from '../lib/notify.js';
 
 function showToast(message, type = 'success') {
   let toast = document.getElementById('toast-notification');
@@ -375,10 +377,98 @@ export async function renderCheckoutPage() {
       renderCheckoutPage();
     });
 
-    document.getElementById('btn-place-order')?.addEventListener('click', () => {
+    document.getElementById('btn-place-order')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-place-order');
+      const data = getCheckoutData();
+      const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+
+      // Generate a human-readable order number
+      const orderNumber = 'NYD' + Date.now().toString().slice(-8);
+      const gstAmount = subtotal * gstRate;
+      const grandTotal = total + shipping; // total already includes GST; add shipping
+      const finalTotal = shipping > 0 ? total + shipping : total;
+
+      // Build order items
+      const items = cartItems.map(item => ({
+        product_id: item.productId,
+        product_name: item.product.title || item.product.name,
+        product_image: item.product.image || item.product.images?.[0] || null,
+        material: item.product.material || null,
+        size: item.product.size || null,
+        quantity: item.qty,
+        unit_price: Number(item.product.price),
+        line_total: Number((item.product.price * item.qty).toFixed(2)),
+      }));
+
+      // Disable button + show progress while we save + email
+      if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
+      showToast('Processing your order…', 'success');
+
+      // 1. Insert order row
+      const { data: orderRow, error: orderErr } = await supabase.from('orders').insert({
+        order_number: orderNumber,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        company: data.company || null,
+        gst: data.gst || null,
+        country: 'India',
+        address_line_1: data.address,
+        address_line_2: null,
+        city: data.city,
+        state: data.state,
+        postcode: data.pin,
+        phone: data.phone,
+        email: data.email,
+        special_instructions: null,
+        payment_method: paymentMethod,
+        privacy_agreed: true,
+        subtotal: Number(subtotal.toFixed(2)),
+        gst_amount: Number(gstAmount.toFixed(2)),
+        shipping: Number(shipping.toFixed(2)),
+        total: Number(finalTotal.toFixed(2)),
+        status: 'pending',
+      }).select().single();
+
+      if (orderErr) {
+        console.error('Order insert failed:', orderErr);
+        showToast('Could not place order. Please try again.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
+        return;
+      }
+
+      // 2. Insert order items (linked to the new order)
+      const { error: itemsErr } = await supabase.from('order_items').insert(
+        items.map(it => ({ ...it, order_id: orderRow.id }))
+      );
+      if (itemsErr) console.error('Order items insert failed:', itemsErr);
+
+      // 3. Send notification email (fire-and-forget; don't block success)
+      sendOrderEmail({
+        orderNumber,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        company: data.company,
+        gst: data.gst,
+        addressLine1: data.address,
+        city: data.city,
+        state: data.state,
+        postcode: data.pin,
+        country: 'India',
+        phone: data.phone,
+        email: data.email,
+        items: items.map(it => ({ name: it.product_name, qty: it.quantity, lineTotal: it.line_total })),
+        paymentMethod,
+        subtotal: Number(subtotal.toFixed(2)),
+        gstAmount: Number(gstAmount.toFixed(2)),
+        shipping: Number(shipping.toFixed(2)),
+        total: Number(finalTotal.toFixed(2)),
+      }).catch(e => console.error('Order email failed:', e));
+
+      // 4. Clear cart + redirect to success
       clearCart();
       sessionStorage.removeItem('checkoutStep');
       sessionStorage.removeItem('checkoutData');
+      sessionStorage.setItem('lastOrderNumber', orderNumber);
       navigateTo('/order-success');
     });
 
