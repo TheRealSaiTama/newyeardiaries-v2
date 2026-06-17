@@ -55,12 +55,14 @@ async function preloadCategories() {
 function hideLoader() {
   const loader = document.getElementById('app-loader');
   if (loader) {
+    // The diary-loader CSS uses `transition: opacity .35s ease`, so setting
+    // opacity:0 here triggers the fade. .is-gone is the macOS-spinner
+    // variant — both classes are safe to apply.
+    loader.style.opacity = '0';
     loader.classList.add('is-gone');
-    // Remove from DOM once the 180ms fade is done (kept short on purpose).
-    setTimeout(() => loader.remove(), 220);
+    setTimeout(() => loader.remove(), 360);
   }
-  // Snappier shell reveal — was 0.4s, now 0.22s. Skip the double-rAF dance:
-  // a single rAF + transition is enough to let layout settle.
+  // Snappier shell reveal — was 0.4s, now 0.22s.
   const shell = document.getElementById('shell');
   if (shell && shell.style.opacity !== '1') {
     shell.style.opacity = '0';
