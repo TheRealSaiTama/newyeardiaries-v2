@@ -92,22 +92,33 @@ function initFloatingButtons() {
   if (container) container.innerHTML = renderFloatingButtons();
 }
 
+// Render one part of the shell, falling back to an empty string if it throws.
+// Without this, a single broken component (e.g. Footer when content hasn't
+// loaded yet) can take down the whole shell and leave a white page.
+function safeRender(label, fn) {
+  try { return fn(); }
+  catch (e) { console.warn(`[shell] ${label} render failed:`, e); return ''; }
+}
+
 function setupShell() {
   const shell = document.getElementById('shell');
+  // appContent may be null here on first paint (we run setupShell BEFORE
+  // loadContent resolves). Each component must accept null safely — use
+  // safeRender as a second line of defense.
   shell.innerHTML = `
-    <div id="header-area">${renderHeader(appContent)}</div>
-    ${renderQuickViewModal()}
-    ${renderSearchModal()}
+    <div id="header-area">${safeRender('Header', () => renderHeader(appContent))}</div>
+    ${safeRender('QuickView', renderQuickViewModal)}
+    ${safeRender('Search', renderSearchModal)}
     <main id="app"></main>
-    ${renderAboutSection()}
-    <div id="footer-area">${renderFooter(appContent)}</div>
+    ${safeRender('About', renderAboutSection)}
+    <div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div>
     <div id="floating-buttons"></div>
     <div id="faq-chatbot"></div>
   `;
-  initHeaderEvents();
-  updateHeaderCounts();
-  initSearchModal();
-  initFaqChatbot();
+  try { initHeaderEvents(); } catch (e) { console.warn('[shell] initHeaderEvents failed:', e); }
+  try { updateHeaderCounts(); } catch (e) { console.warn('[shell] updateHeaderCounts failed:', e); }
+  try { initSearchModal(); } catch (e) { console.warn('[shell] initSearchModal failed:', e); }
+  try { initFaqChatbot(); } catch (e) { console.warn('[shell] initFaqChatbot failed:', e); }
   initFloatingButtons();
 }
 

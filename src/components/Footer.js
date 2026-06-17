@@ -9,8 +9,8 @@ export function renderFooter(content) {
           <div class="nyd-footer__brand">
             <img src="/logo-big-transparent.png" alt="New Year Diaries" class="nyd-footer__logo">
             <p class="nyd-footer__tagline">${f.tagline || 'Premium Diaries, Planners & Corporate Stationery. Crafted in India since 1998.'}</p>
-            <p class="nyd-footer__about">${content.footerSections?.about_left?.content || ''}</p>
-            <p class="nyd-footer__exporter">${content.footerSections?.exporter_right?.content || ''}</p>
+            <p class="nyd-footer__about">${content?.footerSections?.about_left?.content || ''}</p>
+            <p class="nyd-footer__exporter">${content?.footerSections?.exporter_right?.content || ''}</p>
             <div class="nyd-footer__contact">
               <div class="nyd-footer__contact-item">
                 <span class="nyd-footer__contact-icon">📍</span>
@@ -45,7 +45,7 @@ export function renderFooter(content) {
 
            <div class="nyd-footer__col">
              <h4 class="nyd-footer__heading">Our Products</h4>
-             <div class="nyd-footer__services">${content.footerSections?.services_list?.content || ''}</div>
+             <div class="nyd-footer__services">${content?.footerSections?.services_list?.content || ''}</div>
              <ul class="nyd-footer__links">
               <li><a href="/shop">Premium Diary</a></li>
               <li><a href="/shop">New Year Diary</a></li>
