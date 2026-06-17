@@ -6,35 +6,40 @@ const BRANDING_METHODS = [
     title: 'Thermal Logo Debossing',
     blurb: 'Blind debossing — unobtrusive & tactile.',
     desc: 'Debossing or blind debossing is and will continue to be the undisputed favourite among the logo debossings. It is charmingly unobtrusive, of high quality and pleasant to the touch. Sometimes less is just exactly the right thing. High-quality brass debossing stamps are created for every debossing.',
-    color: '#8B4513'
+    color: '#8B4513',
+    image: '/images/branding/thermal-debossing.jpg'
   },
   {
     icon: 'palette',
     title: 'Colour Debossing',
     blurb: 'Debossing with a transferred coloured foil.',
     desc: 'A colour debossing functions in a similar way to a blind debossing. The only difference: between the debossing stamp and the book there is a thin coloured foil that is transferred to the cover. We work together with the leading manufacturers of debossing foils that offer a rich choice of colours.',
-    color: '#6A1B9A'
+    color: '#6A1B9A',
+    image: '/images/branding/colour-debossing.jpg'
   },
   {
     icon: 'auto_awesome',
     title: 'Metallic Debossing',
     blurb: 'Hot foil embossing in gold or silver.',
     desc: 'Metallic debossing — also called hot foil embossing in gold or silver — uses a heated debossing stamp pressed onto a metallic foil that loosens through the heat and is transferred onto the cover. The motif lies deeper, as with all debossings, forming a beautiful touch with a perfect metallic shine.',
-    color: '#B8862F'
+    color: '#B8862F',
+    image: '/images/branding/metallic-debossing.jpg'
   },
   {
     icon: 'content_cut',
     title: 'Laser Cut / Punching',
     blurb: 'Digitally controlled precision cutting.',
     desc: 'A good alternative to stamping is the laser cut — a digitally controlled cutting technique. Compared to stamping, the laser cut can realise considerably more delicate motifs, stencil lettering or even grid images. The cover becomes exciting through the interaction of the underlying end leaves, which can be printed in full colour or with a motif. Good to know: with every additional cut, the stability of the cover decreases.',
-    color: '#37474F'
+    color: '#37474F',
+    image: '/images/branding/laser-cut.jpg'
   },
   {
     icon: 'lock',
     title: 'Magnetic Flap',
     blurb: 'Metal clasps in various shapes & colours.',
     desc: 'All types of clasps made in metal, available in various shapes, sizes and colours to showcase your company logo.',
-    color: '#455A64'
+    color: '#455A64',
+    image: '/images/branding/magnetic-flap.jpg'
   }
 ];
 
@@ -76,7 +81,9 @@ export function renderBrandingPage() {
             ${BRANDING_METHODS.map((m, i) => `
               <article class="b-tile b-reveal" style="--tile:${m.color};--ri:${i}" data-delay="${i * 120}">
                 <div class="b-tile__media">
-                  <span class="material-symbols-outlined b-tile__watermark">${m.icon}</span>
+                  ${m.image
+                    ? `<img class="b-tile__img" src="${m.image}" alt="${m.title}" loading="lazy">`
+                    : `<span class="material-symbols-outlined b-tile__watermark">${m.icon}</span>`}
                 </div>
                 <div class="b-tile__bar">
                   <span class="b-tile__ic"><span class="material-symbols-outlined">${m.icon}</span></span>
@@ -142,7 +149,7 @@ export function renderBrandingPage() {
               </div>
             </div>
             <div class="b-cta__media">
-              <span class="material-symbols-outlined b-cta__media-ic">workspace_premium</span>
+              <img class="b-cta__media-img" src="/images/branding/cta-feature.jpg" alt="Premium branded diary" loading="lazy">
               <span class="b-cta__chip"><span class="material-symbols-outlined">verified</span> In-house production</span>
               <span class="b-cta__chip b-cta__chip--2"><span class="material-symbols-outlined">factory</span> Delhi facility</span>
             </div>

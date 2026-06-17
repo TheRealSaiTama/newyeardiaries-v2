@@ -975,6 +975,17 @@
 .b-tile:hover .b-tile__watermark, .b-tile.is-open .b-tile__watermark {
   transform: scale(1.12) rotate(-4deg);
 }
+.b-tile__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+.b-tile:hover .b-tile__img, .b-tile.is-open .b-tile__img {
+  transform: scale(1.08);
+}
 
 /* Title bar (always visible) */
 .b-tile__bar {
@@ -1188,6 +1199,15 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
 }
+.b-cta__media-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.b-cta__media .b-cta__chip { z-index: 2; }
 .b-cta__media-ic {
   font-size: 150px !important;
   color: rgba(255, 255, 255, 0.95);
