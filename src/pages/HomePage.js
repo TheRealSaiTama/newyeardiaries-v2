@@ -172,28 +172,40 @@ function renderProductSliderSection(title, slug, products, idSuffix, bg) {
 function initHeroSlider() {
   const slider = document.getElementById('hero-slider');
   const slides = document.querySelectorAll('.hero-slide');
-  if (!slider || slides.length <= 1) return;
+  const prevBtn = document.getElementById('heroPrev');
+  const nextBtn = document.getElementById('heroNext');
+  const dotsContainer = document.getElementById('heroDots');
 
-  // Kill any previous instance (prevents stacked intervals → glitch)
+  // Tear down any previous instance — store timer in a STABLE object so
+  // resetTimer() mutates the same reference cleanup reads. (Old bug stored
+  // the timer variable by value, so cleanup cleared a stale/initial ref
+  // and intervals stacked up → glitch on re-navigation.)
   if (window.__heroSlider) {
     clearInterval(window.__heroSlider.timer);
+    window.__heroSlider = null;
   }
 
-  let current = 0;
-  let timer = null;
-  let animating = false;
+  // Nothing to slide (0 or 1 slide) → hide nav, exit clean
+  if (!slider || slides.length <= 1) {
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+    if (dotsContainer) dotsContainer.style.display = 'none';
+    return;
+  }
+
   const SLIDE_MS = 5000;
   const TRANSITION_MS = 800;
+  const state = { current: 0, timer: null, animating: false };
 
   // Build dots
-  const dotsContainer = document.getElementById('heroDots');
   if (dotsContainer) {
+    dotsContainer.style.display = '';
     dotsContainer.innerHTML = slides.map((_, i) =>
       `<button class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}" aria-label="Go to slide ${i + 1}"></button>`
     ).join('');
   }
 
-  // Init positions
+  // Init positions: slide 0 visible, rest off-screen right
   slides.forEach((slide, i) => {
     slide.style.transition = `transform ${TRANSITION_MS}ms ease`;
     slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
@@ -201,59 +213,67 @@ function initHeroSlider() {
   });
 
   function goTo(nextIdx, direction) {
-    if (animating || nextIdx === current) return;
-    animating = true;
+    if (state.animating || nextIdx === state.current) return;
+    state.animating = true;
 
-    const prev = current;
-    const dir = direction || (nextIdx > current ? 1 : -1);
-
-    // Snap incoming slide to correct side instantly (handles wrap-around)
+    const prev = state.current;
+    const dir = direction || (nextIdx > state.current ? 1 : -1);
     const incoming = slides[nextIdx];
+
+    // Snap incoming to the side it enters from (no transition)
     incoming.style.transition = 'none';
     incoming.style.transform = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
-    void incoming.offsetWidth; // force reflow
+    void incoming.offsetWidth; // force reflow so the snap applies
 
-    // Animate
+    // Animate: incoming slides in, outgoing slides out
     incoming.style.transition = `transform ${TRANSITION_MS}ms ease`;
     slides[prev].classList.remove('active');
     slides[prev].style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
     incoming.classList.add('active');
     incoming.style.transform = 'translateX(0)';
 
-    // Update dots
     document.querySelectorAll('.hero-dot').forEach((d, i) => {
       d.classList.toggle('active', i === nextIdx);
     });
 
-    current = nextIdx;
-
-    setTimeout(() => { animating = false; }, TRANSITION_MS);
+    state.current = nextIdx;
+    setTimeout(() => { state.animating = false; }, TRANSITION_MS + 20);
     resetTimer();
   }
 
-  function next() { goTo((current + 1) % slides.length, 1); }
-  function prev() { goTo((current - 1 + slides.length) % slides.length, -1); }
+  const next = () => goTo((state.current + 1) % slides.length, 1);
+  const prev = () => goTo((state.current - 1 + slides.length) % slides.length, -1);
 
   function resetTimer() {
-    clearInterval(timer);
-    timer = setInterval(next, SLIDE_MS);
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(next, SLIDE_MS);
   }
 
-  // Wire arrows
-  const prevBtn = document.getElementById('heroPrev');
-  const nextBtn = document.getElementById('heroNext');
-  if (prevBtn) prevBtn.onclick = prev;
-  if (nextBtn) nextBtn.onclick = next;
+  function stopTimer() {
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
 
-  // Wire dots
+  // Wire manual controls
+  if (prevBtn) {
+    prevBtn.style.display = '';
+    prevBtn.onclick = prev;
+  }
+  if (nextBtn) {
+    nextBtn.style.display = '';
+    nextBtn.onclick = next;
+  }
   document.querySelectorAll('.hero-dot').forEach(d => {
     d.onclick = () => goTo(parseInt(d.dataset.idx));
   });
 
+  // Pause auto-slide on hover/touch (resume on leave) — better UX
+  slider.addEventListener('mouseenter', stopTimer);
+  slider.addEventListener('mouseleave', resetTimer);
+
   resetTimer();
 
-  // Store for cleanup
-  window.__heroSlider = { timer, goTo, next, prev };
+  // Stable handle: cleanup reads state.timer (live), not a snapshot
+  window.__heroSlider = state;
 }
 
 function initProductCardEvents() {
