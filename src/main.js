@@ -55,18 +55,18 @@ async function preloadCategories() {
 function hideLoader() {
   const loader = document.getElementById('app-loader');
   if (loader) {
-    loader.style.opacity = '0';
-    setTimeout(() => loader.remove(), 300);
+    loader.classList.add('is-gone');
+    // Remove from DOM once the 180ms fade is done (kept short on purpose).
+    setTimeout(() => loader.remove(), 220);
   }
-  // Graceful content reveal — fade the shell in after loader clears
+  // Snappier shell reveal — was 0.4s, now 0.22s. Skip the double-rAF dance:
+  // a single rAF + transition is enough to let layout settle.
   const shell = document.getElementById('shell');
-  if (shell) {
+  if (shell && shell.style.opacity !== '1') {
     shell.style.opacity = '0';
     requestAnimationFrame(() => {
-      shell.style.transition = 'opacity 0.4s ease';
-      requestAnimationFrame(() => {
-        shell.style.opacity = '1';
-      });
+      shell.style.transition = 'opacity 0.22s ease';
+      shell.style.opacity = '1';
     });
   }
 }
@@ -157,9 +157,12 @@ function hideLoaderOnce() {
   hideLoader();
 }
 // Hard safety: hide loader no matter what after 3s.
-setTimeout(hideLoaderOnce, 3000);
-// Soft safety: and a second cap at 8s in case the first timer was lost (e.g. tab throttled).
-setTimeout(hideLoaderOnce, 8000);
+// Hard cap: hide the splash after 1.2s no matter what. The new spinner
+// is paint-cheap so 1.2s is plenty even on slow Supabase cold starts.
+setTimeout(hideLoaderOnce, 1200);
+// Soft safety: a second cap at 4s in case the first timer was lost
+// (tab throttled in background, devtools open, etc.).
+setTimeout(hideLoaderOnce, 4000);
 
 function raceWithTimeout(promise, ms, label) {
   return new Promise((resolve) => {
@@ -199,7 +202,7 @@ function raceWithTimeout(promise, ms, label) {
   // the loader anyway — the page will continue rendering in place when its
   // Supabase queries resolve.
   if (firstRender && typeof firstRender.then === 'function') {
-    await raceWithTimeout(firstRender, 3000, 'firstRender');
+    await raceWithTimeout(firstRender, 1000, 'firstRender');
   }
 
   hideLoaderOnce();
