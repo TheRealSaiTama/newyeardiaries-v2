@@ -69,10 +69,12 @@ export function renderHeader(content) {
                   ${exploreGroups.map((groupName, i) => {
                     const cats = groupedCats[groupName] || [];
                     return `
-                      <button class="explore-mega-cat-btn ${i === 0 ? 'active' : ''}" data-group="${groupName}">
+                      <a href="/shop?group=${encodeURIComponent(groupName)}"
+                         class="explore-mega-cat-btn ${i === 0 ? 'active' : ''}"
+                         data-group="${groupName}">
                         ${groupName}
                         ${cats.length > 0 ? '<span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>' : ''}
-                      </button>
+                      </a>
                     `;
                   }).join('')}
                 </div>
@@ -81,7 +83,10 @@ export function renderHeader(content) {
                     const cats = groupedCats[groupName] || [];
                     return `
                       <div class="explore-mega-panel ${i === 0 ? 'active' : ''}" data-panel="${groupName}">
-                        <div class="explore-mega-panel-title">${groupName}</div>
+                        <div class="explore-mega-panel-title">
+                          ${groupName}
+                          <a href="/shop?group=${encodeURIComponent(groupName)}" class="explore-mega-viewall">View all</a>
+                        </div>
                         <div class="explore-mega-panel-grid">
                           ${cats.map(cat => `
                             <a href="/shop?cat=${cat.slug}" class="explore-mega-link">${cat.name}</a>

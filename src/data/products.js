@@ -10,7 +10,9 @@ function normalize(p) {
     slug: p.slug,
     name: p.name,
     title: p.name,
+    // `category` is the display NAME (legacy). Prefer `categorySlug` for filtering.
     category: p.category?.name || '',
+    categorySlug: p.category?.slug || '',
     categoryId: p.category_id || '',
     material: p.material || '',
     size: p.size || '',
@@ -40,12 +42,39 @@ function normalize(p) {
 
 export async function getProducts() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
-  const { data } = await supabase
-    .from('products')
-    .select('*, category:categories!products_category_id_fkey(name)')
-    .eq('active', true)
-    .order('created_at', { ascending: false });
-  _cache = (data || []).map(normalize);
+
+  // Fetch products with their primary category's name+slug, AND the full
+  // product_categories junction so we know every category a product belongs to.
+  const [prodRes, juncRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select('*, category:categories!products_category_id_fkey(name, slug)')
+      .eq('active', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('product_categories')
+      .select('product_id, category_id, category:categories!product_categories_category_id_fkey(slug)'),
+  ]);
+
+  const products = prodRes.data || [];
+  // Build a map: productId -> array of category slugs (from the junction)
+  const extraSlugsByProduct = new Map();
+  for (const row of juncRes.data || []) {
+    const slug = row.category?.slug;
+    if (!slug) continue;
+    const list = extraSlugsByProduct.get(row.product_id) || [];
+    list.push(slug);
+    extraSlugsByProduct.set(row.product_id, list);
+  }
+
+  _cache = products.map(p => {
+    const base = normalize(p);
+    // categorySlugs: [primary slug, ...all junction slugs], deduped
+    const allSlugs = [base.categorySlug, ...(extraSlugsByProduct.get(p.id) || [])]
+      .filter(Boolean);
+    base.categorySlugs = Array.from(new Set(allSlugs));
+    return base;
+  });
   _fetchedAt = Date.now();
   return _cache;
 }
@@ -75,7 +104,7 @@ export async function getProductsByCategory(categorySlug) {
   if (!ids.length) return [];
   const { data } = await supabase
     .from('products')
-    .select('*, category:categories!products_category_id_fkey(name)')
+    .select('*, category:categories!products_category_id_fkey(name, slug)')
     .in('id', ids)
     .eq('active', true)
     .order('sort_order');

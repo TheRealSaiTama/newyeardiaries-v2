@@ -1,6 +1,7 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderFilterSidebar, initFilterEvents } from '../components/FilterSidebar.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
+import { renderProductCardSkeleton } from '../components/Skeleton.js';
 import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS } from '../lib/categories.js';
 
@@ -47,49 +48,27 @@ export async function renderShopPage() {
   const groupName = params.get('group');
   const searchQ = params.get('q');
   const pageParam = parseInt(params.get('page')) || 1;
-  const allProducts = await getProducts();
 
-  let products;
+  // Resolve title/breadcrumb synchronously so the skeleton renders with the
+  // right heading from the very first paint.
   let pageTitle = 'The 2026 Diary Collection';
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
   let breadcrumbLabel = 'All Diaries';
-
   if (searchQ) {
-    const q = searchQ.toLowerCase();
-    products = allProducts.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      (p.description || '').toLowerCase().includes(q) ||
-      (p.shortDescription || '').toLowerCase().includes(q) ||
-      (p.categoryName || '').toLowerCase().includes(q) ||
-      (p.badge || '').toLowerCase().includes(q) ||
-      (p.sku || '').toLowerCase().includes(q) ||
-      (p.tags || '').toLowerCase().includes(q)
-    );
     pageTitle = `Search: "${searchQ}"`;
-    pageDesc = `${products.length} result${products.length !== 1 ? 's' : ''} found`;
     breadcrumbLabel = `Search: "${searchQ}"`;
   } else if (catSlug) {
-    products = allProducts.filter(p => (p.category || '').toLowerCase() === catSlug.toLowerCase());
     pageTitle = catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    pageDesc = '';
     breadcrumbLabel = pageTitle;
   } else if (groupName && CATEGORY_GROUPS[groupName]) {
-    const slugs = CATEGORY_GROUPS[groupName];
-    products = allProducts.filter(p => slugs.includes(p.category));
     const meta = PAGE_TITLES[groupName];
     if (meta) { pageTitle = meta.title; pageDesc = meta.desc; }
     breadcrumbLabel = groupName;
-  } else {
-    products = allProducts;
   }
 
-  const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
-  const currentPage = Math.min(pageParam, totalPages);
-  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
-
+  // ===== Step 1: paint the page shell + skeleton grid SYNCHRONOUSLY =====
+  // This prevents the white-screen gap before Supabase returns products.
   const app = document.getElementById('app');
-
   app.innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -98,7 +77,6 @@ export async function renderShopPage() {
           { label: 'Collections', path: '/shop' },
           { label: breadcrumbLabel },
         ])}
-
         <div class="shop-header">
           <div>
             <h1>${pageTitle}</h1>
@@ -117,43 +95,118 @@ export async function renderShopPage() {
             </select>
           </div>
         </div>
-
         <div class="shop-layout">
           ${renderFilterSidebar()}
           <div class="shop-main">
             <div class="product-grid" id="product-grid">
-              ${pageProducts.length > 0 ? pageProducts.map(p => renderProductCard(p)).join('') : `
-                <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
-                  <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
-                  <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
-                </div>
-              `}
+              ${renderProductCardSkeleton(8)}
             </div>
-
-            ${totalPages > 1 ? `
-              <div class="shop-pagination">
-                <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
-                  <span class="material-symbols-outlined">chevron_left</span>
-                </button>
-                ${renderPaginationButtons(currentPage, totalPages)}
-                <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
-                  <span class="material-symbols-outlined">chevron_right</span>
-                </button>
-              </div>
-            ` : ''}
           </div>
         </div>
       </div>
     </div>
-
     <button id="go-top-btn" class="go-top-btn" aria-label="Go to top">
       <span class="material-symbols-outlined">keyboard_arrow_up</span>
     </button>
   `;
-
   initFilterEvents();
+  initGoTopButton();
+
+  // ===== Step 2: fetch products and re-render the grid in place =====
+  const allProducts = await getProducts();
+
+  // A product matches a category slug if it's the primary category OR it appears
+  // in the product_categories junction for that slug. The junction lets us
+  // correctly surface products tagged in subcategories when a parent group is
+  // selected from the navbar.
+  function productInCategory(p, slug) {
+    if (!slug) return false;
+    const s = slug.toLowerCase();
+    if ((p.categorySlug || '').toLowerCase() === s) return true;
+    if ((p.category || '').toLowerCase() === s) return true;
+    return (p.categorySlugs || []).some(x => (x || '').toLowerCase() === s);
+  }
+  function productInGroup(p, slugs) {
+    if (!slugs || !slugs.length) return false;
+    return slugs.some(s => productInCategory(p, s));
+  }
+
+  let products;
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    products = allProducts.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.shortDescription || '').toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q) ||
+      (p.badge || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.tags || '').toLowerCase().includes(q)
+    );
+  } else if (catSlug) {
+    products = allProducts.filter(p => productInCategory(p, catSlug));
+  } else if (groupName && CATEGORY_GROUPS[groupName]) {
+    const slugs = CATEGORY_GROUPS[groupName];
+    products = allProducts.filter(p => productInGroup(p, slugs));
+  } else {
+    products = allProducts;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
+  const currentPage = Math.min(pageParam, totalPages);
+  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+
+  // In-place update: replace skeleton with real grid, refresh pagination.
+  const grid = document.getElementById('product-grid');
+  if (grid) {
+    grid.innerHTML = pageProducts.length > 0
+      ? pageProducts.map(p => renderProductCard(p)).join('')
+      : `
+        <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
+          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
+          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
+        </div>
+      `;
+    initProductCardSlideshows(grid);
+  }
+
+  // Replace pagination block (or insert it if it doesn't exist yet).
+  const mainEl = document.querySelector('.shop-main');
+  const existingPag = mainEl?.querySelector('.shop-pagination');
+  if (existingPag) existingPag.remove();
+  if (totalPages > 1 && mainEl) {
+    const pagDiv = document.createElement('div');
+    pagDiv.className = 'shop-pagination';
+    pagDiv.innerHTML = `
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      ${renderPaginationButtons(currentPage, totalPages)}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    `;
+    mainEl.appendChild(pagDiv);
+  }
+
   initShopEvents(products, currentPage, totalPages, searchQ);
-  initProductCardSlideshows();
+  initGoTopButton();
+}
+
+// Go-to-top button wiring, factored out so the page works whether the button
+// is in the initial skeleton render or only added after products resolve.
+function initGoTopButton() {
+  const goTopBtn = document.getElementById('go-top-btn');
+  if (!goTopBtn || goTopBtn.dataset.bound === '1') return;
+  goTopBtn.dataset.bound = '1';
+  goTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+  window.addEventListener('scroll', () => {
+    goTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+  }, { passive: true });
+  goTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
 
 function buildPageUrl(page) {

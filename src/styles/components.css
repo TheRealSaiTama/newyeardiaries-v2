@@ -409,6 +409,30 @@
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.explore-mega-viewall {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--color-primary);
+  text-transform: none;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+.explore-mega-viewall:hover { text-decoration: underline; }
+
+/* Group sidebar items are now <a> tags — reset link styling so they
+   look like the previous button state. */
+a.explore-mega-cat-btn {
+  text-decoration: none;
+  color: var(--color-text-secondary);
+}
+a.explore-mega-cat-btn:hover,
+a.explore-mega-cat-btn.active {
+  color: var(--color-text-primary);
 }
 
 .explore-mega-panel-grid {
