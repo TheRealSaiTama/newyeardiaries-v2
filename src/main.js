@@ -4,7 +4,7 @@ import './styles/global.css';
 import './styles/components.css';
 import './styles/pages.css';
 
-import { addRoute, initRouter } from './router.js';
+import { addRoute, initRouter, resolveRoute } from './router.js';
 import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories, initSearchModal, renderSearchModal } from './components/Header.js';
 import { initFaqChatbot } from './components/FaqChatbot.js';
 import { renderFooter } from './components/Footer.js';
@@ -145,32 +145,76 @@ addRoute('/admin', (params) => {
   initAdminPage();
 });
 
-// Safety net: no matter what fails, the loader MUST hide — never leave the
-// user stuck on the splash. Hard cap at 6s.
+// Boot strategy
+// --------------
+// 1. Show the shell + render the first route ASAP so the user sees something.
+// 2. Fire-and-forget the slow Supabase fetches; they re-render in place when they resolve.
+// 3. Hard cap on the splash — never block the user on a slow backend.
 let loaderHidden = false;
 function hideLoaderOnce() {
   if (loaderHidden) return;
   loaderHidden = true;
   hideLoader();
 }
-setTimeout(hideLoaderOnce, 6000);
+// Hard safety: hide loader no matter what after 3s.
+setTimeout(hideLoaderOnce, 3000);
+// Soft safety: and a second cap at 8s in case the first timer was lost (e.g. tab throttled).
+setTimeout(hideLoaderOnce, 8000);
+
+function raceWithTimeout(promise, ms, label) {
+  return new Promise((resolve) => {
+    let done = false;
+    const t = setTimeout(() => {
+      if (done) return;
+      done = true;
+      console.warn(`[boot] ${label} timed out after ${ms}ms — continuing`);
+      resolve(null);
+    }, ms);
+    promise.then(
+      (v) => { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+      (e) => { if (!done) { done = true; clearTimeout(t); console.warn(`[boot] ${label} failed:`, e); resolve(null); } }
+    );
+  });
+}
 
 (async () => {
+  // Step 1: bring up the empty shell + a fallback homepage IMMEDIATELY so the
+  // user is never staring at a splash while Supabase warms up.
   try {
-    await loadContent();
-    await preloadCategories();
     setupShell();
-    initFaqChatbot();
-    // Resolve the first route and WAIT for the async page to finish rendering
-    // before hiding the loader — prevents the empty-shell / About-section flash.
-    const firstRender = initRouter();
-    if (firstRender && typeof firstRender.then === 'function') {
-      await firstRender;
-    }
-    // Small delay lets layout settle (images, fonts) for a clean reveal.
-    setTimeout(hideLoaderOnce, 100);
   } catch (e) {
-    console.error('Boot failed — revealing app anyway:', e);
-    hideLoaderOnce();
+    console.error('[boot] setupShell failed:', e);
   }
+
+  // Step 2: kick off the first route. wrapPage() returns the (possibly Promise)
+  // result of the page render — do NOT await it indefinitely.
+  let firstRender;
+  try {
+    firstRender = initRouter();
+  } catch (e) {
+    console.error('[boot] initRouter failed:', e);
+  }
+
+  // Step 3: race the first render against a 3s cap. If it doesn't finish, hide
+  // the loader anyway — the page will continue rendering in place when its
+  // Supabase queries resolve.
+  if (firstRender && typeof firstRender.then === 'function') {
+    await raceWithTimeout(firstRender, 3000, 'firstRender');
+  }
+
+  hideLoaderOnce();
+
+  // Step 4: still load content + categories in the background so any subsequent
+  // re-render has fresh data. Failures here are non-fatal.
+  Promise.allSettled([
+    loadContent().then(() => preloadCategories()),
+  ]).then(() => {
+    // Once content is in, refresh the page render so DB-driven sections
+    // (banners, products, etc.) populate. Re-resolve the current route.
+    try {
+      resolveRoute();
+    } catch (e) {
+      console.warn('[boot] post-load resolveRoute failed:', e);
+    }
+  });
 })();
