@@ -1443,10 +1443,13 @@ a.explore-mega-cat-btn.active {
 .ap-product-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
+  max-width: 255px;
+  margin: 0 auto;
   overflow: hidden;
   background: #F0EDE8;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
 }
 
 .ap-product-image-wrapper img {
@@ -1499,25 +1502,30 @@ a.explore-mega-cat-btn.active {
 }
 
 .ap-product-body {
-  text-align: left;
+  text-align: center;
   padding: 0;
 }
 
 .ap-product-title {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--space-1);
-  line-height: 1.3;
-  /* removed text-transform: uppercase */
+  font-family: var(--font-family-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: #333230;
+  margin: 0 0 4px;
+  line-height: 1.35;
+  letter-spacing: 0.2px;
+  /* keep title one line-ish on sliders; clamp 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .ap-product-price {
   font-family: var(--font-family-heading);
   font-size: 14px;
-  font-weight: 400;
-  color: #2C2C2C;
+  font-weight: 600;
+  color: #C4956A;
 }
 
 .ap-price-sale {
