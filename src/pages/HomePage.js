@@ -3,7 +3,7 @@ import { renderProductCard, initProductCardSlideshows } from '../components/Prod
 
 import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
-import { getContent, getHeroContent, getCtaContent, getTrustBadges } from '../lib/content.js';
+import { getContent, getHeroContent, getCtaContent, getTrustBadges, getHomepageSliders } from '../lib/content.js';
 import { getProducts, getCategories } from '../lib/products.js';
 
 const SECTION_CATS = {
@@ -22,21 +22,60 @@ export async function renderHomePage() {
 
   const catMap = Object.fromEntries(allCategories.map(c => [c.slug, c]));
 
-  const [
-    leatherDiary2026,
-    latestComboGiftSets,
-    trendingItems,
-    artCoverDiaries2026,
-    bestSelling2026Diary,
-    premiumDiary2026,
-  ] = await Promise.all([
-    getProducts({ categoryId: catMap[SECTION_CATS.leather]?.id, limit: 8 }),
-    getProducts({ categoryId: catMap[SECTION_CATS.combo]?.id, limit: 8 }),
-    getProducts({ limit: 6 }),
-    getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
-    getProducts({ limit: 6 }),
-    getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
-  ]);
+  // Prefer DB-driven slider sections; fall back to the original category-based
+  // queries if the table is empty / not migrated yet.
+  const sliderConfigs = getHomepageSliders(content);
+
+  let sliderLists;
+  if (sliderConfigs.length > 0) {
+    // Resolve each section's product IDs to full product objects
+    const productIdSets = sliderConfigs.map(s => s.productIds);
+    const allIds = [...new Set(productIdSets.flat())];
+    let productMap = new Map();
+    if (allIds.length > 0) {
+      // Chunk to avoid 1000-row URL cap; 50 per chunk is safe
+      const CHUNK = 50;
+      const chunks = [];
+      for (let i = 0; i < allIds.length; i += CHUNK) chunks.push(allIds.slice(i, i + CHUNK));
+      const fetched = await Promise.all(
+        chunks.map(ids => supabase
+          .from('products')
+          .select('*, category:categories!products_category_id_fkey(name)')
+          .in('id', ids))
+      );
+      (fetched || []).forEach(({ data }) => {
+        (data || []).forEach(p => productMap.set(p.id, p));
+      });
+    }
+    sliderLists = sliderConfigs.map(sec => {
+      const products = sec.productIds.map(id => productMap.get(id)).filter(Boolean);
+      return { ...sec, products };
+    });
+  } else {
+    // FALLBACK: original category-based queries
+    const [
+      leatherDiary2026,
+      latestComboGiftSets,
+      trendingItems,
+      artCoverDiaries2026,
+      bestSelling2026Diary,
+      premiumDiary2026,
+    ] = await Promise.all([
+      getProducts({ categoryId: catMap[SECTION_CATS.leather]?.id, limit: 8 }),
+      getProducts({ categoryId: catMap[SECTION_CATS.combo]?.id, limit: 8 }),
+      getProducts({ limit: 6 }),
+      getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
+      getProducts({ limit: 6 }),
+      getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
+    ]);
+    sliderLists = [
+      { key: 'leather_diary_2026',  title: 'Leather Diary 2026',       view_all_link: '/shop?cat=leather-diaries',     bg: '#FAF8F5', products: leatherDiary2026 },
+      { key: 'combo_gifts',         title: 'Latest Combo Gift Sets',   view_all_link: '/shop?cat=diary-with-pen-gift-set', bg: '#fff',    products: latestComboGiftSets },
+      { key: 'trending',            title: 'Trending items',           view_all_link: '/shop',                        bg: '#FAF8F5', products: trendingItems },
+      { key: 'best_selling_2026',   title: 'Best Selling 2026 Diary',  view_all_link: '/shop',                        bg: '#fff',    products: bestSelling2026Diary },
+      { key: 'premium_diary_2026',  title: 'Premium diary 2026',       view_all_link: '/shop?cat=premium-diary',       bg: '#FAF8F5', products: premiumDiary2026 },
+    ];
+  }
 
   const { data: shopCategories } = await supabase
     .from('shop_categories')
@@ -104,11 +143,7 @@ export async function renderHomePage() {
         </div>
       </section>
 
-      ${renderProductSliderSection('Leather Diary 2026', 'leather-diaries', leatherDiary2026, 'leather', '#FAF8F5')}
-      ${renderProductSliderSection('Latest Combo Gift Sets', 'combo-gifts', latestComboGiftSets, 'combo', '#fff')}
-      ${renderProductSliderSection('Trending items', 'trending', trendingItems, 'trending', '#FAF8F5')}
-      ${renderProductSliderSection('Best Selling 2026 Diary', 'best-selling', bestSelling2026Diary, 'bestselling', '#fff')}
-      ${renderProductSliderSection('Premium diary 2026', 'premium-diary', premiumDiary2026, 'premium', '#FAF8F5')}
+      ${sliderLists.map((s, i) => renderProductSliderSection(s.title, s.key + '-slider', s.products, 's' + i, s.bg, s.view_all_link)).join('')}
 
       ${renderCtaSection(getCtaContent(content))}
     </div>
@@ -137,15 +172,16 @@ function renderAnnouncementMarquee(announcements) {
   `;
 }
 
-function renderProductSliderSection(title, slug, products, idSuffix, bg) {
+function renderProductSliderSection(title, slug, products, idSuffix, bg, viewAllLink) {
   if (!products || !products.length) return '';
   const sliderId = `ap-slider-${idSuffix}`;
+  const viewAllHref = viewAllLink || `/shop?cat=${slug}`;
   return `
     <section class="ap-catalogue-section" style="background: ${bg};">
       <div class="ap-catalogue-inner">
         <div class="ap-catalogue-header">
           <h2 class="ap-catalogue-title">${title}</h2>
-          <a href="/shop?cat=${slug}" class="ap-catalogue-viewall">View All →</a>
+          <a href="${viewAllHref}" class="ap-catalogue-viewall">View All →</a>
         </div>
         <div class="ap-cat-wrapper">
           <div class="ap-cat-grid" id="${sliderId}">

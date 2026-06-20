@@ -2131,12 +2131,14 @@ async function renderHomepageSection(container) {
   const { data: shopCats } = await supabase.from('shop_categories').select('*').order('sort_order');
   const { data: primaryCats } = await supabase.from('categories').select('id, name, slug').eq('active', true).order('sort_order');
   const { data: trustBadges } = await supabase.from('trust_badges').select('*').order('position');
+  const { data: sliderSections } = await supabase.from('homepage_slider_sections').select('*').order('sort_order');
+  const { data: sliderItems } = await supabase.from('homepage_slider_items').select('*').order('position');
 
   container.innerHTML = `
     <div class="admin-header">
       <div class="admin-header-left">
         <h1>Homepage</h1>
-        <span class="admin-header-stats">Hero, Trust Badges, CTA & Shop by Category</span>
+        <span class="admin-header-stats">Hero, Trust Badges, Sliders, CTA & Shop by Category</span>
       </div>
     </div>
 
@@ -2200,6 +2202,35 @@ async function renderHomepageSection(container) {
       </table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">verified</span><p>No trust badges added yet</p></div>`}
     </div>
 
+        <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
+      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2 style="font-size:var(--fs-lg);margin:0">🎠 Slider Sections</h2>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 5 product carousels on the homepage — edit title, "View All" link, background, and the products shown (up to 10 each).</p>
+        </div>
+      </div>
+      ${sliderSections?.length ? `<div style="padding:var(--space-2)">
+        ${sliderSections.map(sec => {
+          const secItems = (sliderItems || []).filter(it => it.section_id === sec.id);
+          return `
+          <div style="display:grid;grid-template-columns:1fr 80px 70px 90px 130px;gap:var(--space-3);align-items:center;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-light)">
+            <div>
+              <strong style="font-size:var(--fs-md)">${sec.title}</strong>
+              <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:2px">${sec.view_all_link || '— no view all —'} · <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sec.bg_color || '#FAF8F5'};border:1px solid var(--color-border-light);vertical-align:middle"></span> ${sec.bg_color || '#FAF8F5'}</div>
+            </div>
+            <div style="text-align:center"><span class="badge ${sec.active !== false ? 'badge-active' : 'badge-inactive'}">${sec.active !== false ? 'Active' : 'Inactive'}</span></div>
+            <div style="text-align:center;font-weight:var(--fw-semibold)">${secItems.length}/10</div>
+            <div style="text-align:right">
+              <button class="admin-btn admin-btn-ghost edit-slider-section-btn" data-id="${sec.id}" title="Edit section"><span class="material-symbols-outlined">edit</span> Edit</button>
+            </div>
+            <div style="text-align:right;display:flex;gap:var(--space-2);justify-content:flex-end">
+              <button class="admin-btn admin-btn-primary pick-slider-products-btn" data-id="${sec.id}" title="Choose products"><span class="material-symbols-outlined">add_photo_alternate</span> Products</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">view_carousel</span><p>No slider sections yet. Run migration 20260620002 to seed the 5 default sections.</p></div>`}
+    </div>
+
         <div class="admin-card" style="padding:0;overflow:hidden">
       <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
         <div>
@@ -2260,6 +2291,21 @@ async function renderHomepageSection(container) {
         showToast('Trust badge deleted!');
         renderHomepageSection(container);
       });
+    };
+  });
+
+  document.querySelectorAll('.edit-slider-section-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      openSliderSectionModal(container, sliderSections.find(s => s.id === id));
+    };
+  });
+  document.querySelectorAll('.pick-slider-products-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const sec = sliderSections.find(s => s.id === id);
+      const currentIds = (sliderItems || []).filter(it => it.section_id === id).map(it => it.product_id);
+      openSliderPickerModal(container, sec, currentIds);
     };
   });
 
@@ -2344,6 +2390,352 @@ function openTrustBadgeModal(container, badge, allBadges) {
     showToast(isEdit ? 'Trust badge updated!' : 'Trust badge added!');
     renderHomepageSection(container);
   };
+}
+
+function openSliderSectionModal(container, section) {
+  const isEdit = !!section;
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay';
+  overlay.innerHTML = `
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>Edit Slider Section</h2>
+        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <form class="admin-form" id="slider-section-form">
+        <div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2026"></div>
+        <div class="form-group"><label>View All Link</label><input name="view_all_link" value="${section?.view_all_link || ''}" placeholder="e.g. /shop?cat=leather-diaries"></div>
+        <div class="form-group"><label>Background Color</label>
+          <div style="display:flex;gap:var(--space-2);align-items:center">
+            <input type="color" name="bg_color_picker" value="${section?.bg_color || '#FAF8F5'}" style="width:50px;height:36px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer">
+            <input name="bg_color" value="${section?.bg_color || '#FAF8F5'}" placeholder="#FAF8F5" style="flex:1">
+          </div>
+        </div>
+        <div class="form-group checkbox"><input name="active" type="checkbox" id="slider-active" ${section?.active !== false ? 'checked' : ''}><label for="slider-active">Active</label></div>
+        <div class="admin-modal-actions">
+          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.admin-modal-close').onclick = closeModal;
+  overlay.querySelector('.modal-cancel').onclick = closeModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  // Sync color picker ↔ text input
+  const colorPicker = overlay.querySelector('[name="bg_color_picker"]');
+  const colorText = overlay.querySelector('[name="bg_color"]');
+  colorPicker.addEventListener('input', (e) => { colorText.value = e.target.value; });
+  colorText.addEventListener('input', (e) => {
+    const v = e.target.value.trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) colorPicker.value = v;
+  });
+
+  document.getElementById('slider-section-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const title = (fd.get('title') || '').toString().trim();
+    if (!title) { showToast('Title is required.', 'error'); return; }
+    const payload = {
+      title,
+      view_all_link: (fd.get('view_all_link') || '').toString().trim() || null,
+      bg_color: (fd.get('bg_color') || '').toString().trim() || '#FAF8F5',
+      active: fd.get('active') === 'on',
+    };
+    const { error } = await supabase.from('homepage_slider_sections').update(payload).eq('id', section.id);
+    if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+    bustContentCache();
+    closeModal();
+    showToast('Slider section updated!');
+    renderHomepageSection(container);
+  };
+}
+
+// ============ Slider Product Picker Modal ============
+// Folder-style browser: Root → Groups → Categories → Products with checkboxes.
+// Selection limit: 10 products per section. Already-selected products from
+// other sections don't conflict; only the cap matters.
+const SLIDER_PICKER_LIMIT = 10;
+const SLIDER_PICKER_STATE = { level: 'root', group: null, category: null, search: '', selected: [], allProducts: [] };
+
+async function openSliderPickerModal(container, section, currentProductIds) {
+  SLIDER_PICKER_STATE.selected = Array.isArray(currentProductIds) ? currentProductIds.slice() : [];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay';
+  overlay.innerHTML = `
+    <div class="admin-modal" style="max-width:880px;width:90vw">
+      <div class="admin-modal-header">
+        <div>
+          <h2>Choose products for "${escHtml(section.title)}"</h2>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Pick up to ${SLIDER_PICKER_LIMIT} products. Selected products appear at the bottom of the modal.</p>
+        </div>
+        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div id="slider-picker-body" style="padding:var(--space-4) var(--space-6);min-height:300px;max-height:60vh;overflow-y:auto">
+        ${renderSliderPickerLoading()}
+      </div>
+      <div class="admin-modal-actions" style="flex-direction:column;align-items:stretch;gap:var(--space-3)">
+        <div id="slider-picker-chips" style="display:flex;flex-wrap:wrap;gap:var(--space-2);min-height:38px;padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md)"></div>
+        <div style="display:flex;gap:var(--space-3);justify-content:space-between;align-items:center">
+          <span id="slider-picker-count" style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">0/${SLIDER_PICKER_LIMIT} selected</span>
+          <div style="display:flex;gap:var(--space-2)">
+            <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
+            <button type="button" class="admin-btn admin-btn-primary" id="slider-picker-save">Save Selection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.admin-modal-close').onclick = closeModal;
+  overlay.querySelector('.modal-cancel').onclick = closeModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  // Load all products once for the chip strip and for direct search
+  const { data: allProducts } = await supabase
+    .from('products')
+    .select('id, name, slug, images, price')
+    .order('name');
+  SLIDER_PICKER_STATE.allProducts = allProducts || [];
+  const productMap = new Map((allProducts || []).map(p => [p.id, p]));
+
+  function refresh() {
+    const chipsEl = document.getElementById('slider-picker-chips');
+    const countEl = document.getElementById('slider-picker-count');
+    if (chipsEl) {
+      chipsEl.innerHTML = SLIDER_PICKER_STATE.selected.length === 0
+        ? '<span style="color:var(--color-text-tertiary);font-size:var(--fs-sm)">No products selected yet.</span>'
+        : SLIDER_PICKER_STATE.selected.map((id, i) => {
+            const p = productMap.get(id);
+            if (!p) return '';
+            const img = (p.images && p.images[0]) || '/images/placeholder.jpg';
+            return `<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--color-border-light);border-radius:999px;padding:3px 10px 3px 3px;font-size:var(--fs-xs)">
+              <img src="${img}" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover">
+              <span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.name)}</span>
+              <button type="button" class="slider-chip-remove" data-idx="${i}" style="background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:0;line-height:1" title="Remove"><span class="material-symbols-outlined" style="font-size:16px">close</span></button>
+            </span>`;
+          }).join('');
+      chipsEl.querySelectorAll('.slider-chip-remove').forEach(b => {
+        b.onclick = () => {
+          const idx = Number(b.dataset.idx);
+          SLIDER_PICKER_STATE.selected.splice(idx, 1);
+          refresh();
+        };
+      });
+    }
+    if (countEl) {
+      const n = SLIDER_PICKER_STATE.selected.length;
+      countEl.textContent = `${n}/${SLIDER_PICKER_LIMIT} selected`;
+      countEl.style.color = n >= SLIDER_PICKER_LIMIT ? 'var(--color-error)' : 'var(--color-text-tertiary)';
+    }
+  }
+
+  async function renderLevel() {
+    const body = document.getElementById('slider-picker-body');
+    if (!body) return;
+    if (SLIDER_PICKER_STATE.level === 'root') {
+      body.innerHTML = renderSliderPickerBreadcrumb() + await renderSliderPickerFolders();
+    } else if (SLIDER_PICKER_STATE.level === 'group') {
+      body.innerHTML = renderSliderPickerBreadcrumb() + await renderSliderPickerCategories();
+    } else if (SLIDER_PICKER_STATE.level === 'category') {
+      body.innerHTML = renderSliderPickerBreadcrumb() + renderSliderPickerLoading();
+      body.innerHTML = renderSliderPickerBreadcrumb() + await renderSliderPickerProducts();
+    }
+    wireSliderPickerFolderClicks();
+  }
+
+  document.getElementById('slider-picker-save').onclick = async () => {
+    if (SLIDER_PICKER_STATE.selected.length === 0) {
+      showToast('Please select at least one product.', 'error');
+      return;
+    }
+    if (SLIDER_PICKER_STATE.selected.length > SLIDER_PICKER_LIMIT) {
+      showToast(`Maximum ${SLIDER_PICKER_LIMIT} products.`, 'error');
+      return;
+    }
+    // Replace all items for this section
+    await supabase.from('homepage_slider_items').delete().eq('section_id', section.id);
+    if (SLIDER_PICKER_STATE.selected.length > 0) {
+      const rows = SLIDER_PICKER_STATE.selected.map((productId, i) => ({
+        section_id: section.id,
+        product_id: productId,
+        position: i,
+      }));
+      const { error } = await supabase.from('homepage_slider_items').insert(rows);
+      if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+    }
+    bustContentCache();
+    closeModal();
+    showToast(`${SLIDER_PICKER_STATE.selected.length} product(s) saved!`);
+    renderHomepageSection(container);
+  };
+
+  function wireSliderPickerFolderClicks() {
+    const body = document.getElementById('slider-picker-body');
+    if (!body) return;
+    body.querySelectorAll('[data-picker-nav]').forEach(b => {
+      b.onclick = () => {
+        const nav = JSON.parse(b.dataset.pickerNav);
+        SLIDER_PICKER_STATE.level = nav.level;
+        SLIDER_PICKER_STATE.group = nav.group ?? null;
+        SLIDER_PICKER_STATE.category = nav.category ?? null;
+        renderLevel();
+      };
+    });
+    const backBtn = document.getElementById('slider-picker-back');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        if (SLIDER_PICKER_STATE.level === 'category') {
+          SLIDER_PICKER_STATE.level = 'group';
+          SLIDER_PICKER_STATE.category = null;
+        } else if (SLIDER_PICKER_STATE.level === 'group') {
+          SLIDER_PICKER_STATE.level = 'root';
+          SLIDER_PICKER_STATE.group = null;
+        }
+        renderLevel();
+      };
+    }
+    body.querySelectorAll('.picker-product-check').forEach(cb => {
+      cb.onchange = () => {
+        const id = cb.dataset.id;
+        if (cb.checked) {
+          if (SLIDER_PICKER_STATE.selected.length >= SLIDER_PICKER_LIMIT) {
+            cb.checked = false;
+            showToast(`Maximum ${SLIDER_PICKER_LIMIT} products.`, 'error');
+            return;
+          }
+          if (!SLIDER_PICKER_STATE.selected.includes(id)) SLIDER_PICKER_STATE.selected.push(id);
+        } else {
+          SLIDER_PICKER_STATE.selected = SLIDER_PICKER_STATE.selected.filter(x => x !== id);
+        }
+        refresh();
+        // Disable unchecked boxes when at cap
+        const atCap = SLIDER_PICKER_STATE.selected.length >= SLIDER_PICKER_LIMIT;
+        body.querySelectorAll('.picker-product-check').forEach(c => {
+          if (!c.checked) c.disabled = atCap;
+        });
+      };
+    });
+  }
+
+  refresh();
+  await renderLevel();
+}
+
+function renderSliderPickerLoading() {
+  return '<div style="display:flex;align-items:center;justify-content:center;padding:var(--space-8);color:var(--color-text-tertiary)"><span class="material-symbols-outlined" style="animation:spin 1s linear infinite">progress_activity</span></div>';
+}
+
+function renderSliderPickerBreadcrumb() {
+  const s = SLIDER_PICKER_STATE;
+  const crumbs = [{ label: 'Products', nav: { level: 'root' } }];
+  if (s.level !== 'root' && s.group && s.group !== '__uncategorized') {
+    crumbs.push({ label: s.group, nav: { level: 'group', group: s.group } });
+  }
+  if (s.level === 'category' && s.categoryName) {
+    crumbs.push({ label: s.categoryName, nav: { level: 'category', group: s.group, category: s.category, categoryName: s.categoryName } });
+  }
+  const backDisabled = s.level === 'root';
+  return `
+    <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4)">
+      <button class="admin-btn admin-btn-ghost" id="slider-picker-back" ${backDisabled ? 'disabled' : ''} style="padding:4px 10px"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span> Back</button>
+      <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;flex-wrap:wrap">
+        ${crumbs.map((c, i) => `
+          <button class="admin-btn admin-btn-ghost" data-picker-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''} style="padding:4px 10px;text-transform:none">${escHtml(c.label)}</button>
+          ${i < crumbs.length - 1 ? '<span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">chevron_right</span>' : ''}
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+async function renderSliderPickerFolders() {
+  // Build group folders
+  const groupsHtml = Object.keys(CATEGORY_GROUPS).map(groupName => `
+    <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
+      <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
+      <div>
+        <strong>${escHtml(groupName)}</strong>
+        <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${(CATEGORY_GROUPS[groupName] || []).length} categories</div>
+      </div>
+    </button>
+  `).join('');
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${groupsHtml}</div>`;
+}
+
+async function renderSliderPickerCategories() {
+  const group = SLIDER_PICKER_STATE.group;
+  let cats = [];
+  if (group === '__uncategorized') {
+    const { data: allCats } = await supabase.from('categories').select('id, name, slug').order('name');
+    const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
+    cats = (allCats || []).filter(c => !allGroupedSlugs.has(c.slug));
+  } else {
+    const slugs = CATEGORY_GROUPS[group] || [];
+    if (slugs.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
+    const { data: allCats } = await supabase.from('categories').select('id, name, slug').in('slug', slugs).order('name');
+    cats = (allCats || []).filter(c => slugs.includes(c.slug));
+  }
+  if (cats.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${
+    cats.map(c => `
+      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'category', group: SLIDER_PICKER_STATE.group, category: c.id, categoryName: c.name })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
+        <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
+        <div>
+          <strong>${escHtml(c.name)}</strong>
+          <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">category</div>
+        </div>
+      </button>
+    `).join('')
+  }</div>`;
+}
+
+async function renderSliderPickerProducts() {
+  const categoryId = SLIDER_PICKER_STATE.category;
+  if (!categoryId) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>Pick a category first.</p></div>';
+
+  // Use product_categories junction so products in MULTIPLE categories show up everywhere
+  const { data: pcRows } = await supabase.from('product_categories').select('product_id').eq('category_id', categoryId);
+  const productIds = (pcRows || []).map(r => r.product_id);
+  if (productIds.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">inventory_2</span><p>No products in this category.</p></div>';
+
+  const CHUNK = 50;
+  const chunks = [];
+  for (let i = 0; i < productIds.length; i += CHUNK) chunks.push(productIds.slice(i, i + CHUNK));
+  const fetched = await Promise.all(
+    chunks.map(ids => supabase.from('products').select('id, name, slug, images, price, active').in('id', ids).order('name'))
+  );
+  const products = (fetched || []).flatMap(f => f.data || []);
+  if (products.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">inventory_2</span><p>No products in this category.</p></div>';
+
+  const atCap = SLIDER_PICKER_STATE.selected.length >= SLIDER_PICKER_LIMIT;
+  return `<div style="display:flex;flex-direction:column;gap:var(--space-1)">${
+    products.map(p => {
+      const isSelected = SLIDER_PICKER_STATE.selected.includes(p.id);
+      const img = (p.images && p.images[0]) || '/images/placeholder.jpg';
+      const disabled = !isSelected && atCap;
+      return `
+        <label style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);cursor:${disabled ? 'not-allowed' : 'pointer'};${isSelected ? 'background:var(--color-surface-alt);' : ''}${disabled ? 'opacity:0.5;' : ''}">
+          <input type="checkbox" class="picker-product-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} ${disabled ? 'disabled' : ''} style="cursor:inherit">
+          <img src="${img}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:4px;flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <strong style="display:block;font-size:var(--fs-sm)">${escHtml(p.name)}</strong>
+            <span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(p.slug || '')} · ₹${Number(p.price || 0).toLocaleString()}</span>
+          </div>
+        </label>`;
+    }).join('')
+  }</div>`;
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function openShopCategoryModal(container, shopCat, primaryCats) {

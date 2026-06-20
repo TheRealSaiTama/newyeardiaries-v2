@@ -20,6 +20,8 @@ export async function getContent() {
     { data: footerSections },
     { data: banners },
     { data: trustBadges },
+    { data: sliderSections },
+    { data: sliderItems },
   ] = await Promise.all([
     supabase.from('site_settings').select('*'),
     supabase.from('site_content').select('*'),
@@ -28,6 +30,8 @@ export async function getContent() {
     supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
     supabase.from('banners').select('*').eq('active', true).order('order_index'),
     supabase.from('trust_badges').select('*').order('position'),
+    supabase.from('homepage_slider_sections').select('*').eq('active', true).order('sort_order'),
+    supabase.from('homepage_slider_items').select('*').order('position'),
   ]);
 
   _cache = {
@@ -38,6 +42,8 @@ export async function getContent() {
     footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
     banners: banners || [],
     trustBadges: (trustBadges || []).filter(b => b.active !== false),
+    sliderSections: sliderSections || [],
+    sliderItems: sliderItems || [],
   };
   _fetchedAt = Date.now();
   return _cache;
@@ -78,4 +84,25 @@ export function getCtaContent(content) {
 
 export function getTrustBadges(content) {
   return (content?.trustBadges || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+}
+
+// Returns the list of homepage slider sections, each with its products
+// pre-resolved and in display order. Empty list if the table is missing
+// or has no rows.
+export function getHomepageSliders(content) {
+  const sections = (content?.sliderSections || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const items = content?.sliderItems || [];
+  return sections.map(sec => {
+    const secItems = items
+      .filter(it => it.section_id === sec.id)
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    return {
+      id: sec.id,
+      key: sec.key,
+      title: sec.title,
+      view_all_link: sec.view_all_link,
+      bg: sec.bg_color || '#FAF8F5',
+      productIds: secItems.map(it => it.product_id),
+    };
+  });
 }
