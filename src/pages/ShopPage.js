@@ -214,7 +214,40 @@ export async function renderShopPage() {
   }
   initShopEvents(products, currentPage, totalPages, searchQ);
   initGoTopButton();
+
+  // Cache the rendered HTML for this filter state so re-navigating to
+  // the same /shop URL is instant. The router re-runs __reinitPage.
+  try {
+    const appEl = document.getElementById('app');
+    const html = appEl ? appEl.innerHTML : '';
+    if (html && html.length < 800_000) {
+      const prefix = window.__nydPageCachePrefix || '__nyd_page_cache:';
+      const path = window.location.pathname || '/';
+      const search = window.location.search || '';
+      sessionStorage.setItem(prefix + path + search, JSON.stringify({ html, t: Date.now() }));
+    }
+  } catch { /* quota or disabled — ignore */ }
 }
+
+// Re-initialise the shop page's interactive bits after a cache-paint.
+function reinitShopPage() {
+  try { initFilterEvents(); } catch (e) { console.warn('[shop] filter events init failed:', e); }
+  try { initGoTopButton(); } catch (e) { console.warn('[shop] go-top init failed:', e); }
+  try { initProductCardSlideshows(); } catch (e) { console.warn('[shop] slideshow init failed:', e); }
+}
+
+// Hook for the router: dispatch by pathname so the homepage and shop can
+// each provide their own reinit without clobbering each other.
+const existingReinit = window.__reinitPage;
+window.__reinitPage = function reinitPageDispatch() {
+  const path = window.location.pathname || '/';
+  if (path === '/shop' || path.startsWith('/shop')) {
+    if (typeof reinitShopPage === 'function') reinitShopPage();
+  } else {
+    if (typeof existingReinit === 'function') existingReinit();
+  }
+};
+window.__reinitShopPage = reinitShopPage;
 
 // Go-to-top button wiring, factored out so the page works whether the button
 // is in the initial skeleton render or only added after products resolve.

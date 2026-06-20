@@ -152,7 +152,32 @@ export async function renderHomePage() {
   initProductCardEvents();
   initHeroSlider();
   initProductCardSlideshows();
+
+  // Cache the rendered HTML so re-navigating to / is instant. The router
+  // re-runs __reinitPage when it paints from cache.
+  try {
+    const html = document.getElementById('app').innerHTML;
+    if (html && html.length < 800_000) {
+      const prefix = window.__nydPageCachePrefix || '__nyd_page_cache:';
+      const path = window.location.pathname || '/';
+      const search = window.location.search || '';
+      sessionStorage.setItem(prefix + path + search, JSON.stringify({ html, t: Date.now() }));
+    }
+  } catch { /* quota or disabled — ignore */ }
 }
+
+// Re-initialise the homepage's interactive bits after a cache-paint.
+// The router calls this via window.__reinitPage.
+function reinitHomePage() {
+  try { initProductCardEvents(); } catch (e) { console.warn('[home] product events init failed:', e); }
+  try { initHeroSlider(); } catch (e) { console.warn('[home] hero init failed:', e); }
+  try { initProductCardSlideshows(); } catch (e) { console.warn('[home] slideshow init failed:', e); }
+}
+
+// Register the reinit hook at module load so the router can find it on
+// the first cache hit (before renderHomePage has run).
+window.__reinitPage = reinitHomePage;
+window.__reinitHomePage = reinitHomePage;
 
 function renderAnnouncementMarquee(announcements) {
   if (!Array.isArray(announcements) || announcements.length === 0) return '';

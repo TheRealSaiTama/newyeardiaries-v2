@@ -136,16 +136,97 @@ function syncShellExtras() {
   if (faq) faq.style.display = isAdmin ? 'none' : '';
 }
 
+// Per-page sessionStorage cache. Keyed by the page's base path. The value
+// is the last-rendered HTML for that page, so re-navigation can paint
+// instantly while a background re-fetch refreshes the data.
+//
+// Capacity: sessionStorage is limited (~5MB). The cap here is 3 pages, with
+// per-HTML size check. We don't store anything >1MB so a single huge page
+// can't blow the budget.
+const PAGE_CACHE_PREFIX = '__nyd_page_cache:';
+const PAGE_CACHE_MAX_ENTRIES = 4;
+const PAGE_CACHE_MAX_HTML_BYTES = 800_000; // ~800KB
+
+function pageCacheKey(params) {
+  // Include search params so distinct category/group/q filters cache
+  // separately. We deliberately don't include the hash.
+  const path = window.location.pathname || '/';
+  const search = window.location.search || '';
+  return PAGE_CACHE_PREFIX + path + search;
+}
+
+function getCachedPage(params) {
+  try {
+    const raw = sessionStorage.getItem(pageCacheKey(params));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function setCachedPage(params, html) {
+  if (!html || html.length > PAGE_CACHE_MAX_HTML_BYTES) return;
+  try {
+    sessionStorage.setItem(pageCacheKey(params), JSON.stringify({ html, t: Date.now() }));
+    // Enforce max entries — evict oldest.
+    const keys = Object.keys(sessionStorage).filter(k => k.startsWith(PAGE_CACHE_PREFIX));
+    if (keys.length > PAGE_CACHE_MAX_ENTRIES) {
+      const entries = keys.map(k => {
+        try { return { k, t: JSON.parse(sessionStorage.getItem(k)).t || 0 }; }
+        catch { return { k, t: 0 }; }
+      }).sort((a, b) => a.t - b.t);
+      for (let i = 0; i < entries.length - PAGE_CACHE_MAX_ENTRIES; i++) {
+        sessionStorage.removeItem(entries[i].k);
+      }
+    }
+  } catch { /* quota or disabled — silently ignore */ }
+}
+
+function clearPageCache() {
+  try {
+    const keys = Object.keys(sessionStorage).filter(k => k.startsWith(PAGE_CACHE_PREFIX));
+    keys.forEach(k => sessionStorage.removeItem(k));
+  } catch { /* ignore */ }
+}
+
+// Expose for the admin "bust cache" actions
+window.__clearPageCache = clearPageCache;
+window.__nydPageCachePrefix = PAGE_CACHE_PREFIX;
+
 function wrapPage(renderFn) {
   return (params) => {
-    const result = renderFn(params, appContent);
+    const app = document.getElementById('app');
+    const cached = getCachedPage(params);
+
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
     document.getElementById('footer-area').style.display = '';
     initHeaderEvents();
     updateHeaderCounts();
     initSearchModal();
     syncShellExtras();
-    return result; // may be a Promise (async page) — awaited on first load
+
+    // FAST PATH: paint cached HTML immediately, then re-render in the
+    // background so the user sees content within the same frame.
+    if (cached && cached.html && app) {
+      // INSTANT paint from cache — the user sees the page in the same frame
+      // as the click. The background re-render below refreshes data and
+      // re-attaches all interactive handlers.
+      app.innerHTML = cached.html;
+      // Re-attach interactive handlers (hero slider, product card slideshows,
+      // filter events). These need fresh listeners because innerHTML replaces
+      // the DOM nodes (the original listeners are gone).
+      if (typeof window.__reinitPage === 'function') {
+        try { window.__reinitPage(); } catch (e) { console.warn('[cache] reinit failed:', e); }
+      }
+      // Background re-render: refreshes data and re-attaches any handlers
+      // not covered by __reinitPage. Safe to fire-and-forget.
+      Promise.resolve(renderFn(params, appContent))
+        .catch(e => console.warn('[cache] background refresh failed:', e));
+      return Promise.resolve();
+    }
+
+    // COLD PATH: full render. May be async — return the promise so first
+    // paint waits for content.
+    return Promise.resolve(renderFn(params, appContent));
   };
 }
 
