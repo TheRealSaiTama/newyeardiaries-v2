@@ -37,12 +37,14 @@ export function renderContactPage() {
           <div class="bulk-quote-form">
             <h2 class="heading-3" style="margin-bottom:var(--space-6);">Send Us a Message</h2>
             <form id="contact-form" class="auth-form">
+              <div class="input-group"><label>Name *</label><input name="name" type="text" class="input-field" required></div>
+              <div class="input-group"><label>Address *</label><input name="address" type="text" class="input-field" required placeholder="Street, City, PIN"></div>
               <div class="form-row">
-                <div class="input-group"><label>Full Name *</label><input name="name" type="text" class="input-field" required></div>
-                <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
+                <div class="input-group"><label>State *</label><input name="state" type="text" class="input-field" required placeholder="e.g. Delhi"></div>
+                <div class="input-group"><label>Mobile Number *</label><input name="mobile" type="tel" class="input-field" required pattern="[0-9+\-\s()]{7,15}" placeholder="+91 9899223130"></div>
               </div>
-               <div class="input-group"><label>Subject *</label><input name="subject" type="text" class="input-field" required></div>
-               <div class="input-group"><label>Message *</label><textarea name="message" class="input-field textarea-field" placeholder="How can we help you?" required></textarea></div>
+              <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
+              <div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div>
               <button type="submit" class="btn btn--accent btn--lg btn--full" id="contact-submit-btn">Send Message</button>
             </form>
           </div>
@@ -59,8 +61,10 @@ export function renderContactPage() {
 
     const data = {
       name: form.name.value.trim(),
+      address: form.address.value.trim(),
+      state: form.state.value.trim(),
+      mobile: form.mobile.value.trim(),
       email: form.email.value.trim(),
-      subject: form.subject.value.trim(),
       message: form.message.value.trim() || '',
       enquiry_code: generateEnquiryCode('CT'),
     };

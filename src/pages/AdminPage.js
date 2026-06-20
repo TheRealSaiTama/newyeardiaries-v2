@@ -1791,13 +1791,14 @@ async function renderEnquiries(container, tab = 'contact') {
 
   const renderContactTable = () => (contacts?.length ? `
     <table class="admin-table">
-      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Subject</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${contacts.map(c => `<tr data-id="${c.id}">
           <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${c.enquiry_code || '—'}</code></td>
-          <td>${c.name}</td>
+          <td>${c.name}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${c.address}</span>` : ''}</td>
           <td><a href="mailto:${c.email}">${c.email}</a></td>
-          <td>${c.subject || '—'}</td>
+          <td>${c.mobile ? `<a href="tel:${c.mobile}">${c.mobile}</a>` : '—'}</td>
+          <td>${c.state || '—'}</td>
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.message || '').replace(/"/g, '&quot;')}">${c.message || '—'}</td>
           <td>${new Date(c.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
