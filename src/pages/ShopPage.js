@@ -203,6 +203,15 @@ export async function renderShopPage() {
     mainEl.appendChild(pagDiv);
   }
 
+  // Compute per-category featured slugs once, used for both initial render
+  // and the sort/filter event handlers.
+  const featuredSlugs = resolveFeaturedSlugs(products, { cat: pageCat, group: groupName, _groupSlugs: (groupName ? (getCategorySlugsByGroupName(groupName).length ? getCategorySlugsByGroupName(groupName) : (CATEGORY_GROUPS[groupName] || [])) : []) });
+  const usePerCategoryFeatured = featuredSlugs.length > 0;
+
+  // Apply per-category featured sort for the initial render (Featured is the default option)
+  if (usePerCategoryFeatured) {
+    products = products.slice().sort(categoryFeaturedSort(featuredSlugs));
+  }
   initShopEvents(products, currentPage, totalPages, searchQ);
   initGoTopButton();
 }
@@ -228,6 +237,38 @@ function buildPageUrl(page) {
   return `/shop?${params.toString()}`;
 }
 
+
+/**
+ * Per-category "Featured" sort. The first matching slug (from the page's
+ * category param or the active group) wins. A to Z diary collection always
+ * sorts alphabetically regardless of sort_order.
+ */
+function categoryFeaturedSort(slugs) {
+  const isAZ = (slugs || []).some(s => s === 'a-to-z-diary-collection');
+  if (isAZ) {
+    return (a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+  }
+  return (a, b) => {
+    let sa = null, sb = null;
+    for (const s of slugs) {
+      if (sa == null && a.categorySortOrders && a.categorySortOrders[s] != null) sa = a.categorySortOrders[s];
+      if (sb == null && b.categorySortOrders && b.categorySortOrders[s] != null) sb = b.categorySortOrders[s];
+      if (sa != null && sb != null) break;
+    }
+    if (sa == null && sb == null) return 0;
+    if (sa == null) return 1;
+    if (sb == null) return -1;
+    if (sa !== sb) return sa - sb;
+    return (a.name || '').localeCompare(b.name || '');
+  };
+}
+
+function globalFeaturedSort(a, b) {
+  const sa = a.sortOrder || 0;
+  const sb = b.sortOrder || 0;
+  if (sa !== sb) return sa - sb;
+  return (a.name || '').localeCompare(b.name || '');
+}
 function getActiveFilters() {
   const checked = document.querySelectorAll('.filter-sidebar input[type=checkbox]:checked');
   const active = { material: [], size: [], price: [] };
@@ -256,6 +297,18 @@ function keywordMatch(product, keyword) {
   return searchable.includes(kw);
 }
 
+
+function resolveFeaturedSlugs(products, params) {
+  // Picks the slugs to use for per-category featured sort.
+  // Priority: ?cat= override > ?group= override > first product's categorySlugs.
+  if (params && params.cat) return [params.cat];
+  if (params && params.group) {
+    // The page may already have the slugs from the group lookup
+    return (params._groupSlugs) || [];
+  }
+  // Fallback: use any product's primary categorySlugs (rare)
+  return [];
+}
 function applyFilters(allProducts) {
   const { material, size, price } = getActiveFilters();
   let filtered = allProducts;
@@ -281,7 +334,9 @@ function initShopEvents(products, currentPage, totalPages, searchQ) {
     const val = e.target.value;
     if (val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
     else if (val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
-    else if (val.includes('Newest')) sorted.sort((a, b) => b.sortOrder - a.sortOrder);
+    else if (val.includes('Newest')) sorted.sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0));
+    else if (usePerCategoryFeatured) sorted.sort(categoryFeaturedSort(featuredSlugs));
+    else sorted.sort(globalFeaturedSort);
     renderFilteredGrid(sorted, 1, Math.max(1, Math.ceil(sorted.length / PRODUCTS_PER_PAGE)), searchQ);
   });
 
@@ -291,7 +346,9 @@ function initShopEvents(products, currentPage, totalPages, searchQ) {
       const sortVal = document.getElementById('sort-select')?.value || '';
       if (sortVal.includes('Low to High')) filtered.sort((a, b) => a.price - b.price);
       else if (sortVal.includes('High to Low')) filtered.sort((a, b) => b.price - a.price);
-      else if (sortVal.includes('Newest')) filtered.sort((a, b) => b.sortOrder - a.sortOrder);
+      else if (sortVal.includes('Newest')) filtered.sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0));
+      else if (usePerCategoryFeatured) filtered.sort(categoryFeaturedSort(featuredSlugs));
+      else filtered.sort(globalFeaturedSort);
       renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), searchQ);
     });
   });

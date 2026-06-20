@@ -41,12 +41,25 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
     .eq('active', true)
     .order('created_at', { ascending: false });
 
+  let sortByJunction = null;
+  let categorySlug = null;
+
   if (categoryId) {
+    // Look up the category slug so we can apply the A to Z diary collection
+    // alphabetical special-case for the homepage.
+    const { data: catRow } = await supabase
+      .from('categories')
+      .select('slug')
+      .eq('id', categoryId)
+      .single();
+    categorySlug = catRow?.slug || null;
+
     const { data: pcRows } = await supabase
       .from('product_categories')
-      .select('product_id')
+      .select('product_id, sort_order')
       .eq('category_id', categoryId);
     const ids = (pcRows || []).map(r => r.product_id);
+    sortByJunction = new Map((pcRows || []).map(r => [r.product_id, r.sort_order]));
     if (ids.length) {
       query = query.in('id', ids);
     } else {
@@ -60,7 +73,29 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
 
   const { data, error } = await query;
   if (error) { console.error(error); return []; }
-  return (data || []).map(normalize);
+  const rows = (data || []).map(p => {
+    const n = normalize(p);
+    if (sortByJunction) n.categorySortOrder = sortByJunction.get(p.id) ?? null;
+    return n;
+  });
+
+  // When filtered by category, use the per-category sort. The A to Z
+  // diary collection always sorts alphabetically.
+  if (categoryId && sortByJunction) {
+    if (categorySlug === 'a-to-z-diary-collection') {
+      rows.sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+    } else {
+      rows.sort((a, b) => {
+        const sa = a.categorySortOrder;
+        const sb = b.categorySortOrder;
+        if (sa == null && sb == null) return 0;
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        return sa - sb;
+      });
+    }
+  }
+  return rows;
 }
 
 export async function getProductBySlug(slug) {

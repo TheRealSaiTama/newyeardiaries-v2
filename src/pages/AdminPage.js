@@ -601,6 +601,20 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
     ? await supabase.from('product_categories').select('product_id, category_id, categories(name)').in('product_id', productIds)
     : { data: [] };
 
+  // When viewing a specific category, also fetch the per-product
+  // sort_order from the junction so the Sort column can be edited.
+  const pcSortByProduct = new Map();
+  if (filterCategory) {
+    const { data: pcSortRows } = await supabase
+      .from('product_categories')
+      .select('id, product_id, sort_order')
+      .eq('category_id', filterCategory)
+      .in('product_id', productIds.length ? productIds : ['00000000-0000-0000-0000-000000000000']);
+    (pcSortRows || []).forEach(r => {
+      pcSortByProduct.set(r.product_id, { pc_id: r.id, sort_order: r.sort_order });
+    });
+  }
+
   const catMapByProduct = {};
   (pcRows || []).forEach(r => {
     const name = r.categories?.name || r.category?.name;
@@ -623,23 +637,26 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
     <div class="admin-card">
       ${(products?.length && !error) ? `<div class="admin-table-wrap"><table class="admin-table">
         <thead><tr>
-          <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th>
+          <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th>${filterCategory ? '<th style="width:90px">Sort (1-100)</th>' : ''}<th style="text-align:right">Actions</th>
         </tr></thead>
         <tbody id="products-tbody">
-          ${products.map(p => `
-            <tr class="product-row" data-id="${p.id}">
+          ${products.map(p => {
+            const pc = pcSortByProduct.get(p.id) || null;
+            return `
+            <tr class="product-row" data-id="${p.id}" ${pc ? `data-pc-id="${pc.pc_id}"` : ''} data-product-id="${p.id}">
               <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
               <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
               <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
               <td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
               <td>${p.in_stock ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>` : '<span style="color:var(--color-error)">Out of stock</span>'}</td>
               <td><span class="badge ${p.active ? 'badge-active' : 'badge-inactive'}">${p.active ? 'Active' : 'Inactive'}</span></td>
+              ${filterCategory ? `<td><input type="number" min="1" max="100" class="admin-sort-input" value="${pc?.sort_order ?? ''}" placeholder="—" style="width:64px"></td>` : ''}
               <td class="col-actions">
                 <button class="edit-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
                 <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
               </td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table></div>` : `<div class="fs-empty"><span class="material-symbols-outlined">inventory_2</span><p>${error ? 'Error loading products' : 'No products in this folder'}</p></div>`}
     </div>
@@ -660,6 +677,50 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
   `;
 
   wireFsShared(container);
+
+  // Per-category sort order editor: update product_categories.sort_order
+  // on blur (or Enter). Only visible when viewing a category folder.
+  if (filterCategory) {
+    document.querySelectorAll('.admin-sort-input').forEach(inp => {
+      const commit = async () => {
+        const row = inp.closest('tr');
+        const productId = row.dataset.id;
+        const pcId = row.dataset.pcId;
+        let val = inp.value.trim();
+        if (val === '') {
+          // Clear → set to NULL
+          val = null;
+        } else {
+          const n = Number(val);
+          if (!Number.isFinite(n) || n < 1 || n > 100) {
+            showToast('Sort must be between 1 and 100.', 'error');
+            inp.focus();
+            return;
+          }
+          val = n;
+        }
+        if (pcId) {
+          const { error } = await supabase
+            .from('product_categories')
+            .update({ sort_order: val })
+            .eq('id', pcId);
+          if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+        } else {
+          // No junction row exists for this product+category — insert one.
+          const { data, error } = await supabase
+            .from('product_categories')
+            .insert({ product_id: productId, category_id: filterCategory, sort_order: val })
+            .select('id')
+            .single();
+          if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+          if (data) row.dataset.pcId = data.id;
+        }
+        showToast(val == null ? 'Sort cleared' : `Sort set to ${val}`);
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    });
+  }
 
   // Image lightbox
   document.querySelectorAll('.col-image img').forEach(img => {

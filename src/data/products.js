@@ -44,7 +44,8 @@ export async function getProducts() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
 
   // Fetch products with their primary category's name+slug, AND the full
-  // product_categories junction so we know every category a product belongs to.
+  // product_categories junction so we know every category a product belongs to
+  // AND its per-category sort_order (1..100).
   const [prodRes, juncRes] = await Promise.all([
     supabase
       .from('products')
@@ -53,18 +54,25 @@ export async function getProducts() {
       .order('created_at', { ascending: false }),
     supabase
       .from('product_categories')
-      .select('product_id, category_id, category:categories!product_categories_category_id_fkey(slug)'),
+      .select('product_id, category_id, sort_order, category:categories!product_categories_category_id_fkey(slug)'),
   ]);
 
   const products = prodRes.data || [];
   // Build a map: productId -> array of category slugs (from the junction)
   const extraSlugsByProduct = new Map();
+  // Build a map: productId -> { slug -> sort_order } for per-category sort
+  const sortByProductSlug = new Map();
   for (const row of juncRes.data || []) {
     const slug = row.category?.slug;
     if (!slug) continue;
     const list = extraSlugsByProduct.get(row.product_id) || [];
-    list.push(slug);
+    if (!list.includes(slug)) list.push(slug);
     extraSlugsByProduct.set(row.product_id, list);
+    if (row.sort_order != null) {
+      const m = sortByProductSlug.get(row.product_id) || {};
+      m[slug] = row.sort_order;
+      sortByProductSlug.set(row.product_id, m);
+    }
   }
 
   _cache = products.map(p => {
@@ -73,6 +81,8 @@ export async function getProducts() {
     const allSlugs = [base.categorySlug, ...(extraSlugsByProduct.get(p.id) || [])]
       .filter(Boolean);
     base.categorySlugs = Array.from(new Set(allSlugs));
+    // categorySortOrders: { [slug]: order } for per-category sort
+    base.categorySortOrders = sortByProductSlug.get(p.id) || {};
     return base;
   });
   _fetchedAt = Date.now();
@@ -92,23 +102,63 @@ export async function getProductById(id) {
 export async function getProductsByCategory(categorySlug) {
   const { data: cats } = await supabase
     .from('categories')
-    .select('id')
+    .select('id, slug')
     .eq('slug', categorySlug)
     .single();
   if (!cats) return [];
+
+  // Pull the junction rows for this category — they carry the per-category
+  // sort_order (1..100) that controls the display order on category pages.
   const { data: pcRows } = await supabase
     .from('product_categories')
-    .select('product_id')
+    .select('product_id, sort_order')
     .eq('category_id', cats.id);
   const ids = (pcRows || []).map(r => r.product_id);
   if (!ids.length) return [];
-  const { data } = await supabase
+
+  const { data: products } = await supabase
     .from('products')
     .select('*, category:categories!products_category_id_fkey(name, slug)')
     .in('id', ids)
-    .eq('active', true)
-    .order('sort_order');
-  return (data || []).map(normalize);
+    .eq('active', true);
+  if (!products) return [];
+
+  const sortByJunction = new Map();
+  (pcRows || []).forEach(r => {
+    if (r.sort_order != null) sortByJunction.set(r.product_id, r.sort_order);
+  });
+
+  // Attach per-category sortOrder to each product so the admin / sort UI
+  // can see the current value for THIS category (not the product's global
+  // products.sort_order).
+  const normalized = products.map(p => {
+    const base = normalize(p);
+    base.categorySortOrder = sortByJunction.get(p.id) ?? null;
+    return base;
+  });
+
+  // Sort logic
+  const isAZ = cats.slug === 'a-to-z-diary-collection';
+  if (isAZ) {
+    // A to Z diary collection: alphabetical (case-insensitive) regardless
+    // of the per-category sort_order.
+    normalized.sort((a, b) =>
+      (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())
+    );
+  } else {
+    // Per-category sort_order ASC, then name ASC as tiebreaker for unsorted
+    // products. Products without a sort_order float to the end.
+    normalized.sort((a, b) => {
+      const sa = a.categorySortOrder;
+      const sb = b.categorySortOrder;
+      if (sa == null && sb == null) return (a.name || '').localeCompare(b.name || '');
+      if (sa == null) return 1;
+      if (sb == null) return -1;
+      if (sa !== sb) return sa - sb;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }
+  return normalized;
 }
 
 export function formatPrice(price, currency = '₹') {
