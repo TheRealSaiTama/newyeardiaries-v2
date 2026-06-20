@@ -1188,7 +1188,9 @@
 .b-cta__btns { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .b-cta__media {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
+  max-width: 420px;
+  margin-left: auto;
   border-radius: var(--radius-lg);
   background: linear-gradient(150deg, var(--color-primary) 0%, #6b3410 100%);
   display: flex; align-items: center; justify-content: center;
