@@ -361,9 +361,24 @@ function showConfirmDialog(message, onConfirm) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
   document.getElementById('confirm-yes').onclick = () => { closeModal(); onConfirm(); };
 }
 
@@ -1071,9 +1086,35 @@ async function openProductModal(container, product = null) {
     secondaryObjectUrls.forEach(url => URL.revokeObjectURL(url));
     closeModal();
   };
-  overlay.querySelector('.admin-modal-close').onclick = closeProductModal;
-  overlay.querySelector('.modal-cancel').onclick = closeProductModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeProductModal(); };
+  // Close handlers — use mousedown so TinyMCE's iframe doesn't swallow
+  // the click. Capture-phase listener on the overlay so we always know
+  // whether the press started on the backdrop, not on the modal body.
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeProductModal();
+    }
+  });
+  const stopInsideModal = (e) => e.stopPropagation();
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', stopInsideModal);
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeProductModal();
+  });
+  overlay.querySelector('.modal-cancel').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeProductModal();
+  });
+  // ESC key closes the modal too
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeProductModal();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 
   const secondaryTextarea = overlay.querySelector('[name="secondary_images"]');
   const secondaryGrid = overlay.querySelector('#secondary-media-grid');
@@ -1588,9 +1629,24 @@ async function openCategoryModal(container, category = null, presetGroupName = n
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 
   document.getElementById('cat-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -1798,20 +1854,28 @@ function openBannerModal(container, banner = null) {
     }
   });
 
-  overlay.querySelector('.admin-modal-close').onclick = () => {
+  // Close handlers — robust against nested editors
+  const closeBannerModal = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     closeModal();
   };
-  overlay.querySelector('.modal-cancel').onclick = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    closeModal();
-  };
-  overlay.onclick = (e) => {
+  overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      closeModal();
+      e.preventDefault();
+      closeBannerModal();
     }
-  };
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeBannerModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeBannerModal();
+  });
 
   document.getElementById('banner-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -2149,9 +2213,24 @@ function openEnquiryDetailModal(item, type) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 }
 
 // ===== HEADER SECTION =====
@@ -2258,9 +2337,24 @@ function openAnnModal(container, ann = null) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
   document.getElementById('ann-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -2517,9 +2611,24 @@ function openTrustBadgeModal(container, badge, allBadges) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 
   document.getElementById('trust-badge-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -2575,9 +2684,24 @@ function openSliderSectionModal(container, section) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 
   // Sync color picker ↔ text input
   const colorPicker = overlay.querySelector('[name="bg_color_picker"]');
@@ -2645,9 +2769,24 @@ async function openSliderPickerModal(container, section, currentProductIds) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 
   // Load all products once for the chip strip and for direct search
   const { data: allProducts } = await supabase
@@ -2934,9 +3073,24 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.admin-modal-close').onclick = closeModal;
-  overlay.querySelector('.modal-cancel').onclick = closeModal;
-  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  // Close handlers — robust against nested editors
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
 
   document.getElementById('cat-ref-select').onchange = (e) => {
     const opt = e.target.selectedOptions[0];
