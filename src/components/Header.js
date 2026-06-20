@@ -28,7 +28,6 @@ export function renderHeader(content) {
     { label: 'Shop', path: '/shop' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
-    { label: 'Bespoke', path: '/bulk-quote' },
     { label: 'Branding', path: '/branding' },
   ];
 
