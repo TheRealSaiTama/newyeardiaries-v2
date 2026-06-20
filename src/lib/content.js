@@ -19,6 +19,7 @@ export async function getContent() {
     { data: announcements },
     { data: footerSections },
     { data: banners },
+    { data: trustBadges },
   ] = await Promise.all([
     supabase.from('site_settings').select('*'),
     supabase.from('site_content').select('*'),
@@ -26,6 +27,7 @@ export async function getContent() {
     supabase.from('announcements').select('*').order('created_at'),
     supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
     supabase.from('banners').select('*').eq('active', true).order('order_index'),
+    supabase.from('trust_badges').select('*').order('position'),
   ]);
 
   _cache = {
@@ -35,6 +37,7 @@ export async function getContent() {
     announcements: (announcements || []).filter(a => a.active),
     footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
     banners: banners || [],
+    trustBadges: (trustBadges || []).filter(b => b.active !== false),
   };
   _fetchedAt = Date.now();
   return _cache;
@@ -71,4 +74,8 @@ export function getHeroContent(content) {
 
 export function getCtaContent(content) {
   return content.homepageSections['cta'] || null;
+}
+
+export function getTrustBadges(content) {
+  return (content?.trustBadges || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
 }

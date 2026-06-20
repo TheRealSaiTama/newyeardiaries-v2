@@ -2130,12 +2130,13 @@ async function renderHomepageSection(container) {
   const { data: cta } = await supabase.from('homepage_sections').select('*').eq('section_key', 'cta').single();
   const { data: shopCats } = await supabase.from('shop_categories').select('*').order('sort_order');
   const { data: primaryCats } = await supabase.from('categories').select('id, name, slug').eq('active', true).order('sort_order');
+  const { data: trustBadges } = await supabase.from('trust_badges').select('*').order('position');
 
   container.innerHTML = `
     <div class="admin-header">
       <div class="admin-header-left">
         <h1>Homepage</h1>
-        <span class="admin-header-stats">Hero, CTA & Shop by Category</span>
+        <span class="admin-header-stats">Hero, Trust Badges, CTA & Shop by Category</span>
       </div>
     </div>
 
@@ -2171,7 +2172,35 @@ async function renderHomepageSection(container) {
       </div>
     </div>
 
-    <div class="admin-card" style="padding:0;overflow:hidden">
+    <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
+      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2 style="font-size:var(--fs-lg);margin:0">⭐ Trust Badges</h2>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 4 USP cards shown above the "Ready for Corporate Orders?" section (icon, title, description)</p>
+        </div>
+        <button class="admin-btn admin-btn-primary" id="add-trust-badge-btn">
+          <span class="material-symbols-outlined">add</span> Add Badge
+        </button>
+      </div>
+      ${trustBadges?.length ? `<div class="admin-table-wrap"><table class="admin-table">
+        <thead><tr><th style="width:60px">Icon</th><th>Title</th><th>Description</th><th style="width:60px">Position</th><th style="width:80px">Status</th><th style="width:90px;text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${trustBadges.map(b => `<tr data-id="${b.id}">
+            <td><span class="material-symbols-outlined" style="color:var(--color-accent)">${b.icon || 'verified'}</span></td>
+            <td><strong>${b.title || ''}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${b.icon || ''}</div></td>
+            <td style="font-size:var(--fs-sm);color:var(--color-text-secondary)">${b.description || ''}</td>
+            <td>${b.position || 0}</td>
+            <td><span class="badge ${b.active !== false ? 'badge-active' : 'badge-inactive'}">${b.active !== false ? 'Active' : 'Inactive'}</span></td>
+            <td class="col-actions">
+              <button class="edit-trust-badge-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
+              <button class="delete-trust-badge-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">verified</span><p>No trust badges added yet</p></div>`}
+    </div>
+
+        <div class="admin-card" style="padding:0;overflow:hidden">
       <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
         <div>
           <h2 style="font-size:var(--fs-lg);margin:0">🗂️ Shop by Category</h2>
@@ -2204,14 +2233,35 @@ async function renderHomepageSection(container) {
     e.preventDefault();
     const fd = new FormData(e.target);
     await supabase.from('homepage_sections').upsert({ section_key: 'hero', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link'), second_cta_text: fd.get('second_cta_text'), second_cta_link: fd.get('second_cta_link') }, { onConflict: 'section_key' });
+    bustContentCache();
     showToast('Hero saved!');
   };
   document.getElementById('cta-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     await supabase.from('homepage_sections').upsert({ section_key: 'cta', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link') }, { onConflict: 'section_key' });
+    bustContentCache();
     showToast('CTA saved!');
   };
+
+  document.getElementById('add-trust-badge-btn').onclick = () => openTrustBadgeModal(container, null, trustBadges);
+  document.querySelectorAll('.edit-trust-badge-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      openTrustBadgeModal(container, trustBadges.find(b => b.id === id), trustBadges);
+    };
+  });
+  document.querySelectorAll('.delete-trust-badge-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      showConfirmDialog('Delete this trust badge?', async () => {
+        await supabase.from('trust_badges').delete().eq('id', id);
+        bustContentCache();
+        showToast('Trust badge deleted!');
+        renderHomepageSection(container);
+      });
+    };
+  });
 
   document.getElementById('add-shop-cat-btn').onclick = () => openShopCategoryModal(container, null, primaryCats);
   document.querySelectorAll('.edit-shop-cat-btn').forEach(btn => {
@@ -2230,6 +2280,70 @@ async function renderHomepageSection(container) {
       });
     };
   });
+}
+
+function openTrustBadgeModal(container, badge, allBadges) {
+  const isEdit = !!badge;
+  const nextPosition = isEdit
+    ? (badge.position || 0)
+    : ((allBadges && allBadges.length) ? Math.max(...allBadges.map(b => b.position || 0)) + 1 : 1);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay';
+  overlay.innerHTML = `
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>${isEdit ? 'Edit' : 'Add'} Trust Badge</h2>
+        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <form class="admin-form" id="trust-badge-form">
+        <div class="form-group">
+          <label>Material Symbol Icon *</label>
+          <input name="icon" required value="${badge?.icon || 'verified'}" placeholder="e.g. draw, factory, workspace_premium, local_shipping">
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browse icons at <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">fonts.google.com/icons</a> (use the exact name, lowercase, underscores).</small>
+        </div>
+        <div class="form-group"><label>Title *</label><input name="title" required value="${badge?.title || ''}" placeholder="e.g. Customized Diaries"></div>
+        <div class="form-group"><label>Description</label><input name="description" value="${badge?.description || ''}" placeholder="e.g. Your Brand Logo Embossed"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Position</label><input name="position" type="number" value="${nextPosition}"></div>
+          <div class="form-group checkbox"><input name="active" type="checkbox" id="trust-badge-active" ${badge?.active !== false ? 'checked' : ''}><label for="trust-badge-active">Active</label></div>
+        </div>
+        <div class="admin-modal-actions">
+          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Badge'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.admin-modal-close').onclick = closeModal;
+  overlay.querySelector('.modal-cancel').onclick = closeModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  document.getElementById('trust-badge-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const icon = (fd.get('icon') || '').toString().trim();
+    const title = (fd.get('title') || '').toString().trim();
+    if (!icon || !title) { showToast('Icon and Title are required.', 'error'); return; }
+
+    const payload = {
+      icon,
+      title,
+      description: (fd.get('description') || '').toString().trim() || null,
+      position: Number(fd.get('position')) || 0,
+      active: fd.get('active') === 'on',
+    };
+
+    const { error } = isEdit
+      ? await supabase.from('trust_badges').update(payload).eq('id', badge.id)
+      : await supabase.from('trust_badges').insert(payload);
+    if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+    bustContentCache();
+    closeModal();
+    showToast(isEdit ? 'Trust badge updated!' : 'Trust badge added!');
+    renderHomepageSection(container);
+  };
 }
 
 function openShopCategoryModal(container, shopCat, primaryCats) {

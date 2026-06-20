@@ -3,7 +3,7 @@ import { renderProductCard, initProductCardSlideshows } from '../components/Prod
 
 import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
-import { getContent, getHeroContent } from '../lib/content.js';
+import { getContent, getHeroContent, getCtaContent, getTrustBadges } from '../lib/content.js';
 import { getProducts, getCategories } from '../lib/products.js';
 
 const SECTION_CATS = {
@@ -76,7 +76,7 @@ export async function renderHomePage() {
 
       <section class="section--sm">
         <div class="container">
-          ${renderTrustBadges()}
+          ${renderTrustBadges(getTrustBadges(content))}
         </div>
       </section>
 
@@ -110,17 +110,7 @@ export async function renderHomePage() {
       ${renderProductSliderSection('Best Selling 2026 Diary', 'best-selling', bestSelling2026Diary, 'bestselling', '#fff')}
       ${renderProductSliderSection('Premium diary 2026', 'premium-diary', premiumDiary2026, 'premium', '#FAF8F5')}
 
-      <section class="section">
-        <div class="container" style="text-align:center;">
-          <h2 class="heading-2" style="margin-bottom:var(--space-4);">Ready for Corporate Orders?</h2>
-          <p class="text-body" style="max-width:500px;margin:0 auto var(--space-8);font-size:var(--fs-md);">
-            Get manufacturer-direct pricing on bulk orders of 25+ units. Custom branding with debossing, foil stamping, and bespoke packaging.
-          </p>
-          <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;">
-            <a href="/contact" class="btn btn--accent btn--lg">Contact Us</a>
-          </div>
-        </div>
-      </section>
+      ${renderCtaSection(getCtaContent(content))}
     </div>
   `;
 
@@ -302,4 +292,22 @@ function apCatScroll(gridId, dir) {
   if (!cards.length) return;
   const cardWidth = cards[0].offsetWidth + 16;
   grid.scrollBy({ left: dir * cardWidth * 2, behavior: 'smooth' });
+}
+function renderCtaSection(cta) {
+  const title    = cta?.title    || 'Ready for Corporate Orders?';
+  const subtitle = cta?.subtitle || 'Get manufacturer-direct pricing on bulk orders of 25+ units. Custom branding with debossing, foil stamping, and bespoke packaging.';
+  const ctaText  = cta?.cta_text || 'Contact Us';
+  const ctaLink  = cta?.cta_link || '/contact';
+
+  return `
+      <section class="section">
+        <div class="container" style="text-align:center;">
+          <h2 class="heading-2" style="margin-bottom:var(--space-4);">${title}</h2>
+          <p class="text-body" style="max-width:500px;margin:0 auto var(--space-8);font-size:var(--fs-md);">${subtitle}</p>
+          <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;">
+            <a href="${ctaLink}" class="btn btn--accent btn--lg">${ctaText}</a>
+          </div>
+        </div>
+      </section>
+  `;
 }
