@@ -111,7 +111,7 @@ function setupShell() {
     ${safeRender('QuickView', renderQuickViewModal)}
     ${safeRender('Search', renderSearchModal)}
     <main id="app"></main>
-    ${safeRender('About', renderAboutSection)}
+    <div id="about-section">${safeRender('About', renderAboutSection)}</div>
     <div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div>
     <div id="floating-buttons"></div>
     <div id="faq-chatbot"></div>
@@ -123,13 +123,28 @@ function setupShell() {
   initFloatingButtons();
 }
 
+// Show/hide the About section, floating WhatsApp button, and FAQ chatbot
+// based on the current route. They're part of the main website shell and
+// should not appear in the admin dashboard.
+function syncShellExtras() {
+  const isAdmin = (window.location.pathname || '').startsWith('/admin');
+  const about = document.querySelector('.nyd-about-section') || document.getElementById('about-section');
+  if (about) about.style.display = isAdmin ? 'none' : '';
+  const floating = document.getElementById('floating-buttons');
+  if (floating) floating.style.display = isAdmin ? 'none' : '';
+  const faq = document.getElementById('faq-chatbot');
+  if (faq) faq.style.display = isAdmin ? 'none' : '';
+}
+
 function wrapPage(renderFn) {
   return (params) => {
     const result = renderFn(params, appContent);
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
+    document.getElementById('footer-area').style.display = '';
     initHeaderEvents();
     updateHeaderCounts();
     initSearchModal();
+    syncShellExtras();
     return result; // may be a Promise (async page) — awaited on first load
   };
 }
@@ -155,6 +170,7 @@ addRoute('/branding', wrapPage(renderBrandingPage));
 addRoute('/admin', (params) => {
   document.getElementById('header-area').style.display = 'none';
   document.getElementById('footer-area').style.display = 'none';
+  syncShellExtras();
   document.getElementById('app').innerHTML = renderAdminPage();
   initAdminPage();
 });
