@@ -148,18 +148,10 @@
 }
 
 .ap-cat-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
-  overflow-x: auto;
-  padding: 4px 4px 12px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-}
-
-.ap-cat-grid::-webkit-scrollbar {
-  display: none;
+  padding-bottom: 4px;
 }
 
 .ap-cat-card {
@@ -234,6 +226,10 @@
   background: #2C2C2C;
   color: #fff;
 }
+
+/* On the homepage, the grid shows all products at once, so the prev/next
+   arrows aren't useful. Hide them; the 'View All →' link handles overflow. */
+.ap-catalogue-section .ap-cat-arrow { display: none; }
 
 .home-whatsapp-btn { display: none !important; }
 
@@ -377,8 +373,6 @@
 }
 
 .ap-cat-grid .ap-product-card {
-  flex: 0 0 280px;
-  scroll-snap-align: start;
   background: #ffffff;
   border: 1px solid #ECEAE5;
   border-radius: 8px;
@@ -389,14 +383,15 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
-@media (max-width: 1024px) {
-  .ap-cat-grid .ap-product-card { flex: 0 0 230px; }
+@media (max-width: 1200px) {
+  .ap-cat-grid { grid-template-columns: repeat(4, 1fr); }
 }
-@media (max-width: 768px) {
-  .ap-cat-grid .ap-product-card { flex: 0 0 200px; }
+@media (max-width: 900px) {
+  .ap-cat-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
 }
-@media (max-width: 480px) {
-  .ap-cat-grid .ap-product-card { flex: 0 0 165px; padding: 8px 8px 12px; }
+@media (max-width: 600px) {
+  .ap-cat-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .ap-cat-grid .ap-product-card { padding: 8px 8px 12px; }
 }
 
 /* Contain the square image in the slider card */
