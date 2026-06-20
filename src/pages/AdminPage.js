@@ -900,7 +900,7 @@ async function openProductModal(container, product = null) {
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
+    <div class="admin-modal" style="max-width:860px">
       <div class="admin-modal-header">
         <h2>${isEdit ? 'Edit Product' : 'Add Product'}</h2>
         <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
@@ -934,8 +934,8 @@ async function openProductModal(container, product = null) {
           </div>
         </div>
         <div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div>
-        <div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description">${product?.short_description || ''}</textarea></div>
-        <div class="form-group"><label>Description</label><textarea name="description">${product?.description || ''}</textarea></div>
+        <div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description" id="rte-short-description" class="nyd-rte">${product?.short_description || ''}</textarea></div>
+        <div class="form-group"><label>Description</label><textarea name="description" id="rte-description" class="nyd-rte">${product?.description || ''}</textarea></div>
         <div class="form-group">
           <label>SEO / Meta Tags <small style="color:var(--color-text-tertiary)">(for product detail page & social)</small></label>
           <input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (≤60 chars)">
@@ -979,7 +979,95 @@ async function openProductModal(container, product = null) {
     </div>
   `;
   document.body.appendChild(overlay);
+
+  // ===== Rich text editors (TinyMCE) for Short Description and Description =====
+  // Loaded lazily from CDN the first time the product modal opens. Reused
+  // across openings via the module-level promise.
+  const TINYMCE_CDN = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
+  if (!window.__tinymceLoadPromise) {
+    window.__tinymceLoadPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-tinymce]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.tinymce));
+        existing.addEventListener('error', reject);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = TINYMCE_CDN;
+      script.async = true;
+      script.dataset.tinymce = '1';
+      script.referrerPolicy = 'origin';
+      script.onload = () => resolve(window.tinymce);
+      script.onerror = (e) => { window.__tinymceLoadPromise = null; reject(e); };
+      document.head.appendChild(script);
+    });
+  }
+
+  const rteInstances = [];
+  const teardownRtes = () => {
+    if (window.tinymce) {
+      rteInstances.forEach(id => {
+        try { window.tinymce.remove(`#${id}`); } catch (_) { /* ignore */ }
+      });
+    }
+    rteInstances.length = 0;
+  };
+  const initRtes = async () => {
+    try {
+      const tinymce = await window.__tinymceLoadPromise;
+      const baseConfig = {
+        height: 220,
+        menubar: false,
+        branding: false,
+        promotion: false,
+        skin: 'oxide',
+        content_css: 'default',
+        plugins: [
+          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+          'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
+          'fullscreen', 'insertdatetime', 'media', 'table', 'help', 'wordcount',
+          'emoticons', 'autosave',
+        ],
+        toolbar:
+          'undo redo | blocks | bold italic underline strikethrough | ' +
+          'forecolor backcolor | highlight | alignleft aligncenter ' +
+          'alignright alignjustify | bullist numlist outdent indent | ' +
+          'link image table | blockquote code | removeformat | help',
+        toolbar_mode: 'wrap',
+        statusbar: true,
+        elementpath: false,
+        resize: true,
+        browser_spellcheck: true,
+        contextmenu: 'link image table',
+      };
+      // Short description: smaller height
+      await tinymce.init({
+        ...baseConfig,
+        selector: '#rte-short-description',
+        height: 140,
+        toolbar:
+          'undo redo | bold italic underline | forecolor backcolor | ' +
+          'highlight | link | bullist numlist | blockquote | removeformat',
+        statusbar: false,
+      });
+      rteInstances.push('rte-short-description');
+
+      // Description: full toolbar
+      await tinymce.init({
+        ...baseConfig,
+        selector: '#rte-description',
+        height: 360,
+      });
+      rteInstances.push('rte-description');
+    } catch (e) {
+      console.warn('[product] TinyMCE failed to load, using plain textareas:', e);
+      // Fallback: leave the textareas as-is; the form still works.
+    }
+  };
+  initRtes();
+
   const closeProductModal = () => {
+    teardownRtes();
     secondaryObjectUrls.forEach(url => URL.revokeObjectURL(url));
     closeModal();
   };
@@ -1114,6 +1202,11 @@ async function openProductModal(container, product = null) {
 
   document.getElementById('product-form').onsubmit = async (e) => {
     e.preventDefault();
+    // Sync TinyMCE editor content into the underlying textareas so FormData
+    // picks up the latest HTML.
+    if (window.tinymce) {
+      try { window.tinymce.triggerSave(); } catch (_) { /* ignore */ }
+    }
     const fd = new FormData(e.target);
     let slug = fd.get('slug') || generateSlug(fd.get('name'));
     let uploadedPrimary = [];
