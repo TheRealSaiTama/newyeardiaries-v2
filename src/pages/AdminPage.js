@@ -998,7 +998,7 @@ async function openProductModal(container, product = null) {
   // ===== Rich text editors (TinyMCE) for Short Description and Description =====
   // Loaded lazily from CDN the first time the product modal opens. Reused
   // across openings via the module-level promise.
-  const TINYMCE_CDN = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
+  const TINYMCE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/tinymce.min.js';
   if (!window.__tinymceLoadPromise) {
     window.__tinymceLoadPromise = new Promise((resolve, reject) => {
       const existing = document.querySelector('script[data-tinymce]');
@@ -1007,11 +1007,24 @@ async function openProductModal(container, product = null) {
         existing.addEventListener('error', reject);
         return;
       }
+      // Load the TinyMCE skin CSS first (icons + popup chrome)
+      if (!document.querySelector('link[data-tinymce-skin]')) {
+        const skinLink = document.createElement('link');
+        skinLink.rel = 'stylesheet';
+        skinLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/ui/oxide/content.min.css';
+        skinLink.dataset.tinymceSkin = '1';
+        document.head.appendChild(skinLink);
+        const skinDark = document.createElement('link');
+        skinDark.rel = 'stylesheet';
+        skinDark.href = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/ui/oxide-dark/content.min.css';
+        skinDark.dataset.tinymceSkin = '1';
+        document.head.appendChild(skinDark);
+      }
       const script = document.createElement('script');
       script.src = TINYMCE_CDN;
       script.async = true;
       script.dataset.tinymce = '1';
-      script.referrerPolicy = 'origin';
+      script.referrerPolicy = 'no-referrer';
       script.onload = () => resolve(window.tinymce);
       script.onerror = (e) => { window.__tinymceLoadPromise = null; reject(e); };
       document.head.appendChild(script);
