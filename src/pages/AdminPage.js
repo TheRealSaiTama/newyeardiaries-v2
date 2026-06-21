@@ -341,7 +341,13 @@ async function loadTab(tab) {
 }
 
 function closeModal() {
-  document.getElementById('modal-overlay')?.remove();
+  // Primary path: the modal that set overlay.id = 'modal-overlay'.
+  const el = document.getElementById('modal-overlay');
+  if (el) { el.remove(); return; }
+  // Fallback: remove the most recently appended admin-modal-overlay.
+  // Some modals (e.g. the homepage slider product picker) never set an id.
+  const overlays = document.querySelectorAll('.admin-modal-overlay');
+  if (overlays.length) overlays[overlays.length - 1].remove();
 }
 
 function showConfirmDialog(message, onConfirm) {
@@ -2806,6 +2812,7 @@ async function openSliderPickerModal(container, section, currentProductIds) {
 
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
+  overlay.id = 'modal-overlay';
   overlay.innerHTML = `
     <div class="admin-modal" style="max-width:880px;width:90vw">
       <div class="admin-modal-header">
