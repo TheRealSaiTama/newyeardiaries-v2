@@ -622,11 +622,11 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
   if (filterCategory) {
     const { data: pcSortRows } = await supabase
       .from('product_categories')
-      .select('id, product_id, sort_order')
+      .select('product_id, category_id, sort_order')
       .eq('category_id', filterCategory)
       .in('product_id', productIds.length ? productIds : ['00000000-0000-0000-0000-000000000000']);
     (pcSortRows || []).forEach(r => {
-      pcSortByProduct.set(r.product_id, { pc_id: r.id, sort_order: r.sort_order });
+      pcSortByProduct.set(r.product_id, { pc_id: `${r.product_id}:${r.category_id}`, sort_order: r.sort_order });
     });
   }
 
@@ -715,20 +715,20 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
           val = n;
         }
         if (pcId) {
+          const [pid, cid] = pcId.split(':');
           const { error } = await supabase
             .from('product_categories')
             .update({ sort_order: val })
-            .eq('id', pcId);
+            .eq('product_id', pid)
+            .eq('category_id', cid);
           if (error) { showToast('Failed: ' + error.message, 'error'); return; }
         } else {
           // No junction row exists for this product+category — insert one.
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('product_categories')
-            .insert({ product_id: productId, category_id: filterCategory, sort_order: val })
-            .select('id')
-            .single();
+            .insert({ product_id: productId, category_id: filterCategory, sort_order: val });
           if (error) { showToast('Failed: ' + error.message, 'error'); return; }
-          if (data) row.dataset.pcId = data.id;
+          row.dataset.pcId = `${productId}:${filterCategory}`;
         }
         showToast(val == null ? 'Sort cleared' : `Sort set to ${val}`);
       };
