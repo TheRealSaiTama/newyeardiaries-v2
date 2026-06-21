@@ -249,6 +249,68 @@ window.__reinitPage = function reinitPageDispatch() {
 };
 window.__reinitShopPage = reinitShopPage;
 
+// In-place data refresh for cache-paint navigations. Re-fetches products and
+// swaps the grid + pagination in place — never re-paints the shell, so the
+// user never sees a skeleton flash after the instant cache paint.
+window.__nydCacheRefresh = async function nydCacheRefreshShop() {
+  if (!window.location.pathname.startsWith('/shop')) return;
+  const grid = document.getElementById('product-grid');
+  if (!grid) return; // shop page hasn't mounted yet
+  try {
+    const allProducts = await getProducts();
+    const params = new URLSearchParams(window.location.search);
+    const catSlug = params.get('cat');
+    const groupName = params.get('group');
+    const searchQ = params.get('q');
+    function productInCategory(p, slug) {
+      if (!slug) return false;
+      const s = slug.toLowerCase();
+      if ((p.categorySlug || '').toLowerCase() === s) return true;
+      if ((p.category || '').toLowerCase() === s) return true;
+      return (p.categorySlugs || []).some(x => (x || '').toLowerCase() === s);
+    }
+    function productInGroup(p, slugs) {
+      if (!slugs || !slugs.length) return false;
+      return slugs.some(s => productInCategory(p, s));
+    }
+    let products;
+    if (searchQ) {
+      const q = searchQ.toLowerCase();
+      products = allProducts.filter(p => (p.name || '').toLowerCase().includes(q));
+    } else if (catSlug) {
+      products = allProducts.filter(p => productInCategory(p, catSlug));
+    } else if (groupName) {
+      let slugs = getCategorySlugsByGroupName(groupName);
+      if (!slugs.length && CATEGORY_GROUPS[groupName]) slugs = CATEGORY_GROUPS[groupName];
+      products = slugs.length ? allProducts.filter(p => productInGroup(p, slugs)) : [];
+    } else {
+      products = allProducts;
+    }
+    const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
+    const pageParam = parseInt(params.get('page')) || 1;
+    const currentPage = Math.min(pageParam, totalPages);
+    const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+    grid.innerHTML = pageProducts.length > 0
+      ? pageProducts.map(p => renderProductCard(p)).join('')
+      : `<div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}.</p></div>`;
+    initProductCardSlideshows(grid);
+    const mainEl = document.querySelector('.shop-main');
+    const existingPag = mainEl?.querySelector('.shop-pagination');
+    if (existingPag) existingPag.remove();
+    if (totalPages > 1 && mainEl) {
+      const pagDiv = document.createElement('div');
+      pagDiv.className = 'shop-pagination';
+      pagDiv.innerHTML = `
+        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
+        ${renderPaginationButtons(currentPage, totalPages)}
+        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
+      `;
+      mainEl.appendChild(pagDiv);
+    }
+  } catch (e) { console.warn('[shop] in-place refresh failed:', e); }
+};
+
 // Go-to-top button wiring, factored out so the page works whether the button
 // is in the initial skeleton render or only added after products resolve.
 function initGoTopButton() {

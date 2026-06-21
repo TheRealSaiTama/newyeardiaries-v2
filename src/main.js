@@ -204,23 +204,23 @@ function wrapPage(renderFn) {
     initSearchModal();
     syncShellExtras();
 
-    // FAST PATH: paint cached HTML immediately, then re-render in the
-    // background so the user sees content within the same frame.
+    // FAST PATH: paint cached HTML immediately. The original code re-ran
+    // renderFn() in the background which rewrote app.innerHTML with a fresh
+    // shell+skeleton — users saw a flash and felt the click was ignored.
+    // Skip the re-render; the cache is good enough until next nav. If a page
+    // wants in-place data refresh, it can register window.__nydCacheRefresh.
     if (cached && cached.html && app) {
-      // INSTANT paint from cache — the user sees the page in the same frame
-      // as the click. The background re-render below refreshes data and
-      // re-attaches all interactive handlers.
       app.innerHTML = cached.html;
-      // Re-attach interactive handlers (hero slider, product card slideshows,
-      // filter events). These need fresh listeners because innerHTML replaces
-      // the DOM nodes (the original listeners are gone).
       if (typeof window.__reinitPage === 'function') {
         try { window.__reinitPage(); } catch (e) { console.warn('[cache] reinit failed:', e); }
       }
-      // Background re-render: refreshes data and re-attaches any handlers
-      // not covered by __reinitPage. Safe to fire-and-forget.
-      Promise.resolve(renderFn(params, appContent))
-        .catch(e => console.warn('[cache] background refresh failed:', e));
+      // Quiet background data refresh — only swaps the grid in place, never
+      // the whole shell. Failures are silent.
+      if (typeof window.__nydCacheRefresh === 'function') {
+        Promise.resolve()
+          .then(() => window.__nydCacheRefresh(params, appContent))
+          .catch(e => console.warn('[cache] in-place refresh failed:', e));
+      }
       return Promise.resolve();
     }
 
