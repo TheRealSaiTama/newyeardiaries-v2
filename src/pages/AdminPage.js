@@ -141,7 +141,7 @@ export function renderAdminPage() {
     .admin-table .col-image img:hover { transform: scale(1.1); box-shadow: var(--shadow-lg); }
     .admin-table .col-name strong { display: block; font-weight: var(--fw-semibold); color: var(--color-text-primary); }
     .admin-table .col-name span { font-size: var(--fs-xs); color: var(--color-text-tertiary); }
-    .admin-table .col-actions { width: 100px; }
+    .admin-table .col-actions { width: 132px; }
     .admin-table .col-actions { display: flex; gap: var(--space-2); }
     .admin-table .col-actions button { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); border: 1px solid var(--color-border); cursor: pointer; background: var(--color-surface); color: var(--color-text-secondary); transition: var(--transition-fast); }
     .admin-table .col-actions button:hover { background: var(--color-surface-alt); color: var(--color-text-primary); border-color: var(--color-primary); }
@@ -649,6 +649,7 @@ const catMapByProduct = {};
               <td><span class="badge ${p.active ? 'badge-active' : 'badge-inactive'}">${p.active ? 'Active' : 'Inactive'}</span></td>
               <td class="col-actions">
                 <button class="edit-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
+                <button class="duplicate-btn" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
                 <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
               </td>
             </tr>`;
@@ -706,6 +707,20 @@ const catMapByProduct = {};
       const id = btn.closest('tr').dataset.id;
       const product = products.find(p => p.id === id);
       openProductModal(container, product);
+    };
+  });
+
+  document.querySelectorAll('.duplicate-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.closest('tr').dataset.id;
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+      btn.disabled = true;
+      try {
+        await duplicateProduct(product, container);
+      } finally {
+        btn.disabled = false;
+      }
     };
   });
 
@@ -834,6 +849,70 @@ async function validateBannerImage(file) {
 
 function isVideoMedia(src, type = '') {
   return type === 'video/mp4' || /\\.mp4($|[?#])/i.test(src);
+}
+
+
+// Deep-clone an existing product. Copies every column verbatim, including
+// images and category junctions. Only the name (and slug) is changed.
+// Naming: "Copy of <name>" → "Copy of <name> (1)" → ... (file-system style).
+async function duplicateProduct(source, container) {
+  // Fetch fresh source + its category junctions (the list-row copy may
+  // miss the junction rows).
+  const [{ data: fullSrc }, { data: catRows }] = await Promise.all([
+    supabase.from('products').select('*').eq('id', source.id).single(),
+    supabase.from('product_categories').select('category_id').eq('product_id', source.id),
+  ]);
+  if (!fullSrc) { showToast('Source product not found.', 'error'); return; }
+
+  // Build a unique name + slug.
+  const baseName = `Copy of ${fullSrc.name}`;
+  const { data: existing } = await supabase
+    .from('products')
+    .select('name')
+    .ilike('name', `${baseName.replace(/[%_]/g, '\$&')}%`);
+  const taken = new Set((existing || []).map(r => r.name));
+  let newName = baseName;
+  if (taken.has(newName)) {
+    let i = 1;
+    while (taken.has(`${baseName} (${i})`)) i++;
+    newName = `${baseName} (${i})`;
+  }
+  const baseSlug = generateSlug(newName);
+  const { data: slugRows } = await supabase
+    .from('products')
+    .select('slug')
+    .ilike('slug', `${baseSlug}%`);
+  const takenSlugs = new Set((slugRows || []).map(r => r.slug));
+  let newSlug = baseSlug;
+  if (takenSlugs.has(newSlug)) {
+    let i = 1;
+    while (takenSlugs.has(`${baseSlug}-${i}`)) i++;
+    newSlug = `${baseSlug}-${i}`;
+  }
+
+  // Strip the immutable / PK columns, keep everything else.
+  const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = fullSrc;
+  const payload = { ...rest, name: newName, slug: newSlug };
+
+  const { data: inserted, error } = await supabase
+    .from('products')
+    .insert(payload)
+    .select('id')
+    .single();
+  if (error) { showToast(`Failed: ${error.message}`, 'error'); return; }
+
+  if (inserted?.id && catRows?.length) {
+    const rows = catRows.map(r => ({ product_id: inserted.id, category_id: r.category_id }));
+    const { error: pcError } = await supabase.from('product_categories').insert(rows);
+    if (pcError) console.error('Category copy failed:', pcError);
+  }
+
+  showToast(`Duplicated as "${newName}"`);
+  // Re-render the current list view (preserves search/filter/nav).
+  const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
+  const search = document.getElementById('product-search')?.value || '';
+  const filterActive = document.getElementById('filter-active')?.value || '';
+  await renderProducts(container, 1, search, filterActive, nav);
 }
 
 async function openProductModal(container, product = null) {
