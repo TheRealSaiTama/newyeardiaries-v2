@@ -2939,18 +2939,37 @@ async function openSliderPickerModal(container, section, currentProductIds) {
   function wireSliderPickerFolderClicks() {
     const body = document.getElementById('slider-picker-body');
     if (!body) return;
+    // Search box: re-render the current level with the new query.
+    const searchInput = document.getElementById('slider-picker-search');
+    if (searchInput && !searchInput.dataset.bound) {
+      searchInput.dataset.bound = '1';
+      searchInput.addEventListener('input', (e) => {
+        SLIDER_PICKER_STATE.search = e.target.value;
+        renderLevel();
+        const next = document.getElementById('slider-picker-search');
+        if (next) {
+          next.focus();
+          const v = next.value;
+          next.value = '';
+          next.value = v;
+        }
+      });
+    }
     body.querySelectorAll('[data-picker-nav]').forEach(b => {
       b.onclick = () => {
         const nav = JSON.parse(b.dataset.pickerNav);
         SLIDER_PICKER_STATE.level = nav.level;
         SLIDER_PICKER_STATE.group = nav.group ?? null;
         SLIDER_PICKER_STATE.category = nav.category ?? null;
+        SLIDER_PICKER_STATE.categoryName = nav.categoryName ?? null;
+        SLIDER_PICKER_STATE.search = '';
         renderLevel();
       };
     });
     const backBtn = document.getElementById('slider-picker-back');
     if (backBtn) {
       backBtn.onclick = () => {
+        SLIDER_PICKER_STATE.search = '';
         if (SLIDER_PICKER_STATE.level === 'category') {
           SLIDER_PICKER_STATE.level = 'group';
           SLIDER_PICKER_STATE.category = null;
@@ -3002,8 +3021,15 @@ function renderSliderPickerBreadcrumb() {
     crumbs.push({ label: s.categoryName, nav: { level: 'category', group: s.group, category: s.category, categoryName: s.categoryName } });
   }
   const backDisabled = s.level === 'root';
+  const placeholder = s.level === 'category' ? 'products' : s.level === 'group' ? 'categories' : 'groups';
+  const searchHtml = `
+    <div style="position:relative;flex:1;min-width:180px;max-width:280px">
+      <span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-tertiary);font-size:18px;pointer-events:none">search</span>
+      <input id="slider-picker-search" type="text" placeholder="Search ${placeholder}…" value="${escHtml(s.search || '')}" style="width:100%;padding:6px 10px 6px 34px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--fs-sm)">
+    </div>
+  `;
   return `
-    <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4)">
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap">
       <button class="admin-btn admin-btn-ghost" id="slider-picker-back" ${backDisabled ? 'disabled' : ''} style="padding:4px 10px"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span> Back</button>
       <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;flex-wrap:wrap">
         ${crumbs.map((c, i) => `
@@ -3011,12 +3037,16 @@ function renderSliderPickerBreadcrumb() {
           ${i < crumbs.length - 1 ? '<span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">chevron_right</span>' : ''}
         `).join('')}
       </div>
+      ${searchHtml}
     </div>`;
 }
 
 async function renderSliderPickerFolders() {
-  // Build group folders
-  const groupsHtml = Object.keys(CATEGORY_GROUPS).map(groupName => `
+  // Build group folders, filtered by the search box
+  const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
+  const matchedGroups = Object.keys(CATEGORY_GROUPS).filter(n => !q || n.toLowerCase().includes(q));
+  if (matchedGroups.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No groups match your search.</p></div>';
+  const groupsHtml = matchedGroups.map(groupName => `
     <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
       <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
       <div>
@@ -3030,6 +3060,7 @@ async function renderSliderPickerFolders() {
 
 async function renderSliderPickerCategories() {
   const group = SLIDER_PICKER_STATE.group;
+  const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
   let cats = [];
   if (group === '__uncategorized') {
     const { data: allCats } = await supabase.from('categories').select('id, name, slug').order('name');
@@ -3042,6 +3073,8 @@ async function renderSliderPickerCategories() {
     cats = (allCats || []).filter(c => slugs.includes(c.slug));
   }
   if (cats.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
+  if (q) cats = cats.filter(c => (c.name || '').toLowerCase().includes(q));
+  if (cats.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No categories match your search.</p></div>';
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${
     cats.map(c => `
       <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'category', group: SLIDER_PICKER_STATE.group, category: c.id, categoryName: c.name })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
@@ -3073,9 +3106,13 @@ async function renderSliderPickerProducts() {
   const products = (fetched || []).flatMap(f => f.data || []);
   if (products.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">inventory_2</span><p>No products in this category.</p></div>';
 
+  const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
+  const filteredProducts = q ? products.filter(p => (p.name || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q)) : products;
+  if (filteredProducts.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No products match your search.</p></div>';
+
   const atCap = SLIDER_PICKER_STATE.selected.length >= SLIDER_PICKER_LIMIT;
   return `<div style="display:flex;flex-direction:column;gap:var(--space-1)">${
-    products.map(p => {
+    filteredProducts.map(p => {
       const isSelected = SLIDER_PICKER_STATE.selected.includes(p.id);
       const img = (p.images && p.images[0]) || '/images/placeholder.jpg';
       const disabled = !isSelected && atCap;
