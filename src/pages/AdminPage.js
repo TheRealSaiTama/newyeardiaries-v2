@@ -1327,10 +1327,25 @@ async function openProductModal(container, product = null) {
     }
 
     if (savedProduct?.id) {
+      // Preserve existing per-category sort_order so the list column stays
+      // populated. ponytail: 2 queries, but junction is small per product.
+      const { data: existingPc } = await supabase
+        .from('product_categories')
+        .select('category_id, sort_order')
+        .eq('product_id', savedProduct.id);
+      const sortByCat = new Map((existingPc || []).map(r => [r.category_id, r.sort_order]));
+
       const { error: delError } = await supabase.from('product_categories').delete().eq('product_id', savedProduct.id);
       if (delError) console.error('Category delete failed:', delError);
       if (selectedCatIds.length) {
-        const rows = selectedCatIds.map(cid => ({ product_id: savedProduct.id, category_id: cid }));
+        const productSort = Number(payload.sort_order) || null;
+        const rows = selectedCatIds.map(cid => ({
+          product_id: savedProduct.id,
+          category_id: cid,
+          // If the per-category row had a sort, keep it; otherwise seed from
+          // the product-level sort_order so the list column shows something.
+          sort_order: sortByCat.has(cid) ? sortByCat.get(cid) : (productSort != null && productSort >= 1 && productSort <= 100 ? productSort : null),
+        }));
         const { error: pcError } = await supabase.from('product_categories').insert(rows);
         if (pcError) {
           console.error('Category assignment failed:', pcError);
