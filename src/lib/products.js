@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-function normalize(product) {
+export function normalizeProduct(product) {
   if (!product) return null;
   return {
     id: product.id,

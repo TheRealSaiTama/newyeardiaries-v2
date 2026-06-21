@@ -4,7 +4,7 @@ import { renderProductCard, initProductCardSlideshows } from '../components/Prod
 import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
 import { getContent, getHeroContent, getCtaContent, getTrustBadges, getHomepageSliders } from '../lib/content.js';
-import { getProducts, getCategories } from '../lib/products.js';
+import { getProducts, getCategories, normalizeProduct } from '../lib/products.js';
 
 const SECTION_CATS = {
   leather: 'leather-diary',
@@ -44,11 +44,11 @@ export async function renderHomePage() {
           .in('id', ids))
       );
       (fetched || []).forEach(({ data }) => {
-        (data || []).forEach(p => productMap.set(p.id, p));
+        (data || []).forEach(p => productMap.set(p.id, normalizeProduct(p)));
       });
     }
     sliderLists = sliderConfigs.map(sec => {
-      const products = sec.productIds.map(id => productMap.get(id)).filter(Boolean);
+      const products = sec.productIds.map(id => productMap.get(id)).filter(Boolean).slice(0, 10);
       return { ...sec, products };
     });
   } else {
@@ -344,6 +344,13 @@ function initProductCardEvents() {
       apCatScroll(btn.dataset.slider, parseInt(btn.dataset.dir));
     });
   });
+
+  // Keep catalogue slider arrow enabled/disabled state in sync with scroll.
+  document.querySelectorAll('.ap-catalogue-section .ap-cat-grid').forEach(grid => {
+    grid.addEventListener('scroll', () => requestAnimationFrame(syncSliderArrows), { passive: true });
+  });
+  // Initial sync after layout settles.
+  requestAnimationFrame(() => requestAnimationFrame(syncSliderArrows));
 }
 
 function apCatScroll(gridId, dir) {
@@ -351,9 +358,28 @@ function apCatScroll(gridId, dir) {
   if (!grid) return;
   const cards = grid.children;
   if (!cards.length) return;
-  const cardWidth = cards[0].offsetWidth + 16;
-  grid.scrollBy({ left: dir * cardWidth * 2, behavior: 'smooth' });
+  // Scroll by ~5 cards worth (the visible viewport) so the user advances a
+  // full "page" of the slider. Fall back to 2 cards if width measurement
+  // isn't ready yet.
+  const cardW = (cards[0].offsetWidth || 200) + 20;
+  const visible = Math.max(2, Math.floor(grid.clientWidth / cardW));
+  grid.scrollBy({ left: dir * cardW * visible, behavior: 'smooth' });
 }
+
+// Sync prev/next arrow disabled state with current scroll position. Called
+// on init and on the strip's scroll event.
+function syncSliderArrows() {
+  document.querySelectorAll('.ap-catalogue-section').forEach(sec => {
+    const grid = sec.querySelector('.ap-cat-grid');
+    if (!grid) return;
+    const left = sec.querySelector('.ap-cat-arrow--left');
+    const right = sec.querySelector('.ap-cat-arrow--right');
+    const max = grid.scrollWidth - grid.clientWidth - 1;
+    if (left) left.classList.toggle('is-disabled', grid.scrollLeft <= 0);
+    if (right) right.classList.toggle('is-disabled', grid.scrollLeft >= max);
+  });
+}
+
 function renderCtaSection(cta) {
   const title    = cta?.title    || 'Ready for Corporate Orders?';
   const subtitle = cta?.subtitle || 'Get manufacturer-direct pricing on bulk orders of 25+ units. Custom branding with debossing, foil stamping, and bespoke packaging.';

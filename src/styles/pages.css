@@ -153,6 +153,34 @@
   gap: 20px;
   padding-bottom: 4px;
 }
+/* Catalogue slider: horizontal scroll strip, 5 cards visible at a time.
+   Each card is ~1/5 of the inner width minus gap. ponytail: use flex +
+   scroll-snap over a JS carousel — fewer moving parts, native scroll. */
+.ap-catalogue-section .ap-cat-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  gap: 20px;
+  padding-bottom: 4px;
+}
+.ap-catalogue-section .ap-cat-grid::-webkit-scrollbar { display: none; }
+.ap-catalogue-section .ap-cat-grid .ap-product-card {
+  flex: 0 0 calc((100% - 80px) / 5); /* 5 cards visible, 4 gaps of 20px */
+  scroll-snap-align: start;
+}
+@media (max-width: 1200px) {
+  .ap-catalogue-section .ap-cat-grid .ap-product-card { flex: 0 0 calc((100% - 60px) / 4); }
+}
+@media (max-width: 900px) {
+  .ap-catalogue-section .ap-cat-grid .ap-product-card { flex: 0 0 calc((100% - 40px) / 3); }
+}
+@media (max-width: 600px) {
+  .ap-catalogue-section .ap-cat-grid .ap-product-card { flex: 0 0 calc((100% - 20px) / 2); }
+}
 
 .ap-cat-card {
   flex: 0 0 220px;
@@ -218,6 +246,11 @@
 .ap-cat-wrapper:hover .ap-cat-arrow {
   opacity: 1;
 }
+/* Catalogue slider arrows: always visible (slider is the affordance) but
+   dim when there's no room to scroll in that direction. The home Shop-by-
+   Category carousel above still hides them via the next rule. */
+.ap-catalogue-section .ap-cat-arrow { display: flex; opacity: 0.7; }
+.ap-catalogue-section .ap-cat-arrow.is-disabled { opacity: 0.15; pointer-events: none; }
 
 .ap-cat-arrow--left { left: 8px; }
 .ap-cat-arrow--right { right: 8px; }
@@ -227,9 +260,6 @@
   color: #fff;
 }
 
-/* On the homepage, the grid shows all products at once, so the prev/next
-   arrows aren't useful. Hide them; the 'View All →' link handles overflow. */
-.ap-catalogue-section .ap-cat-arrow { display: none; }
 
 .home-whatsapp-btn { display: none !important; }
 
