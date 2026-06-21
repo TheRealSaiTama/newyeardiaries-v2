@@ -361,14 +361,8 @@ function showConfirmDialog(message, onConfirm) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
-  overlay.addEventListener('mousedown', (e) => {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeModal();
-    }
-  });
-  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  // Close handlers — only the X button (or Cancel) closes; clicking the
+  // backdrop is a no-op so dad doesn't lose filled data from a stray click.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1039,17 +1033,10 @@ async function openProductModal(container, product = null) {
     secondaryObjectUrls.forEach(url => URL.revokeObjectURL(url));
     closeModal();
   };
-  // Close handlers — use mousedown so TinyMCE's iframe doesn't swallow
-  // the click. Capture-phase listener on the overlay so we always know
-  // whether the press started on the backdrop, not on the modal body.
-  overlay.addEventListener('mousedown', (e) => {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeProductModal();
-    }
-  });
-  const stopInsideModal = (e) => e.stopPropagation();
-  overlay.querySelector('.admin-modal').addEventListener('mousedown', stopInsideModal);
+  // Close handlers — only the X button (or Cancel) closes. Backdrop click
+  // and ESC are intentionally no-ops so dad doesn't lose form data from a
+  // stray click. ponytail: keep the X/Cancel handlers since TinyMCE's
+  // iframe can swallow normal click events, so mousedown is still used.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1060,14 +1047,6 @@ async function openProductModal(container, product = null) {
     e.stopPropagation();
     closeProductModal();
   });
-  // ESC key closes the modal too
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeProductModal();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
-  document.addEventListener('keydown', escHandler);
 
   const secondaryTextarea = overlay.querySelector('[name="secondary_images"]');
   const secondaryGrid = overlay.querySelector('#secondary-media-grid');
@@ -1597,14 +1576,8 @@ async function openCategoryModal(container, category = null, presetGroupName = n
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
-  overlay.addEventListener('mousedown', (e) => {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeModal();
-    }
-  });
-  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
+  // Close handlers — only the X button (or Cancel) closes. Backdrop click
+  // is intentionally a no-op so dad doesn't lose form data from a stray click.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1827,13 +1800,6 @@ function openBannerModal(container, banner = null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     closeModal();
   };
-  overlay.addEventListener('mousedown', (e) => {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeBannerModal();
-    }
-  });
-  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2181,14 +2147,6 @@ function openEnquiryDetailModal(item, type) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
-  overlay.addEventListener('mousedown', (e) => {
-    if (e.target === overlay) {
-      e.preventDefault();
-      closeModal();
-    }
-  });
-  overlay.querySelector('.admin-modal').addEventListener('mousedown', (e) => e.stopPropagation());
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
