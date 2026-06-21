@@ -195,6 +195,9 @@ export function renderAdminPage() {
     .admin-media-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
     .admin-cat-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-2); max-height: 160px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
     .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; }
+    .admin-cat-group-label { font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-tertiary); padding: var(--space-2) var(--space-2) var(--space-1); margin-top: var(--space-2); border-bottom: 1px solid var(--color-border-light); width: 100%; }
+    .admin-cat-group-label:first-child { margin-top: 0; }
+    .admin-cat-checkboxes { flex-direction: column; align-items: stretch !important; }
     .admin-cat-checkbox:hover { background: var(--color-surface-alt); }
     .admin-cat-checkbox input { accent-color: var(--color-primary); }
     .admin-modal-actions { display: flex; gap: var(--space-3); justify-content: flex-end; padding: var(--space-6); border-top: 1px solid var(--color-border); }
@@ -834,10 +837,61 @@ function isVideoMedia(src, type = '') {
 }
 
 async function openProductModal(container, product = null) {
-  const [{ data: categories }, existingCats] = await Promise.all([
-    supabase.from('categories').select('id, name').order('name'),
+  // Use fetchCategories() so the list mirrors the navbar's grouping (DB
+  // group_id with the hardcoded CATEGORY_GROUPS fallback). Linear, with
+  // group labels as section headers and a tab indent before each item.
+  const [allCategories, existingCats] = await Promise.all([
+    fetchCategories(),
     product?.id ? supabase.from('product_categories').select('category_id').eq('product_id', product.id) : Promise.resolve({ data: [] }),
   ]);
+
+  // Group categories by their group_name. Group order matches the navbar
+  // (sort_order on category_groups), then the hardcoded fallback order,
+  // then any orphan group last.
+  const groups = await fetchCategoryGroups();
+  const groupOrder = groups.map(g => g.name);
+  const groupSortByName = new Map(groups.map(g => [g.name, g.sort_order || 0]));
+  const FALLBACK_ORDER = Object.keys(CATEGORY_GROUPS);
+
+  // Buckets: groupName -> [cat]
+  const buckets = new Map();
+  const orphans = [];
+  for (const c of allCategories || []) {
+    const gName = c.group_name || null;
+    if (gName) {
+      if (!buckets.has(gName)) buckets.set(gName, []);
+      buckets.get(gName).push(c);
+    } else {
+      orphans.push(c);
+    }
+  }
+  // Compose the final ordered list: [group, [cat...]], [group, [cat...]], ...
+  const ordered = [];
+  const seen = new Set();
+  const pushBucket = (name) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    const items = (buckets.get(name) || []).slice().sort((a, b) => {
+      const so = (a.sort_order || 0) - (b.sort_order || 0);
+      if (so !== 0) return so;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    if (items.length) ordered.push({ name, items });
+  };
+  for (const n of groupOrder) pushBucket(n);
+  for (const n of FALLBACK_ORDER) pushBucket(n);
+  if (orphans.length) {
+    const sorted = orphans.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    ordered.push({ name: 'Other', items: sorted });
+  }
+  // Sort groups that came only from the fallback by their hardcoded index.
+  ordered.forEach(g => {
+    if (groupSortByName.has(g.name)) return;
+    const idx = FALLBACK_ORDER.indexOf(g.name);
+    g._fallbackIdx = idx === -1 ? 9999 : idx;
+  });
+  // Stable order: DB group sort_order, then fallback order, then 'Other' last.
+  // (groupOrder/FALLBACK_ORDER iteration above already does this.)
   const isEdit = !!product;
   const primaryImage = product?.images?.[0] || '';
   const secondaryImages = product?.images?.slice(1) || [];
@@ -862,7 +916,10 @@ async function openProductModal(container, product = null) {
         <div class="form-row">
           <div class="form-group" style="flex:1"><label>Categories</label>
             <div class="admin-cat-checkboxes">
-              ${categories.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+              ${ordered.map(g => `
+                <div class="admin-cat-group-label">${g.name}</div>
+                ${g.items.map(c => `<label class="admin-cat-checkbox" style="padding-left:24px"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+              `).join('')}
             </div>
           </div>
           <div class="form-group"><label>Price *</label><input name="price" type="number" step="0.01" value="${product?.price || ''}" required></div>
