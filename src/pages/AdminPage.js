@@ -9,6 +9,20 @@ const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const SECONDARY_MEDIA_TYPES = [...IMAGE_TYPES, 'video/mp4'];
 const MAX_MEDIA_SIZE = 8 * 1024 * 1024;
 
+const adminCache = new Map();
+function acGet(key, ttl = 10000) {
+  const hit = adminCache.get(key);
+  if (hit && Date.now() - hit.ts < ttl) return hit.data;
+  adminCache.delete(key);
+  return null;
+}
+function acSet(key, data) { adminCache.set(key, { data, ts: Date.now() }); }
+function acBust(prefix) {
+  if (!prefix) adminCache.clear();
+  else for (const k of adminCache.keys()) if (k.startsWith(prefix)) adminCache.delete(k);
+}
+const tabCache = new Map();
+
 export function renderAdminPage() {
   const isAuthed = sessionStorage.getItem('admin_auth') === '1';
 
@@ -103,7 +117,7 @@ export function renderAdminPage() {
     .admin-nav-item:hover { background: rgba(255,255,255,0.08); color: var(--color-footer-link-hover); }
     .admin-nav-item.active { background: var(--color-primary); color: #fff; }
     .admin-nav-item .material-symbols-outlined { font-size: 20px; }
-    .admin-main { flex: 1; padding: var(--space-8); overflow-y: auto; background: var(--color-surface-alt); }
+    .admin-main { flex: 1; padding: var(--space-8); overflow-y: auto; background: var(--color-surface-alt); transition: opacity 0.15s; }
     .admin-loading { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text-secondary); padding: var(--space-8); }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -327,7 +341,14 @@ export async function initAdminPage() {
 
 async function loadTab(tab) {
   const content = document.getElementById('admin-content');
-  content.innerHTML = '<div class="admin-loading"><span class="material-symbols-outlined spin">progress_activity</span> Loading...</div>';
+  const cached = tabCache.get(tab);
+  if (cached) {
+    content.innerHTML = cached;
+    content.style.opacity = '0.6';
+    requestAnimationFrame(() => { content.style.transition = 'opacity 0.15s'; content.style.opacity = '1'; });
+  } else {
+    content.innerHTML = '<div class="admin-loading"><span class="material-symbols-outlined spin">progress_activity</span> Loading...</div>';
+  }
   switch (tab) {
     case 'homepage': await renderHomepageSection(content); break;
     case 'header': await renderHeaderSection(content); break;
@@ -338,6 +359,9 @@ async function loadTab(tab) {
     case 'settings': await renderSettings(content); break;
     case 'enquiries': await renderEnquiries(content); break;
   }
+  tabCache.set(tab, content.innerHTML);
+  content.style.transition = 'opacity 0.15s';
+  content.style.opacity = '1';
 }
 
 function closeModal() {
@@ -569,6 +593,9 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
     btn.onclick = () => {
       const next = JSON.parse(btn.dataset.nav);
       container.dataset.fsNav = JSON.stringify(next);
+      if (next.level === 'category') {
+        container.innerHTML = '<div class="admin-loading"><span class="material-symbols-outlined spin">progress_activity</span> Loading products...</div>';
+      }
       renderProducts(container, 1, '', '');
     };
   });
@@ -586,6 +613,13 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
 // Product rows view (inside a category folder, or global search)
 async function renderProductRows(container, header, opts, breadcrumb = '') {
   const { search, filterCategory, filterActive, page } = opts;
+  const cacheKey = `prods:${search}|${filterCategory}|${filterActive}|${page}`;
+  const cached = acGet(cacheKey);
+  if (cached) {
+    container.innerHTML = cached.html;
+    wireProductRows(container, cached.products);
+    return;
+  }
 
   let query = supabase
     .from('products')
@@ -596,8 +630,14 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
     query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,sku.ilike.%${search}%`);
   }
   if (filterCategory) {
-    const { data: pcFilter } = await supabase.from('product_categories').select('product_id').eq('category_id', filterCategory);
-    const filterIds = (pcFilter || []).map(r => r.product_id);
+    const pcKey = `pcFilter:${filterCategory}`;
+    let pcFilter = acGet(pcKey);
+    if (!pcFilter) {
+      const { data } = await supabase.from('product_categories').select('product_id').eq('category_id', filterCategory);
+      pcFilter = data || [];
+      acSet(pcKey, pcFilter);
+    }
+    const filterIds = pcFilter.map(r => r.product_id);
     if (filterIds.length) {
       query = query.in('id', filterIds);
     } else {
@@ -678,43 +718,9 @@ const catMapByProduct = {};
       <span class="page-info">${count} total</span>
     </div>` : ''}
   `;
+  acSet(cacheKey, { html: container.innerHTML, products });
 
   wireFsShared(container);
-
-  // Image lightbox
-  document.querySelectorAll('.col-image img').forEach(img => {
-    img.addEventListener('click', () => {
-      const overlay = document.createElement('div');
-      overlay.className = 'img-lightbox';
-      overlay.innerHTML = `<img src="${img.dataset.src}" alt="">`;
-      overlay.onclick = () => overlay.remove();
-      document.body.appendChild(overlay);
-    });
-  });
-
-  // Search-clear returns to folder view
-  document.getElementById('fs-search-clear')?.addEventListener('click', () => {
-    renderProducts(container, 1, '', '');
-  });
-
-  document.getElementById('fs-back')?.addEventListener('click', () => fsGoBack(container));
-
-  document.querySelectorAll('.fs-crumb').forEach(btn => {
-    btn.onclick = () => {
-      if (btn.disabled) return;
-      const next = JSON.parse(btn.dataset.nav);
-      container.dataset.fsNav = JSON.stringify(next);
-      renderProducts(container, 1, '', '');
-    };
-  });
-
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.closest('tr').dataset.id;
-      const product = products.find(p => p.id === id);
-      openProductModal(container, product);
-    };
-  });
 
   document.querySelectorAll('.duplicate-btn').forEach(btn => {
     btn.onclick = async () => {
@@ -736,6 +742,7 @@ const catMapByProduct = {};
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
         await supabase.from('products').delete().eq('id', id);
         showToast('Product deleted!');
+        acBust('prods:');
         const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
         renderProducts(container, 1, document.getElementById('product-search')?.value || '', document.getElementById('filter-active')?.value || '', nav);
       });
@@ -914,7 +921,7 @@ async function duplicateProduct(source, container) {
   }
 
   showToast(`Duplicated as "${newName}"`);
-  // Re-render the current list view (preserves search/filter/nav).
+  acBust('prods:');
   const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
   const search = document.getElementById('product-search')?.value || '';
   const filterActive = document.getElementById('filter-active')?.value || '';
@@ -1417,6 +1424,7 @@ async function openProductModal(container, product = null) {
 
     closeProductModal();
     showToast(isEdit ? 'Product updated!' : 'Product added!');
+    acBust('prods:');
     await renderProducts(container);
   };
 }
