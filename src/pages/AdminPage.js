@@ -646,7 +646,7 @@ const catMapByProduct = {};
         <tbody id="products-tbody">
           ${products.map(p => {
             return `
-            <tr class="product-row" data-id="${p.id}" ${pc ? `data-pc-id="${pc.pc_id}"` : ''} data-product-id="${p.id}">
+            <tr class="product-row" data-id="${p.id}" data-product-id="${p.id}">
               <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
               <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
               <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
