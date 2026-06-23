@@ -625,18 +625,23 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
     .from('products')
     .select('*, category:categories!products_category_id_fkey(name)', { count: 'exact' })
     .order('created_at', { ascending: false });
+  let categorySlug = null;
+  let sortByProduct = null;
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,sku.ilike.%${search}%`);
   }
   if (filterCategory) {
+    const { data: catRow } = await supabase.from('categories').select('slug').eq('id', filterCategory).maybeSingle();
+    categorySlug = catRow?.slug || null;
     const pcKey = `pcFilter:${filterCategory}`;
     let pcFilter = acGet(pcKey);
     if (!pcFilter) {
-      const { data } = await supabase.from('product_categories').select('product_id').eq('category_id', filterCategory);
+      const { data } = await supabase.from('product_categories').select('product_id, sort_order').eq('category_id', filterCategory);
       pcFilter = data || [];
       acSet(pcKey, pcFilter);
     }
+    sortByProduct = new Map(pcFilter.map(r => [r.product_id, r.sort_order]));
     const filterIds = pcFilter.map(r => r.product_id);
     if (filterIds.length) {
       query = query.in('id', filterIds);
@@ -650,9 +655,23 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
 
   const from = (page - 1) * PRODUCTS_PER_PAGE;
   const to = from + PRODUCTS_PER_PAGE - 1;
-  query = query.range(from, to);
+  if (!filterCategory) query = query.range(from, to);
 
-  const { data: products, error, count } = await query;
+  let { data: products, error, count } = await query;
+
+  if (filterCategory && products?.length) {
+    products = products.slice().sort((a, b) => {
+      if (categorySlug === 'a-to-z-diary-collection') return (a.name || '').localeCompare(b.name || '');
+      const sa = sortByProduct?.get(a.id);
+      const sb = sortByProduct?.get(b.id);
+      if (sa == null && sb == null) return (a.name || '').localeCompare(b.name || '');
+      if (sa == null) return 1;
+      if (sb == null) return -1;
+      return sa - sb || (a.name || '').localeCompare(b.name || '');
+    });
+    count = products.length;
+    products = products.slice(from, to + 1);
+  }
 
   const productIds = (products || []).map(p => p.id);
   const { data: pcRows } = productIds.length
@@ -668,6 +687,7 @@ const catMapByProduct = {};
     }
   });
   const totalPages = Math.ceil((count || 0) / PRODUCTS_PER_PAGE);
+  const showSortColumn = !!filterCategory && categorySlug !== 'a-to-z-diary-collection';
 
   const searchBanner = search ? `
     <div class="fs-breadcrumb">
@@ -681,7 +701,7 @@ const catMapByProduct = {};
     <div class="admin-card">
       ${(products?.length && !error) ? `<div class="admin-table-wrap"><table class="admin-table">
         <thead><tr>
-          <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th>
+          <th>Image</th><th>Name</th>${showSortColumn ? '<th style="width:120px">Sort</th>' : ''}<th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th>
         </tr></thead>
         <tbody id="products-tbody">
           ${products.map(p => {
@@ -689,6 +709,7 @@ const catMapByProduct = {};
             <tr class="product-row" data-id="${p.id}" data-product-id="${p.id}">
               <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
               <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
+              ${showSortColumn ? `<td><input class="category-sort-input" data-product-id="${p.id}" data-category-id="${filterCategory}" type="number" min="1" max="100" value="${sortByProduct?.get(p.id) || ''}" style="width:82px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm)"></td>` : ''}
               <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
               <td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
               <td>${p.in_stock ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>` : '<span style="color:var(--color-error)">Out of stock</span>'}</td>
@@ -721,6 +742,29 @@ const catMapByProduct = {};
   acSet(cacheKey, { html: container.innerHTML, products });
 
   wireFsShared(container);
+
+  document.querySelectorAll('.category-sort-input').forEach(input => {
+    input.onchange = async () => {
+      const sort = Number(input.value);
+      if (!sort || sort < 1 || sort > 100) {
+        input.value = '';
+        showToast('Sort order must be 1-100.', 'error');
+        return;
+      }
+      const { error } = await supabase
+        .from('product_categories')
+        .update({ sort_order: sort })
+        .eq('product_id', input.dataset.productId)
+        .eq('category_id', input.dataset.categoryId);
+      if (error) {
+        showToast(`Failed: ${error.message}`, 'error');
+        return;
+      }
+      acBust('prods:');
+      acBust(`pcFilter:${input.dataset.categoryId}`);
+      showToast('Sort order saved.');
+    };
+  });
 
   document.querySelectorAll('.duplicate-btn').forEach(btn => {
     btn.onclick = async () => {
@@ -1131,25 +1175,36 @@ async function openProductModal(container, product = null) {
         menubar: false,
         branding: false,
         promotion: false,
+        base_url: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5',
+        suffix: '.min',
         skin: 'oxide',
-        content_css: 'default',
+        skin_url: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/ui/oxide',
+        content_css: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/content/default/content.min.css',
         plugins: [
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
           'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
           'fullscreen', 'insertdatetime', 'media', 'table', 'help', 'wordcount',
-          'emoticons', 'autosave',
+          'emoticons', 'autosave', 'quickbars',
         ],
         toolbar:
-          'undo redo | blocks | bold italic underline strikethrough | ' +
-          'forecolor backcolor | highlight | alignleft aligncenter ' +
-          'alignright alignjustify | bullist numlist outdent indent | ' +
-          'link image table | blockquote code | removeformat | help',
+          'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
+          'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
+          'bullist numlist outdent indent | link image media table | ' +
+          'blockquote charmap emoticons | removeformat fullscreen preview code help',
         toolbar_mode: 'wrap',
         statusbar: true,
         elementpath: false,
         resize: true,
         browser_spellcheck: true,
         contextmenu: 'link image table',
+        quickbars_selection_toolbar: 'bold italic underline | forecolor backcolor | link blockquote',
+        table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+        color_cols: 8,
+        color_map: [
+          '000000', 'Black', '333333', 'Dark gray', '666666', 'Gray', '999999', 'Light gray',
+          'A0522D', 'NYD Brown', 'C4956A', 'NYD Gold', 'E53935', 'Red', '1565C0', 'Blue',
+          '1B5E20', 'Green', 'FBC02D', 'Yellow', 'FFFFFF', 'White',
+        ],
       };
       // Short description: smaller height
       await tinymce.init({
@@ -1157,8 +1212,8 @@ async function openProductModal(container, product = null) {
         selector: '#rte-short-description',
         height: 140,
         toolbar:
-          'undo redo | bold italic underline | forecolor backcolor | ' +
-          'highlight | link | bullist numlist | blockquote | removeformat',
+          'undo redo | blocks fontsize | bold italic underline | forecolor backcolor | ' +
+          'link | bullist numlist | blockquote | removeformat',
         statusbar: false,
       });
       rteInstances.push('rte-short-description');

@@ -128,12 +128,9 @@ function setupShell() {
 // should not appear in the admin dashboard.
 function syncShellExtras() {
   const isAdmin = (window.location.pathname || '').startsWith('/admin');
-  const about = document.querySelector('.nyd-about-section') || document.getElementById('about-section');
-  if (about) about.style.display = isAdmin ? 'none' : '';
-  const floating = document.getElementById('floating-buttons');
-  if (floating) floating.style.display = isAdmin ? 'none' : '';
-  const faq = document.getElementById('faq-chatbot');
-  if (faq) faq.style.display = isAdmin ? 'none' : '';
+  document.body.classList.toggle('is-admin-route', isAdmin);
+  document.querySelectorAll('#about-section, .nyd-about-section, #floating-buttons, #faq-chatbot')
+    .forEach(el => { el.style.display = isAdmin ? 'none' : ''; });
 }
 
 // Per-page sessionStorage cache. Keyed by the page's base path. The value
@@ -144,8 +141,9 @@ function syncShellExtras() {
 // per-HTML size check. We don't store anything >1MB so a single huge page
 // can't blow the budget.
 const PAGE_CACHE_PREFIX = '__nyd_page_cache:';
-const PAGE_CACHE_MAX_ENTRIES = 4;
+const PAGE_CACHE_MAX_ENTRIES = 8;
 const PAGE_CACHE_MAX_HTML_BYTES = 800_000; // ~800KB
+const HOME_CACHE_KEY = PAGE_CACHE_PREFIX + 'persistent:/';
 
 function pageCacheKey(params) {
   // Include search params so distinct category/group/q filters cache
@@ -157,16 +155,23 @@ function pageCacheKey(params) {
 
 function getCachedPage(params) {
   try {
-    const raw = sessionStorage.getItem(pageCacheKey(params));
+    const key = pageCacheKey(params);
+    if (key === PAGE_CACHE_PREFIX + '/' && window.__nydHomeHtmlCache?.html) return window.__nydHomeHtmlCache;
+    const raw = sessionStorage.getItem(key) || (key === PAGE_CACHE_PREFIX + '/' ? localStorage.getItem(HOME_CACHE_KEY) : null);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch { return null; }
 }
 
 function setCachedPage(params, html) {
-  if (!html || html.length > PAGE_CACHE_MAX_HTML_BYTES) return;
+  if (!html) return;
+  const key = pageCacheKey(params);
+  if (key === PAGE_CACHE_PREFIX + '/') window.__nydHomeHtmlCache = { html, t: Date.now() };
+  if (html.length > PAGE_CACHE_MAX_HTML_BYTES) return;
   try {
-    sessionStorage.setItem(pageCacheKey(params), JSON.stringify({ html, t: Date.now() }));
+    const payload = JSON.stringify({ html, t: Date.now() });
+    sessionStorage.setItem(key, payload);
+    if (key === PAGE_CACHE_PREFIX + '/') localStorage.setItem(HOME_CACHE_KEY, payload);
     // Enforce max entries — evict oldest.
     const keys = Object.keys(sessionStorage).filter(k => k.startsWith(PAGE_CACHE_PREFIX));
     if (keys.length > PAGE_CACHE_MAX_ENTRIES) {
@@ -185,6 +190,8 @@ function clearPageCache() {
   try {
     const keys = Object.keys(sessionStorage).filter(k => k.startsWith(PAGE_CACHE_PREFIX));
     keys.forEach(k => sessionStorage.removeItem(k));
+    localStorage.removeItem(HOME_CACHE_KEY);
+    window.__nydHomeHtmlCache = null;
   } catch { /* ignore */ }
 }
 
@@ -226,7 +233,15 @@ function wrapPage(renderFn) {
 
     // COLD PATH: full render. May be async — return the promise so first
     // paint waits for content.
-    return Promise.resolve(renderFn(params, appContent));
+    const targetPath = window.location.pathname + window.location.search;
+    if (targetPath === '/' && app) app.innerHTML = renderHomeSkeleton();
+    return Promise.resolve(renderFn(params, appContent)).then(() => {
+      if (window.location.pathname + window.location.search !== targetPath) {
+        resolveRoute();
+        return;
+      }
+      if (app) setCachedPage(params, app.innerHTML);
+    });
   };
 }
 

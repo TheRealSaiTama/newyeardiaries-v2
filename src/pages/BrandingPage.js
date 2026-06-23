@@ -149,7 +149,7 @@ export function renderBrandingPage() {
               </div>
             </div>
             <div class="b-cta__media">
-              <img class="b-cta__media-img" src="/images/branding/cta-feature.jpg" alt="Premium branded diary" loading="lazy">
+              <img class="b-cta__media-img" src="/images/branding/cta-diary-handoff.png" alt="Premium branded diary handoff" loading="lazy">
               <span class="b-cta__chip"><span class="material-symbols-outlined">verified</span> In-house production</span>
               <span class="b-cta__chip b-cta__chip--2"><span class="material-symbols-outlined">factory</span> Delhi facility</span>
             </div>

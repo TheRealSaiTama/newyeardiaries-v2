@@ -33,7 +33,7 @@ export async function openQuickView(productId) {
         <div class="label">${product.category}</div>
         <h2 class="heading-3">${product.title}</h2>
         <div class="pdp-price">${formatPrice(product.price)}</div>
-        <p class="text-body">${product.description}</p>
+        <div class="text-body">${product.description}</div>
         <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
           ${[product.material, product.size, product.pages ? product.pages + ' pages' : null].filter(Boolean).join(' • ')}
         </div>

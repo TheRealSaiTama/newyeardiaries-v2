@@ -151,7 +151,7 @@ export async function renderProductDetailPage(params) {
               ${product.originalPrice ? `<span style="font-size:var(--fs-md);color:var(--color-text-tertiary);text-decoration:line-through;margin-left:var(--space-3);">${formatPrice(product.originalPrice)}</span>` : ''}
             </div>
 
-            <p class="pdp-description">${product.shortDescription || product.description}</p>
+            <div class="pdp-description">${product.shortDescription || product.description}</div>
 
             ${product.hasShippingBadge || product.hasWarrantyBadge ? `
               <div style="margin-top:var(--space-4);font-size:var(--fs-sm);line-height:1.6;display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4);">

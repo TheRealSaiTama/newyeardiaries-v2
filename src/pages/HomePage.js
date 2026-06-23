@@ -161,7 +161,10 @@ export async function renderHomePage() {
       const prefix = window.__nydPageCachePrefix || '__nyd_page_cache:';
       const path = window.location.pathname || '/';
       const search = window.location.search || '';
-      sessionStorage.setItem(prefix + path + search, JSON.stringify({ html, t: Date.now() }));
+      const payload = JSON.stringify({ html, t: Date.now() });
+      window.__nydHomeHtmlCache = { html, t: Date.now() };
+      sessionStorage.setItem(prefix + path + search, payload);
+      if (path === '/' && !search) localStorage.setItem(prefix + 'persistent:/', payload);
     }
   } catch { /* quota or disabled — ignore */ }
 }
