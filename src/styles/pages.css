@@ -706,6 +706,59 @@ body.is-admin-route #faq-chatbot {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
+/* ---- Checkout notices (Please Note / Payment Options) ---- */
+.checkout-notice {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  border-left: 4px solid;
+}
+.checkout-notice--warning {
+  background: #fff7ed;
+  border-left-color: #d97706;
+}
+.checkout-notice--info {
+  background: #eff6ff;
+  border-left-color: #2563eb;
+}
+.checkout-notice--important {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #b91c1c;
+  box-shadow: 0 1px 3px rgba(185, 28, 28, 0.08);
+}
+.checkout-notice--important .checkout-notice__icon { color: #b91c1c; }
+.checkout-notice--important .checkout-notice__title { color: #b91c1c; }
+.checkout-notice__icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+.checkout-notice--warning .checkout-notice__icon { color: #d97706; }
+.checkout-notice--info .checkout-notice__icon { color: #2563eb; }
+.checkout-notice__body { flex: 1; }
+.checkout-notice__title {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  margin-bottom: var(--space-2);
+  color: var(--color-text-primary);
+}
+.checkout-notice__body p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.checkout-notice__body p:last-child { margin-bottom: 0; }
+.checkout-notice__methods {
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-primary);
+}
+.checkout-notice__highlight {
+  font-weight: var(--fw-semibold);
+  color: #b91c1c;
+}
 @media (max-width: 1024px) {
   .checkout-layout { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
@@ -1391,6 +1444,17 @@ body.is-admin-route #faq-chatbot {
   margin: 0 auto var(--space-8);
   line-height: var(--lh-relaxed);
 }
+.success-page .success-lede { margin-bottom: var(--space-2); }
+.success-page .success-received { color: var(--color-text-primary); }
+.success-page .success-status {
+  font-weight: var(--fw-bold);
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--fs-base);
+  margin-bottom: var(--space-4);
+}
+.success-page .success-followup { margin-bottom: var(--space-8); }
 
 /* ---- FAQ Accordion ---- */
 .faq-item {

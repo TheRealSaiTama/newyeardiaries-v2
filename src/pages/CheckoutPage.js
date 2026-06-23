@@ -75,7 +75,6 @@ export async function renderCheckoutPage() {
     }
   });
 
-  const step = getCheckoutStep();
   const checkoutData = getCheckoutData();
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
@@ -85,18 +84,13 @@ export async function renderCheckoutPage() {
   const shipping = subtotal >= 5000 ? 0 : 250;
   const total = subtotal + (subtotal * gstRate);
 
-  const isShipping = step === 'shipping';
-  const isPayment = step === 'payment';
-
   const stepperHtml = `
     <div class="checkout-stepper">
-      <div class="step completed"><span class="step-indicator"><span class="material-symbols-outlined" style="font-size:16px;">check</span></span><span class="step-label">Cart</span></div>
-      <div class="step-connector ${isPayment ? 'completed' : (isShipping ? 'completed' : '')}"></div>
-      <div class="step ${isShipping ? 'active' : (isPayment ? 'completed' : '')}"><span class="step-indicator">${isPayment ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '2'}</span><span class="step-label">Shipping</span></div>
-      <div class="step-connector ${isPayment ? 'active' : ''}"></div>
-      <div class="step ${isPayment ? 'active' : ''}"><span class="step-indicator">3</span><span class="step-label">Payment</span></div>
+      <div class="step active"><span class="step-indicator">1</span><span class="step-label">Contact Info</span></div>
       <div class="step-connector"></div>
-      <div class="step"><span class="step-indicator">4</span><span class="step-label">Review</span></div>
+      <div class="step"><span class="step-indicator">2</span><span class="step-label">Review</span></div>
+      <div class="step-connector"></div>
+      <div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div>
     </div>
   `;
 
@@ -116,13 +110,11 @@ export async function renderCheckoutPage() {
               <div style="flex:1;min-width:0;">
                 <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);">${item.product.title}</div>
                 <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${item.product.material || ''} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
-                ${isShipping ? `
                 <div class="qty-stepper checkout-qty-stepper">
                   <button class="qty-step-btn checkout-qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
                   <input type="number" class="qty-step-input checkout-qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}" step="1">
                   <button class="qty-step-btn checkout-qty-plus" data-id="${item.product.id}" data-moq="${moq}">+</button>
                 </div>
-                ` : `<div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">Qty: ${item.qty}</div>`}
               </div>
               <div style="font-weight:var(--fw-semibold);font-size:var(--fs-sm);text-align:right;">
                 <div class="checkout-item-subtotal">${formatPrice(item.product.price * item.qty)}</div>
@@ -139,9 +131,7 @@ export async function renderCheckoutPage() {
     </div>
   `;
 
-  let formHtml;
-  if (isShipping) {
-    formHtml = `
+  const formHtml = `
       <div class="checkout-form-section">
         <div class="checkout-form-group">
           <h2>Contact Information</h2>
@@ -192,76 +182,37 @@ export async function renderCheckoutPage() {
           <h2>Tax Information (Optional)</h2>
           <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
         </div>
-        <div class="checkout-form-group">
-          <h2>Shipping Method</h2>
-          <div class="card" style="padding:var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
-            <input type="radio" checked name="shipping" id="standard">
-            <label for="standard" style="flex:1;"><strong>Standard Shipping</strong><br><span class="text-sm">5-7 business days • Free on orders above ₹5,000</span></label>
-            <span style="font-weight:var(--fw-semibold);">${shipping > 0 ? '₹' + shipping : 'Free'}</span>
+        <div class="checkout-notice checkout-notice--warning">
+          <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
+          <div class="checkout-notice__body">
+            <div class="checkout-notice__title">Please Note:</div>
+            <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by selecting your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
+            <p>Cash on Delivery (COD) is <strong>not</strong> available on this order.</p>
+          </div>
+        </div>
+        <div class="checkout-notice checkout-notice--info">
+          <span class="material-symbols-outlined checkout-notice__icon">payments</span>
+          <div class="checkout-notice__body">
+            <div class="checkout-notice__title">Payment Options:</div>
+            <p>You can use any payment option for this order:</p>
+            <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
+            <p class="checkout-notice__highlight">Your order will not be shipped until we receive your payment.</p>
+          </div>
+        </div>
+        <div class="checkout-notice checkout-notice--important">
+          <span class="material-symbols-outlined checkout-notice__icon">block</span>
+          <div class="checkout-notice__body">
+            <div class="checkout-notice__title">No Payment Will Be Made Now</div>
+            <p class="checkout-notice__highlight">No payment will be collected at checkout.</p>
+            <p>Placing this order does <strong>not</strong> require any payment. Our team will contact you shortly with the final total (including shipping) and payment instructions.</p>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
           <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
-          <button class="btn btn--accent btn--lg" id="btn-continue-payment">Continue to Payment</button>
-        </div>
-      </div>
-    `;
-  } else {
-    // Payment step
-    formHtml = `
-      <div class="checkout-form-section">
-        <div class="checkout-form-group">
-          <h2>Payment Method</h2>
-          <div class="card" style="padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3);">
-            <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;padding:var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);transition:all 0.2s;" class="payment-option active">
-              <input type="radio" name="payment" value="cod" checked style="accent-color:var(--color-primary);">
-              <div style="flex:1;">
-                <strong>Cash on Delivery</strong>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Pay when your order is delivered</div>
-              </div>
-            </label>
-            <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;padding:var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);transition:all 0.2s;" class="payment-option">
-              <input type="radio" name="payment" value="upi" style="accent-color:var(--color-primary);">
-              <div style="flex:1;">
-                <strong>UPI / QR Code</strong>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Google Pay, PhonePe, Paytm, etc.</div>
-              </div>
-            </label>
-            <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;padding:var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);transition:all 0.2s;" class="payment-option">
-              <input type="radio" name="payment" value="bank" style="accent-color:var(--color-primary);">
-              <div style="flex:1;">
-                <strong>Bank Transfer / NEFT</strong>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Transfer directly to our account</div>
-              </div>
-            </label>
-            <label style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer;padding:var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);transition:all 0.2s;" class="payment-option">
-              <input type="radio" name="payment" value="card" style="accent-color:var(--color-primary);">
-              <div style="flex:1;">
-                <strong>Credit / Debit Card</strong>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Visa, Mastercard, RuPay</div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="checkout-form-group">
-          <h2>Shipping To</h2>
-          <div class="card" style="padding:var(--space-4);background:var(--color-surface-alt);">
-            <div style="font-weight:var(--fw-semibold);">${checkoutData.firstName || ''} ${checkoutData.lastName || ''}</div>
-            <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);margin-top:var(--space-1);">${checkoutData.address || ''}</div>
-            <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">${checkoutData.city || ''}, ${checkoutData.state || ''} — ${checkoutData.pin || ''}</div>
-            <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);margin-top:var(--space-1);">${checkoutData.phone || ''}</div>
-            ${checkoutData.gst ? `<div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">GST: ${checkoutData.gst}</div>` : ''}
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
-          <button class="btn btn--ghost" id="btn-back-shipping"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Back to Shipping</button>
           <button class="btn btn--accent btn--lg" id="btn-place-order">Place Order</button>
         </div>
       </div>
     `;
-  }
 
   app.innerHTML = `
     <div class="page-content">
@@ -276,220 +227,194 @@ export async function renderCheckoutPage() {
     </div>
   `;
 
-  // Quantity handlers (only on shipping step)
-  if (isShipping) {
-    function recalcCheckout() {
-      const cart = getCart();
-      let newSub = 0;
-      cart.forEach(item => {
-        const el = document.querySelector(`.checkout-item[data-product-id="${item.productId}"]`);
-        if (!el) return;
-        const price = cartItems.find(c => c.product.id === item.productId)?.product.price || 0;
-        const lineTotal = price * item.qty;
-        newSub += lineTotal;
-        const subtotalEl = el.querySelector('.checkout-item-subtotal');
-        if (subtotalEl) subtotalEl.textContent = formatPrice(lineTotal);
-        const detailEl = el.querySelector('.checkout-item-subtotal + div');
-        if (detailEl) detailEl.textContent = `₹${Number(price).toLocaleString()} × ${item.qty}`;
-      });
-
-      const newGst = newSub * gstRate;
-      const newCgst = newGst / 2;
-      const newSgst = newGst / 2;
-      const newTotal = newSub + newGst;
-
-      document.getElementById('checkout-subtotal').textContent = formatPrice(newSub);
-      document.getElementById('checkout-cgst').textContent = formatPrice(newCgst);
-      document.getElementById('checkout-sgst').textContent = formatPrice(newSgst);
-      document.getElementById('checkout-total').textContent = formatPrice(newTotal);
-    }
-
-    document.querySelectorAll('.checkout-qty-minus').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        const moq = parseInt(btn.dataset.moq);
-        const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
-        const newQty = Math.max(moq, (parseInt(input.value) || moq) - 1);
-        input.value = newQty;
-        updateCartQty(id, newQty, moq);
-        recalcCheckout();
-      });
+  // Quantity handlers
+  function recalcCheckout() {
+    const cart = getCart();
+    let newSub = 0;
+    cart.forEach(item => {
+      const el = document.querySelector(`.checkout-item[data-product-id="${item.productId}"]`);
+      if (!el) return;
+      const price = cartItems.find(c => c.product.id === item.productId)?.product.price || 0;
+      const lineTotal = price * item.qty;
+      newSub += lineTotal;
+      const subtotalEl = el.querySelector('.checkout-item-subtotal');
+      if (subtotalEl) subtotalEl.textContent = formatPrice(lineTotal);
+      const detailEl = el.querySelector('.checkout-item-subtotal + div');
+      if (detailEl) detailEl.textContent = `₹${Number(price).toLocaleString()} × ${item.qty}`;
     });
 
-    document.querySelectorAll('.checkout-qty-plus').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = parseInt(btn.dataset.id);
-        const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
-        const newQty = (parseInt(input.value) || 1) + 1;
-        input.value = newQty;
-        updateCartQty(id, newQty);
-        recalcCheckout();
-      });
-    });
+    const newGst = newSub * gstRate;
+    const newCgst = newGst / 2;
+    const newSgst = newGst / 2;
+    const newTotal = newSub + newGst;
 
-    document.querySelectorAll('.checkout-qty-input').forEach(input => {
-      input.addEventListener('change', () => {
-        const id = parseInt(input.dataset.id);
-        const moq = parseInt(input.dataset.moq);
-        const newQty = Math.max(moq, parseInt(input.value) || moq);
-        input.value = newQty;
-        updateCartQty(id, newQty, moq);
-        recalcCheckout();
-      });
-    });
-
-    // Continue to Payment
-    document.getElementById('btn-continue-payment')?.addEventListener('click', () => {
-      const email = document.getElementById('chk-email')?.value.trim();
-      const phone = document.getElementById('chk-phone')?.value.trim();
-      const firstName = document.getElementById('chk-firstname')?.value.trim();
-      const lastName = document.getElementById('chk-lastname')?.value.trim();
-      const address = document.getElementById('chk-address')?.value.trim();
-      const city = document.getElementById('chk-city')?.value.trim();
-      const pin = document.getElementById('chk-pin')?.value.trim();
-      const state = document.getElementById('chk-state')?.value;
-
-      const required = { email, phone, firstName, lastName, address, city, pin, state };
-      const empty = Object.entries(required).filter(([k, v]) => !v);
-      if (empty.length) {
-        const labels = { email: 'Email', phone: 'Phone', firstName: 'First Name', lastName: 'Last Name', address: 'Address', city: 'City', pin: 'PIN Code', state: 'State' };
-        showToast(`Please fill in: ${empty.map(([k]) => labels[k]).join(', ')}`, 'error');
-        const firstEmpty = document.getElementById(`chk-${empty[0][0]}`);
-        firstEmpty?.focus();
-        return;
-      }
-
-      setCheckoutData({
-        email, phone, firstName, lastName,
-        company: document.getElementById('chk-company')?.value.trim() || '',
-        address, city, pin, state,
-        gst: document.getElementById('chk-gst')?.value.trim() || ''
-      });
-      setCheckoutStep('payment');
-      renderCheckoutPage();
-    });
+    document.getElementById('checkout-subtotal').textContent = formatPrice(newSub);
+    document.getElementById('checkout-cgst').textContent = formatPrice(newCgst);
+    document.getElementById('checkout-sgst').textContent = formatPrice(newSgst);
+    document.getElementById('checkout-total').textContent = formatPrice(newTotal);
   }
 
-  // Payment step handlers
-  if (isPayment) {
-    document.getElementById('btn-back-shipping')?.addEventListener('click', () => {
-      setCheckoutStep('shipping');
-      renderCheckoutPage();
+  document.querySelectorAll('.checkout-qty-minus').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const moq = parseInt(btn.dataset.moq);
+      const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
+      const newQty = Math.max(moq, (parseInt(input.value) || moq) - 1);
+      input.value = newQty;
+      updateCartQty(id, newQty, moq);
+      recalcCheckout();
     });
+  });
 
-    document.getElementById('btn-place-order')?.addEventListener('click', async () => {
-      const btn = document.getElementById('btn-place-order');
-      const data = getCheckoutData();
-      const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
-
-      // Generate a human-readable order number
-      const orderNumber = 'NYD' + Date.now().toString().slice(-8);
-      const gstAmount = subtotal * gstRate;
-      const grandTotal = total + shipping; // total already includes GST; add shipping
-      const finalTotal = shipping > 0 ? total + shipping : total;
-
-      // Build order items
-      const items = cartItems.map(item => ({
-        product_id: item.productId,
-        product_name: item.product.title || item.product.name,
-        product_image: item.product.image || item.product.images?.[0] || null,
-        material: item.product.material || null,
-        size: item.product.size || null,
-        quantity: item.qty,
-        unit_price: Number(item.product.price),
-        line_total: Number((item.product.price * item.qty).toFixed(2)),
-      }));
-
-      // Disable button + show progress while we save + email
-      if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
-      showToast('Processing your order…', 'success');
-
-      // 1. Insert order row
-      const { data: orderRow, error: orderErr } = await supabase.from('orders').insert({
-        order_number: orderNumber,
-        first_name: data.firstName,
-        last_name: data.lastName,
-        company: data.company || null,
-        gst: data.gst || null,
-        country: 'India',
-        address_line_1: data.address,
-        address_line_2: null,
-        city: data.city,
-        state: data.state,
-        postcode: data.pin,
-        phone: data.phone,
-        email: data.email,
-        special_instructions: null,
-        payment_method: paymentMethod,
-        privacy_agreed: true,
-        subtotal: Number(subtotal.toFixed(2)),
-        gst_amount: Number(gstAmount.toFixed(2)),
-        shipping: Number(shipping.toFixed(2)),
-        total: Number(finalTotal.toFixed(2)),
-        status: 'pending',
-      }).select().single();
-
-      if (orderErr) {
-        console.error('Order insert failed:', orderErr);
-        showToast('Could not place order. Please try again.', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
-        return;
-      }
-
-      // 2. Insert order items (linked to the new order)
-      const { error: itemsErr } = await supabase.from('order_items').insert(
-        items.map(it => ({ ...it, order_id: orderRow.id }))
-      );
-      if (itemsErr) console.error('Order items insert failed:', itemsErr);
-
-      // 3. Send notification email (fire-and-forget; don't block success)
-      sendOrderEmail({
-        orderNumber,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        company: data.company,
-        gst: data.gst,
-        addressLine1: data.address,
-        city: data.city,
-        state: data.state,
-        postcode: data.pin,
-        country: 'India',
-        phone: data.phone,
-        email: data.email,
-        items: items.map(it => ({ name: it.product_name, qty: it.quantity, lineTotal: it.line_total })),
-        paymentMethod,
-        subtotal: Number(subtotal.toFixed(2)),
-        gstAmount: Number(gstAmount.toFixed(2)),
-        shipping: Number(shipping.toFixed(2)),
-        total: Number(finalTotal.toFixed(2)),
-      }).catch(e => console.error('Order email failed:', e));
-
-      // 4. Clear cart + redirect to success
-      clearCart();
-      sessionStorage.removeItem('checkoutStep');
-      sessionStorage.removeItem('checkoutData');
-      sessionStorage.setItem('lastOrderNumber', orderNumber);
-      navigateTo('/order-success');
+  document.querySelectorAll('.checkout-qty-plus').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
+      const newQty = (parseInt(input.value) || 1) + 1;
+      input.value = newQty;
+      updateCartQty(id, newQty);
+      recalcCheckout();
     });
+  });
 
-    // Payment option styling
-    document.querySelectorAll('.payment-option').forEach(opt => {
-      const radio = opt.querySelector('input[type="radio"]');
-      radio?.addEventListener('change', () => {
-        document.querySelectorAll('.payment-option').forEach(o => {
-          o.style.borderColor = 'var(--color-border-light)';
-          o.style.background = '';
-        });
-        opt.style.borderColor = 'var(--color-primary)';
-        opt.style.background = 'rgba(160,82,45,0.04)';
-      });
+  document.querySelectorAll('.checkout-qty-input').forEach(input => {
+    input.addEventListener('change', () => {
+      const id = parseInt(input.dataset.id);
+      const moq = parseInt(input.dataset.moq);
+      const newQty = Math.max(moq, parseInt(input.value) || moq);
+      input.value = newQty;
+      updateCartQty(id, newQty, moq);
+      recalcCheckout();
     });
-    // Set initial active style
-    const checked = document.querySelector('.payment-option input:checked');
-    if (checked) {
-      const parent = checked.closest('.payment-option');
-      parent.style.borderColor = 'var(--color-primary)';
-      parent.style.background = 'rgba(160,82,45,0.04)';
+  });
+
+  // Place Order — validates the shipping form, then submits the order directly
+  // (no separate payment step; payment is confirmed offline per the notices).
+  document.getElementById('btn-place-order')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-place-order');
+
+    const email = document.getElementById('chk-email')?.value.trim();
+    const phone = document.getElementById('chk-phone')?.value.trim();
+    const firstName = document.getElementById('chk-firstname')?.value.trim();
+    const lastName = document.getElementById('chk-lastname')?.value.trim();
+    const address = document.getElementById('chk-address')?.value.trim();
+    const city = document.getElementById('chk-city')?.value.trim();
+    const pin = document.getElementById('chk-pin')?.value.trim();
+    const state = document.getElementById('chk-state')?.value;
+
+    const requiredFields = { email, phone, firstName, lastName, address, city, pin, state };
+    const empty = Object.entries(requiredFields).filter(([k, v]) => !v);
+    if (empty.length) {
+      const labels = { email: 'Email', phone: 'Phone', firstName: 'First Name', lastName: 'Last Name', address: 'Address', city: 'City', pin: 'PIN Code', state: 'State' };
+      showToast(`Please fill in: ${empty.map(([k]) => labels[k]).join(', ')}`, 'error');
+      const firstEmpty = document.getElementById(`chk-${empty[0][0]}`);
+      firstEmpty?.focus();
+      return;
     }
-  }
+
+    const data = {
+      email, phone, firstName, lastName,
+      company: document.getElementById('chk-company')?.value.trim() || '',
+      address, city, pin, state,
+      gst: document.getElementById('chk-gst')?.value.trim() || ''
+    };
+    // ponytail: no payment UI now → default to bank transfer (offline confirmation).
+    const paymentMethod = 'bank';
+
+    // Generate a human-readable order number
+    const orderNumber = 'NYD' + Date.now().toString().slice(-8);
+    const gstAmount = subtotal * gstRate;
+    const finalTotal = shipping > 0 ? total + shipping : total;
+
+    // Build order items
+    const items = cartItems.map(item => ({
+      product_id: item.productId,
+      product_name: item.product.title || item.product.name,
+      product_image: item.product.image || item.product.images?.[0] || null,
+      material: item.product.material || null,
+      size: item.product.size || null,
+      quantity: item.qty,
+      unit_price: Number(item.product.price),
+      line_total: Number((item.product.price * item.qty).toFixed(2)),
+    }));
+
+    // Disable button + show progress while we save + email
+    if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
+    showToast('Processing your order…', 'success');
+
+    // 1. Insert order row
+    const { data: orderRow, error: orderErr } = await supabase.from('orders').insert({
+      order_number: orderNumber,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      company: data.company || null,
+      gst: data.gst || null,
+      country: 'India',
+      address_line_1: data.address,
+      address_line_2: null,
+      city: data.city,
+      state: data.state,
+      postcode: data.pin,
+      phone: data.phone,
+      email: data.email,
+      special_instructions: null,
+      payment_method: paymentMethod,
+      privacy_agreed: true,
+      subtotal: Number(subtotal.toFixed(2)),
+      gst_amount: Number(gstAmount.toFixed(2)),
+      shipping: Number(shipping.toFixed(2)),
+      total: Number(finalTotal.toFixed(2)),
+      status: 'pending',
+    }).select().single();
+
+    if (orderErr) {
+      console.error('Order insert failed:', orderErr);
+      showToast('Could not place order. Please try again.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
+      return;
+    }
+
+    // 2. Insert order items (linked to the new order)
+    const { error: itemsErr } = await supabase.from('order_items').insert(
+      items.map(it => ({ ...it, order_id: orderRow.id }))
+    );
+    if (itemsErr) console.error('Order items insert failed:', itemsErr);
+
+    // 3. Send notification email (fire-and-forget; don't block success)
+    sendOrderEmail({
+      orderNumber,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      company: data.company,
+      gst: data.gst,
+      addressLine1: data.address,
+      city: data.city,
+      state: data.state,
+      postcode: data.pin,
+      country: 'India',
+      phone: data.phone,
+      email: data.email,
+      items: items.map(it => ({
+        name: it.product_name,
+        sku: it.product_id,
+        qty: it.quantity,
+        unitPrice: it.unit_price,
+        image: it.product_image,
+        lineTotal: it.line_total,
+      })),
+      paymentMethod,
+      tAndCAgreed: true,
+      subtotal: Number(subtotal.toFixed(2)),
+      gstAmount: Number(gstAmount.toFixed(2)),
+      shipping: Number(shipping.toFixed(2)),
+      total: Number(finalTotal.toFixed(2)),
+    }).catch(e => console.error('Order email failed:', e));
+
+    // 4. Clear cart + redirect to success
+    clearCart();
+    sessionStorage.removeItem('checkoutStep');
+    sessionStorage.removeItem('checkoutData');
+    sessionStorage.setItem('lastOrderNumber', orderNumber);
+    navigateTo('/order-success');
+  });
 }

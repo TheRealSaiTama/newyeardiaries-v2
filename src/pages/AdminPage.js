@@ -321,6 +321,8 @@ export async function initAdminPage() {
   logoutBtn.style.color = 'var(--color-footer-link)';
   nav.appendChild(logoutBtn);
 
+  setupAdminModalCloseDelegation();
+
   document.querySelectorAll('.admin-nav-item[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentTab = btn.dataset.tab;
@@ -365,13 +367,28 @@ async function loadTab(tab) {
 }
 
 function closeModal() {
-  // Primary path: the modal that set overlay.id = 'modal-overlay'.
-  const el = document.getElementById('modal-overlay');
-  if (el) { el.remove(); return; }
-  // Fallback: remove the most recently appended admin-modal-overlay.
-  // Some modals (e.g. the homepage slider product picker) never set an id.
-  const overlays = document.querySelectorAll('.admin-modal-overlay');
-  if (overlays.length) overlays[overlays.length - 1].remove();
+  // ponytail: remove every admin overlay. Safe — only one is open at a time in
+  // practice, and this avoids the "which overlay had the id?" lookup bug.
+  document.querySelectorAll('.admin-modal-overlay').forEach(o => o.remove());
+}
+
+// ponytail: one delegated handler closes ANY admin overlay via backdrop click,
+// close button, or Cancel button — regardless of whether it set an id.
+// Covers the Trust Badge, Slider Section, and Shop Category modals (id-less)
+// alongside the older id-ed ones. Attached once on the admin shell.
+function setupAdminModalCloseDelegation() {
+  document.addEventListener('click', (e) => {
+    const overlay = e.target.closest('.admin-modal-overlay');
+    if (!overlay) return;
+    // Close if click landed on the backdrop itself, the close button, or Cancel.
+    const isBackdrop = e.target === overlay;
+    const isCloseBtn = e.target.closest('.admin-modal-close');
+    const isCancelBtn = e.target.closest('.modal-cancel');
+    if (isBackdrop || isCloseBtn || isCancelBtn) {
+      e.preventDefault();
+      overlay.remove();
+    }
+  });
 }
 
 function showConfirmDialog(message, onConfirm) {
@@ -617,7 +634,7 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
   const cached = acGet(cacheKey);
   if (cached) {
     container.innerHTML = cached.html;
-    wireProductRows(container, cached.products);
+    wireProductRows(container, header, opts, breadcrumb, cached.products, page);
     return;
   }
 
@@ -741,6 +758,14 @@ const catMapByProduct = {};
   `;
   acSet(cacheKey, { html: container.innerHTML, products });
 
+  wireProductRows(container, header, opts, breadcrumb, products, page);
+}
+
+// Wire up all interactive handlers for the product-rows view. Called both after
+// a fresh render AND on a cache hit (so pagination/buttons keep working within
+// the cache TTL — previously the cache path called an undefined function and
+// left the list unclickable).
+function wireProductRows(container, header, opts, breadcrumb, products, page) {
   wireFsShared(container);
 
   document.querySelectorAll('.category-sort-input').forEach(input => {
@@ -790,6 +815,14 @@ const catMapByProduct = {};
         const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
         renderProducts(container, 1, document.getElementById('product-search')?.value || '', document.getElementById('filter-active')?.value || '', nav);
       });
+    };
+  });
+
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.closest('tr').dataset.id;
+      const product = products.find(p => p.id === id);
+      if (product) openProductModal(container, product);
     };
   });
 
