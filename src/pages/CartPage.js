@@ -1,17 +1,54 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { getCart, removeFromCart, updateCartQty } from '../data/store.js';
 import { getProductById, formatPrice } from '../data/products.js';
+import { supabase } from '../lib/supabase.js';
+
+// ponytail: getProductById reads from the active-only 30s cache, so an
+// inactive/just-edited product returns null and the cart silently drops the
+// item (badge counts it, bill doesn't). Fallback to a direct single-row
+// Supabase fetch with no active filter so every item the user added renders.
+async function resolveCartItem(item) {
+  const cached = await getProductById(item.productId);
+  if (cached) return { ...item, product: cached };
+  const { data } = await supabase
+    .from('products')
+    .select('*, category:categories!products_category_id_fkey(name, slug)')
+    .eq('id', item.productId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    ...item,
+    product: {
+      id: data.id,
+      slug: data.slug,
+      name: data.name,
+      title: data.name,
+      material: data.material || '',
+      size: data.size || '',
+      price: Number(data.price) || 0,
+      image: (data.images && data.images[0]) || '',
+      images: data.images || [],
+      minBulkOrder: data.min_bulk_order ?? 1,
+      inStock: data.in_stock !== false,
+      active: data.active !== false,
+    },
+  };
+}
 
 export async function renderCartPage() {
   const app = document.getElementById('app');
   const cart = getCart();
 
   let cartItems = (await Promise.all(
-    cart.map(async item => {
-      const product = await getProductById(item.productId);
-      return product ? { ...item, product } : null;
-    })
+    cart.map(async item => resolveCartItem(item))
   )).filter(Boolean);
+
+  // ponytail: if a product was deleted entirely, drop the orphan so the bill
+  // never carries a phantom line. Keeps cart + badge in sync.
+  if (cartItems.length !== cart.length) {
+    const validIds = new Set(cartItems.map(i => i.productId));
+    cart.filter(i => !validIds.has(i.productId)).forEach(i => removeFromCart(i.productId));
+  }
 
   // Enforce MOQ on existing cart items
   cartItems.forEach(item => {
