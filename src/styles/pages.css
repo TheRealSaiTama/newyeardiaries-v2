@@ -364,7 +364,7 @@ body.is-admin-route #faq-chatbot {
 /* ===== Anand Prakash Complete Catalogue ===== */
 .ap-catalogue-section {
   background: #FAF8F5;
-  padding: 64px 0;
+  padding: 44px 0;
 }
 
 .ap-catalogue-inner {
@@ -377,7 +377,7 @@ body.is-admin-route #faq-chatbot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .ap-catalogue-title {
@@ -407,7 +407,7 @@ body.is-admin-route #faq-chatbot {
 }
 
 @media (max-width: 768px) {
-  .ap-catalogue-section { padding: 40px 0; }
+  .ap-catalogue-section { padding: 28px 0; }
   .ap-catalogue-inner { padding: 0 20px; }
   .ap-catalogue-title { font-size: 18px; }
 }

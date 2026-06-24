@@ -768,6 +768,19 @@ const catMapByProduct = {};
 function wireProductRows(container, header, opts, breadcrumb, products, page) {
   wireFsShared(container);
 
+  // ponytail: back + breadcrumb clicks only got wired in renderFolderGrid,
+  // leaving them dead inside a category folder. Wire them here too so they
+  // work on both fresh render and cache hits.
+  document.getElementById('fs-back')?.addEventListener('click', () => fsGoBack(container));
+  document.querySelectorAll('.fs-crumb').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+      const next = JSON.parse(btn.dataset.nav);
+      container.dataset.fsNav = JSON.stringify(next);
+      renderProducts(container, 1, '', '');
+    };
+  });
+
   document.querySelectorAll('.category-sort-input').forEach(input => {
     input.onchange = async () => {
       const sort = Number(input.value);

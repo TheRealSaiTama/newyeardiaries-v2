@@ -28,13 +28,13 @@ export function renderProductCard(product) {
         ${outOfStock ? '<div class="ap-sold-out-overlay"><span>Sold Out</span></div>' : ''}
       </div>
       <div class="ap-product-body">
-        <h3 class="ap-product-title">${product.name || product.title}</h3>
         <div class="ap-product-price">
           ${product.originalPrice && product.originalPrice > product.price
             ? `<span class="ap-price-sale">₹${product.originalPrice}</span>`
             : ''}
           <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">₹${product.price}</span>
         </div>
+        <h3 class="ap-product-title">${product.name || product.title}</h3>
       </div>
     </a>
   `;
