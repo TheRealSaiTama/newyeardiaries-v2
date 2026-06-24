@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
 import { bustContentCache } from '../lib/content.js';
 import { CATEGORY_GROUPS, getCategoriesByGroup, fetchCategories, fetchCategoryGroups, bustCategoriesCache } from '../lib/categories.js';
+import { bustProductsCache } from '../data/products.js';
 
 let currentTab = 'products';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
@@ -20,6 +21,10 @@ function acSet(key, data) { adminCache.set(key, { data, ts: Date.now() }); }
 function acBust(prefix) {
   if (!prefix) adminCache.clear();
   else for (const k of adminCache.keys()) if (k.startsWith(prefix)) adminCache.delete(k);
+  
+  if (prefix === 'prods:') {
+    try { bustProductsCache(); } catch (e) {}
+  }
 }
 const tabCache = new Map();
 

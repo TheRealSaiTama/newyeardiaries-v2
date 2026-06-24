@@ -5,6 +5,7 @@ import { openQuickView } from '../components/QuickViewModal.js';
 import { supabase } from '../lib/supabase.js';
 import { getContent, getHeroContent, getCtaContent, getTrustBadges, getHomepageSliders } from '../lib/content.js';
 import { getProducts, getCategories, normalizeProduct } from '../lib/products.js';
+import { getProducts as getProductsCached } from '../data/products.js';
 
 const SECTION_CATS = {
   leather: 'leather-diary',
@@ -15,9 +16,10 @@ const WHATSAPP_NUMBER = '919899223130';
 const WHATSAPP_MESSAGE = encodeURIComponent('Hi New Year Diaries, I want to enquire about diaries and corporate gifting.');
 
 export async function renderHomePage() {
-  const [content, allCategories] = await Promise.all([
+  const [content, allCategories, allProducts] = await Promise.all([
     getContent(),
     getCategories(),
+    getProductsCached(),
   ]);
 
   const catMap = Object.fromEntries(allCategories.map(c => [c.slug, c]));
@@ -28,46 +30,20 @@ export async function renderHomePage() {
 
   let sliderLists;
   if (sliderConfigs.length > 0) {
-    // Resolve each section's product IDs to full product objects
-    const productIdSets = sliderConfigs.map(s => s.productIds);
-    const allIds = [...new Set(productIdSets.flat())];
-    let productMap = new Map();
-    if (allIds.length > 0) {
-      // Chunk to avoid 1000-row URL cap; 50 per chunk is safe
-      const CHUNK = 50;
-      const chunks = [];
-      for (let i = 0; i < allIds.length; i += CHUNK) chunks.push(allIds.slice(i, i + CHUNK));
-      const fetched = await Promise.all(
-        chunks.map(ids => supabase
-          .from('products')
-          .select('*, category:categories!products_category_id_fkey(name)')
-          .in('id', ids))
-      );
-      (fetched || []).forEach(({ data }) => {
-        (data || []).forEach(p => productMap.set(p.id, normalizeProduct(p)));
-      });
-    }
+    // Resolve each section's product IDs to full product objects from the in-memory allProducts list
+    const productMap = new Map(allProducts.map(p => [p.id, p]));
     sliderLists = sliderConfigs.map(sec => {
       const products = sec.productIds.map(id => productMap.get(id)).filter(Boolean).slice(0, 10);
       return { ...sec, products };
     });
   } else {
-    // FALLBACK: original category-based queries
-    const [
-      leatherDiary2026,
-      latestComboGiftSets,
-      trendingItems,
-      artCoverDiaries2026,
-      bestSelling2026Diary,
-      premiumDiary2026,
-    ] = await Promise.all([
-      getProducts({ categoryId: catMap[SECTION_CATS.leather]?.id, limit: 8 }),
-      getProducts({ categoryId: catMap[SECTION_CATS.combo]?.id, limit: 8 }),
-      getProducts({ limit: 6 }),
-      getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
-      getProducts({ limit: 6 }),
-      getProducts({ categoryId: catMap[SECTION_CATS.premium]?.id, limit: 8 }),
-    ]);
+    // FALLBACK: original category-based queries, resolved client-side from allProducts
+    const leatherDiary2026 = allProducts.filter(p => p.categorySlug === SECTION_CATS.leather || p.categorySlugs?.includes(SECTION_CATS.leather)).slice(0, 8);
+    const latestComboGiftSets = allProducts.filter(p => p.categorySlug === SECTION_CATS.combo || p.categorySlugs?.includes(SECTION_CATS.combo)).slice(0, 8);
+    const trendingItems = allProducts.slice(0, 6);
+    const bestSelling2026Diary = allProducts.slice(0, 6);
+    const premiumDiary2026 = allProducts.filter(p => p.categorySlug === SECTION_CATS.premium || p.categorySlugs?.includes(SECTION_CATS.premium)).slice(0, 8);
+
     sliderLists = [
       { key: 'leather_diary_2026',  title: 'Leather Diary 2026',       view_all_link: '/shop?cat=leather-diaries',     bg: '#FAF8F5', products: leatherDiary2026 },
       { key: 'combo_gifts',         title: 'Latest Combo Gift Sets',   view_all_link: '/shop?cat=diary-with-pen-gift-set', bg: '#fff',    products: latestComboGiftSets },
@@ -77,11 +53,7 @@ export async function renderHomePage() {
     ];
   }
 
-  const { data: shopCategories } = await supabase
-    .from('shop_categories')
-    .select('*')
-    .eq('active', true)
-    .order('sort_order');
+  const shopCategories = content.shopCategories || [];
 
   const app = document.getElementById('app');
 

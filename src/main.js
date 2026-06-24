@@ -328,6 +328,32 @@ function raceWithTimeout(promise, ms, label) {
   });
 }
 
+// Listen for background cache updates and refresh the UI when they occur
+window.addEventListener('nyd-content-updated', (e) => {
+  appContent = e.detail;
+  try {
+    resolveRoute();
+  } catch (err) {
+    console.warn('[main] resolveRoute after content update failed:', err);
+  }
+});
+
+window.addEventListener('nyd-products-updated', () => {
+  try {
+    resolveRoute();
+  } catch (err) {
+    console.warn('[main] resolveRoute after products update failed:', err);
+  }
+});
+
+window.addEventListener('nyd-categories-updated', () => {
+  try {
+    resolveRoute();
+  } catch (err) {
+    console.warn('[main] resolveRoute after categories update failed:', err);
+  }
+});
+
 (async () => {
   // Step 1: bring up the empty shell + a HOMEPAGE SKELETON IMMEDIATELY so
   // the main area is never empty (which would expose the About section

@@ -4,49 +4,116 @@ let _cache = null;
 let _fetchedAt = null;
 const CACHE_TTL = 60_000;
 
+const CONTENT_STORAGE_KEY = '__nyd_content_cache';
+
 export function bustContentCache() {
   _cache = null;
   _fetchedAt = null;
+  try {
+    localStorage.removeItem(CONTENT_STORAGE_KEY);
+  } catch (e) {}
 }
 
 export async function getContent() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
 
-  const [
-    { data: siteSettings },
-    { data: siteContent },
-    { data: homepageSections },
-    { data: announcements },
-    { data: footerSections },
-    { data: banners },
-    { data: trustBadges },
-    { data: sliderSections },
-    { data: sliderItems },
-  ] = await Promise.all([
-    supabase.from('site_settings').select('*'),
-    supabase.from('site_content').select('*'),
-    supabase.from('homepage_sections').select('*').order('sort_order'),
-    supabase.from('announcements').select('*').order('created_at'),
-    supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
-    supabase.from('banners').select('*').eq('active', true).order('order_index'),
-    supabase.from('trust_badges').select('*').order('position'),
-    supabase.from('homepage_slider_sections').select('*').eq('active', true).order('sort_order'),
-    supabase.from('homepage_slider_items').select('*').order('position'),
-  ]);
+  if (!_cache) {
+    try {
+      const stored = localStorage.getItem(CONTENT_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        _cache = parsed.data;
+        _fetchedAt = parsed.fetchedAt;
+      }
+    } catch (e) {
+      console.warn('[content] failed to load localStorage cache:', e);
+    }
+  }
 
-  _cache = {
-    siteSettings: Object.fromEntries((siteSettings || []).map(s => [s.key, s.value])),
-    siteContent: Object.fromEntries((siteContent || []).map(s => [`${s.section}.${s.key}`, s.value])),
-    homepageSections: Object.fromEntries((homepageSections || []).map(s => [s.section_key, s])),
-    announcements: (announcements || []).filter(a => a.active),
-    footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
-    banners: banners || [],
-    trustBadges: (trustBadges || []).filter(b => b.active !== false),
-    sliderSections: sliderSections || [],
-    sliderItems: sliderItems || [],
-  };
-  _fetchedAt = Date.now();
-  return _cache;
+  if (_cache) {
+    const isStale = Date.now() - _fetchedAt >= CACHE_TTL;
+    if (isStale) {
+      fetchContentBackground();
+    }
+    return _cache;
+  }
+
+  return fetchContentFresh();
+}
+
+async function fetchContentFresh() {
+  try {
+    const [
+      { data: siteSettings },
+      { data: siteContent },
+      { data: homepageSections },
+      { data: announcements },
+      { data: footerSections },
+      { data: banners },
+      { data: trustBadges },
+      { data: sliderSections },
+      { data: sliderItems },
+      { data: shopCategories },
+    ] = await Promise.all([
+      supabase.from('site_settings').select('*'),
+      supabase.from('site_content').select('*'),
+      supabase.from('homepage_sections').select('*').order('sort_order'),
+      supabase.from('announcements').select('*').order('created_at'),
+      supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
+      supabase.from('banners').select('*').eq('active', true).order('order_index'),
+      supabase.from('trust_badges').select('*').order('position'),
+      supabase.from('homepage_slider_sections').select('*').eq('active', true).order('sort_order'),
+      supabase.from('homepage_slider_items').select('*').order('position'),
+      supabase.from('shop_categories').select('*').eq('active', true).order('sort_order'),
+    ]);
+
+    const newCache = {
+      siteSettings: Object.fromEntries((siteSettings || []).map(s => [s.key, s.value])),
+      siteContent: Object.fromEntries((siteContent || []).map(s => [`${s.section}.${s.key}`, s.value])),
+      homepageSections: Object.fromEntries((homepageSections || []).map(s => [s.section_key, s])),
+      announcements: (announcements || []).filter(a => a.active),
+      footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
+      banners: banners || [],
+      trustBadges: (trustBadges || []).filter(b => b.active !== false),
+      sliderSections: sliderSections || [],
+      sliderItems: sliderItems || [],
+      shopCategories: shopCategories || [],
+    };
+
+    _cache = newCache;
+    _fetchedAt = Date.now();
+
+    try {
+      localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify({ data: _cache, fetchedAt: _fetchedAt }));
+    } catch (e) {
+      console.warn('[content] failed to save to localStorage:', e);
+    }
+
+    return _cache;
+  } catch (err) {
+    console.error('[content] fetchContentFresh failed:', err);
+    return _cache || {};
+  }
+}
+
+let _isFetchingBackground = false;
+async function fetchContentBackground() {
+  if (_isFetchingBackground) return;
+  _isFetchingBackground = true;
+  try {
+    const oldCacheStr = JSON.stringify(_cache);
+    const fresh = await fetchContentFresh();
+    const newCacheStr = JSON.stringify(fresh);
+    
+    if (oldCacheStr !== newCacheStr) {
+      console.log('[content] site content updated in background, dispatching event');
+      window.dispatchEvent(new CustomEvent('nyd-content-updated', { detail: fresh }));
+    }
+  } catch (e) {
+    console.warn('[content] background fetch failed:', e);
+  } finally {
+    _isFetchingBackground = false;
+  }
 }
 
 export function getFooterContent(content) {

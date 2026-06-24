@@ -39,10 +39,14 @@ const CATEGORY_GROUPS_FALLBACK = {
 let _catCache = null;
 let _catCacheAt = 0;
 const CACHE_TTL_MS = 60_000; // 60s — admin changes propagate within a minute
+const CAT_STORAGE_KEY = '__nyd_categories_cache';
 
 export function bustCategoriesCache() {
   _catCache = null;
   _catCacheAt = 0;
+  try {
+    localStorage.removeItem(CAT_STORAGE_KEY);
+  } catch (e) {}
 }
 
 // Fetch all categories WITH their group resolved. Falls back to the hardcoded
@@ -51,60 +55,117 @@ export function bustCategoriesCache() {
 export async function fetchCategories() {
   if (_catCache && Date.now() - _catCacheAt < CACHE_TTL_MS) return _catCache;
 
-  const { data: cats, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order');
-  if (error) throw error;
-
-  let groups = null;
-  // Best-effort fetch of the groups table. If it doesn't exist (pre-migration),
-  // silently fall back to the hardcoded map.
-  try {
-    const { data: g, error: gErr } = await supabase
-      .from('category_groups')
-      .select('id, name, sort_order')
-      .order('sort_order');
-    if (!gErr && g) groups = g;
-  } catch (_) { /* table may not exist yet */ }
-
-  const groupById = new Map();
-  const groupByName = new Map();
-  if (groups) {
-    for (const g of groups) {
-      groupById.set(g.id, g);
-      groupByName.set(g.name, g);
+  if (!_catCache) {
+    try {
+      const stored = localStorage.getItem(CAT_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        _catCache = parsed.data;
+        _catCacheAt = parsed.fetchedAt;
+      }
+    } catch (e) {
+      console.warn('[categories] failed to load localStorage cache:', e);
     }
   }
 
-  const fallbackNameForSlug = (slug) => {
-    for (const [name, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
-      if (slugs.includes(slug)) return name;
+  if (_catCache) {
+    const isStale = Date.now() - _catCacheAt >= CACHE_TTL_MS;
+    if (isStale) {
+      fetchCategoriesBackground();
     }
-    return null;
-  };
+    return _catCache;
+  }
 
-  // Decorate each category with its group object (id, name) for the admin UI
-  // and downstream consumers.
-  const decorated = (cats || []).map(c => {
-    let grp = null;
-    if (c.group_id && groupById.has(c.group_id)) {
-      grp = groupById.get(c.group_id);
-    } else if (!c.group_id) {
-      // No explicit group — try the fallback map (pre-migration data).
-      const fbName = fallbackNameForSlug(c.slug);
-      if (fbName && groupByName.has(fbName)) {
-        grp = groupByName.get(fbName);
-      } else if (fbName) {
-        grp = { id: null, name: fbName, sort_order: 0 };
+  return fetchCategoriesFresh();
+}
+
+async function fetchCategoriesFresh() {
+  try {
+    const { data: cats, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order');
+    if (error) throw error;
+
+    let groups = null;
+    // Best-effort fetch of the groups table. If it doesn't exist (pre-migration),
+    // silently fall back to the hardcoded map.
+    try {
+      const { data: g, error: gErr } = await supabase
+        .from('category_groups')
+        .select('id, name, sort_order')
+        .order('sort_order');
+      if (!gErr && g) groups = g;
+    } catch (_) { /* table may not exist yet */ }
+
+    const groupById = new Map();
+    const groupByName = new Map();
+    if (groups) {
+      for (const g of groups) {
+        groupById.set(g.id, g);
+        groupByName.set(g.name, g);
       }
     }
-    return { ...c, group: grp, group_name: grp?.name || null };
-  });
 
-  _catCache = decorated;
-  _catCacheAt = Date.now();
-  return decorated;
+    const fallbackNameForSlug = (slug) => {
+      for (const [name, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
+        if (slugs.includes(slug)) return name;
+      }
+      return null;
+    };
+
+    // Decorate each category with its group object (id, name) for the admin UI
+    // and downstream consumers.
+    const decorated = (cats || []).map(c => {
+      let grp = null;
+      if (c.group_id && groupById.has(c.group_id)) {
+        grp = groupById.get(c.group_id);
+      } else if (!c.group_id) {
+        // No explicit group — try the fallback map (pre-migration data).
+        const fbName = fallbackNameForSlug(c.slug);
+        if (fbName && groupByName.has(fbName)) {
+          grp = groupByName.get(fbName);
+        } else if (fbName) {
+          grp = { id: null, name: fbName, sort_order: 0 };
+        }
+      }
+      return { ...c, group: grp, group_name: grp?.name || null };
+    });
+
+    _catCache = decorated;
+    _catCacheAt = Date.now();
+
+    try {
+      localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify({ data: _catCache, fetchedAt: _catCacheAt }));
+    } catch (e) {
+      console.warn('[categories] failed to save to localStorage:', e);
+    }
+
+    return decorated;
+  } catch (err) {
+    console.error('[categories] fetchCategoriesFresh failed:', err);
+    return _catCache || [];
+  }
+}
+
+let _isFetchingCategoriesBackground = false;
+async function fetchCategoriesBackground() {
+  if (_isFetchingCategoriesBackground) return;
+  _isFetchingCategoriesBackground = true;
+  try {
+    const oldCacheStr = JSON.stringify(_catCache);
+    const fresh = await fetchCategoriesFresh();
+    const newCacheStr = JSON.stringify(fresh);
+    
+    if (oldCacheStr !== newCacheStr) {
+      console.log('[categories] categories updated in background, dispatching event');
+      window.dispatchEvent(new CustomEvent('nyd-categories-updated', { detail: fresh }));
+    }
+  } catch (e) {
+    console.warn('[categories] background fetch failed:', e);
+  } finally {
+    _isFetchingCategoriesBackground = false;
+  }
 }
 
 // Fetch just the groups list (DB-backed with fallback).
@@ -160,8 +221,15 @@ export function getCategorySlugsByGroupName(groupName, categories) {
 
 // Seed categories on first run if the table is empty.
 export async function seedCategoriesIfEmpty() {
+  if (localStorage.getItem('__nyd_categories_seeded') === 'true') return;
+
   const { data: existing } = await supabase.from('categories').select('slug');
-  if (existing && existing.length > 0) return;
+  if (existing && existing.length > 0) {
+    try {
+      localStorage.setItem('__nyd_categories_seeded', 'true');
+    } catch (e) {}
+    return;
+  }
 
   // Also try to seed groups if the table exists and is empty.
   const slugsByGroup = {};
@@ -182,6 +250,9 @@ export async function seedCategoriesIfEmpty() {
       })));
     if (error) throw error;
   }
+  try {
+    localStorage.setItem('__nyd_categories_seeded', 'true');
+  } catch (e) {}
 }
 
 // Backwards-compat export so existing imports (e.g. ShopPage's static fallback)

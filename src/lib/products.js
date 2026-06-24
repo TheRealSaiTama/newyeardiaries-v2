@@ -166,15 +166,86 @@ const LOCAL_CAT_IMAGES = {
   'leather-planners-2': '/images/categories/premium-diary.jpg',
 };
 
+let _categoriesCache = null;
+let _categoriesFetchedAt = 0;
+const CAT_CACHE_TTL = 60_000;
+const CAT_STORAGE_KEY = '__nyd_categories_cache_lib';
+
 export async function getCategories() {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('id, name, slug, icon, description, image_url, sort_order, active')
-    .eq('active', true)
-    .order('sort_order');
-  if (error) return [];
-  return (data || []).map(cat => ({
-    ...cat,
-    image_url: cat.image_url || LOCAL_CAT_IMAGES[cat.slug] || '/images/placeholder.jpg',
-  }));
+  if (_categoriesCache && Date.now() - _categoriesFetchedAt < CAT_CACHE_TTL) {
+    return _categoriesCache;
+  }
+
+  if (!_categoriesCache) {
+    try {
+      const stored = localStorage.getItem(CAT_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        _categoriesCache = parsed.data;
+        _categoriesFetchedAt = parsed.fetchedAt;
+      }
+    } catch (e) {
+      console.warn('[categories-lib] failed to load localStorage cache:', e);
+    }
+  }
+
+  if (_categoriesCache) {
+    const isStale = Date.now() - _categoriesFetchedAt >= CAT_CACHE_TTL;
+    if (isStale) {
+      fetchCategoriesBackground();
+    }
+    return _categoriesCache;
+  }
+
+  return fetchCategoriesFresh();
+}
+
+async function fetchCategoriesFresh() {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id, name, slug, icon, description, image_url, sort_order, active')
+      .eq('active', true)
+      .order('sort_order');
+    if (error) return [];
+    
+    const result = (data || []).map(cat => ({
+      ...cat,
+      image_url: cat.image_url || LOCAL_CAT_IMAGES[cat.slug] || '/images/placeholder.jpg',
+    }));
+
+    _categoriesCache = result;
+    _categoriesFetchedAt = Date.now();
+
+    try {
+      localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify({ data: _categoriesCache, fetchedAt: _categoriesFetchedAt }));
+    } catch (e) {
+      console.warn('[categories-lib] failed to save to localStorage:', e);
+    }
+
+    return _categoriesCache;
+  } catch (err) {
+    console.error('[categories-lib] fetchCategoriesFresh failed:', err);
+    return _categoriesCache || [];
+  }
+}
+
+let _isFetchingCategoriesBackground = false;
+async function fetchCategoriesBackground() {
+  if (_isFetchingCategoriesBackground) return;
+  _isFetchingCategoriesBackground = true;
+  try {
+    const oldCacheStr = JSON.stringify(_categoriesCache);
+    const fresh = await fetchCategoriesFresh();
+    const newCacheStr = JSON.stringify(fresh);
+    
+    if (oldCacheStr !== newCacheStr) {
+      console.log('[categories-lib] categories updated in background, dispatching event');
+      window.dispatchEvent(new CustomEvent('nyd-categories-updated', { detail: fresh }));
+    }
+  } catch (e) {
+    console.warn('[categories-lib] background fetch failed:', e);
+  } finally {
+    _isFetchingCategoriesBackground = false;
+  }
 }

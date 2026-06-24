@@ -40,53 +40,122 @@ function normalize(p) {
   };
 }
 
+const PRODUCTS_STORAGE_KEY = '__nyd_products_cache';
+
+export function bustProductsCache() {
+  _cache = null;
+  _fetchedAt = null;
+  try {
+    localStorage.removeItem(PRODUCTS_STORAGE_KEY);
+  } catch (e) {}
+}
+
 export async function getProducts() {
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
 
-  // Fetch products with their primary category's name+slug, AND the full
-  // product_categories junction so we know every category a product belongs to
-  // AND its per-category sort_order (1..100).
-  const [prodRes, juncRes] = await Promise.all([
-    supabase
-      .from('products')
-      .select('*, category:categories!products_category_id_fkey(name, slug)')
-      .eq('active', true)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('product_categories')
-      .select('product_id, category_id, sort_order, category:categories!product_categories_category_id_fkey(slug)'),
-  ]);
-
-  const products = prodRes.data || [];
-  // Build a map: productId -> array of category slugs (from the junction)
-  const extraSlugsByProduct = new Map();
-  // Build a map: productId -> { slug -> sort_order } for per-category sort
-  const sortByProductSlug = new Map();
-  for (const row of juncRes.data || []) {
-    const slug = row.category?.slug;
-    if (!slug) continue;
-    const list = extraSlugsByProduct.get(row.product_id) || [];
-    if (!list.includes(slug)) list.push(slug);
-    extraSlugsByProduct.set(row.product_id, list);
-    if (row.sort_order != null) {
-      const m = sortByProductSlug.get(row.product_id) || {};
-      m[slug] = row.sort_order;
-      sortByProductSlug.set(row.product_id, m);
+  if (!_cache) {
+    try {
+      const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        _cache = parsed.data;
+        _fetchedAt = parsed.fetchedAt;
+      }
+    } catch (e) {
+      console.warn('[products] failed to load localStorage cache:', e);
     }
   }
 
-  _cache = products.map(p => {
-    const base = normalize(p);
-    // categorySlugs: [primary slug, ...all junction slugs], deduped
-    const allSlugs = [base.categorySlug, ...(extraSlugsByProduct.get(p.id) || [])]
-      .filter(Boolean);
-    base.categorySlugs = Array.from(new Set(allSlugs));
-    // categorySortOrders: { [slug]: order } for per-category sort
-    base.categorySortOrders = sortByProductSlug.get(p.id) || {};
-    return base;
-  });
-  _fetchedAt = Date.now();
-  return _cache;
+  if (_cache) {
+    const isStale = Date.now() - _fetchedAt >= CACHE_TTL;
+    if (isStale) {
+      fetchProductsBackground();
+    }
+    return _cache;
+  }
+
+  return fetchProductsFresh();
+}
+
+async function fetchProductsFresh() {
+  try {
+    // Fetch products with their primary category's name+slug, AND the full
+    // product_categories junction so we know every category a product belongs to
+    // AND its per-category sort_order (1..100).
+    const [prodRes, juncRes] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*, category:categories!products_category_id_fkey(name, slug)')
+        .eq('active', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('product_categories')
+        .select('product_id, category_id, sort_order, category:categories!product_categories_category_id_fkey(slug)'),
+    ]);
+
+    const products = prodRes.data || [];
+    // Build a map: productId -> array of category slugs (from the junction)
+    const extraSlugsByProduct = new Map();
+    // Build a map: productId -> { slug -> sort_order } for per-category sort
+    const sortByProductSlug = new Map();
+    for (const row of juncRes.data || []) {
+      const slug = row.category?.slug;
+      if (!slug) continue;
+      const list = extraSlugsByProduct.get(row.product_id) || [];
+      if (!list.includes(slug)) list.push(slug);
+      extraSlugsByProduct.set(row.product_id, list);
+      if (row.sort_order != null) {
+        const m = sortByProductSlug.get(row.product_id) || {};
+        m[slug] = row.sort_order;
+        sortByProductSlug.set(row.product_id, m);
+      }
+    }
+
+    const newCache = products.map(p => {
+      const base = normalize(p);
+      // categorySlugs: [primary slug, ...all junction slugs], deduped
+      const allSlugs = [base.categorySlug, ...(extraSlugsByProduct.get(p.id) || [])]
+        .filter(Boolean);
+      base.categorySlugs = Array.from(new Set(allSlugs));
+      // categorySortOrders: { [slug]: order } for per-category sort
+      base.categorySortOrders = sortByProductSlug.get(p.id) || {};
+      return base;
+    });
+
+    _cache = newCache;
+    _fetchedAt = Date.now();
+
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify({ data: _cache, fetchedAt: _fetchedAt }));
+    } catch (e) {
+      console.warn('[products] failed to save to localStorage:', e);
+    }
+
+    return _cache;
+  } catch (err) {
+    console.error('[products] fetchProductsFresh failed:', err);
+    return _cache || [];
+  }
+}
+
+let _isFetchingProductsBackground = false;
+async function fetchProductsBackground() {
+  if (_isFetchingProductsBackground) return;
+  _isFetchingProductsBackground = true;
+  try {
+    const oldCacheStr = JSON.stringify(_cache);
+    const fresh = await fetchProductsFresh();
+    const newCacheStr = JSON.stringify(fresh);
+    
+    if (oldCacheStr !== newCacheStr) {
+      console.log('[products] products updated in background, dispatching event');
+      window.dispatchEvent(new CustomEvent('nyd-products-updated', { detail: fresh }));
+    }
+  } catch (e) {
+    console.warn('[products] background fetch failed:', e);
+  } finally {
+    _isFetchingProductsBackground = false;
+  }
 }
 
 export async function getProductBySlug(slug) {
