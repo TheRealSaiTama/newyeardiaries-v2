@@ -235,31 +235,6 @@ export async function renderCheckoutPage() {
             </div>
           `).join('')}</div>
         </div>
-        <div class="checkout-notice checkout-notice--warning">
-          <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
-          <div class="checkout-notice__body">
-            <div class="checkout-notice__title">Please Note:</div>
-            <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by selecting your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
-            <p>Cash on Delivery (COD) is <strong>not</strong> available on this order.</p>
-          </div>
-        </div>
-        <div class="checkout-notice checkout-notice--info">
-          <span class="material-symbols-outlined checkout-notice__icon">payments</span>
-          <div class="checkout-notice__body">
-            <div class="checkout-notice__title">Payment Options:</div>
-            <p>You can use any payment option for this order:</p>
-            <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
-            <p class="checkout-notice__highlight">Your order will not be shipped until we receive your payment.</p>
-          </div>
-        </div>
-        <div class="checkout-notice checkout-notice--important">
-          <span class="material-symbols-outlined checkout-notice__icon">block</span>
-          <div class="checkout-notice__body">
-            <div class="checkout-notice__title">No Payment Will Be Made Now</div>
-            <p class="checkout-notice__highlight">No payment will be collected at checkout.</p>
-            <p>Placing this order does <strong>not</strong> require any payment. Our team will contact you shortly with the final total (including shipping) and payment instructions.</p>
-          </div>
-        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
           <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
           <button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button>
@@ -307,6 +282,31 @@ export async function renderCheckoutPage() {
               `).join('')}
             </div>
           </div>` : ''}
+        </div>
+      </div>
+      <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
+        <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">Please Note:</div>
+          <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by selecting your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
+          <p>Cash on Delivery (COD) is <strong>not</strong> available on this order.</p>
+        </div>
+      </div>
+      <div class="checkout-notice checkout-notice--info" style="margin-top:var(--space-4);">
+        <span class="material-symbols-outlined checkout-notice__icon">payments</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">Payment Options:</div>
+          <p>You can use any payment option for this order:</p>
+          <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
+          <p class="checkout-notice__highlight">Your order will not be shipped until we receive your payment.</p>
+        </div>
+      </div>
+      <div class="checkout-notice checkout-notice--important" style="margin-top:var(--space-4); margin-bottom:var(--space-6);">
+        <span class="material-symbols-outlined checkout-notice__icon">block</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">No Payment Will Be Made Now</div>
+          <p class="checkout-notice__highlight">No payment will be collected at checkout.</p>
+          <p>Placing this order does <strong>not</strong> require any payment. Our team will contact you shortly with the final total (including shipping) and payment instructions.</p>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
@@ -516,7 +516,7 @@ export async function renderCheckoutPage() {
     setCheckoutData(data);
     setCheckoutStep('review');
     renderCheckoutPage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   });
 
   // Step 2 → Step 1: go back to edit (data already persisted, so the form
@@ -524,7 +524,7 @@ export async function renderCheckoutPage() {
   document.getElementById('btn-edit-info')?.addEventListener('click', () => {
     setCheckoutStep('shipping');
     renderCheckoutPage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   });
 
   // Place Order (step 2) — reads the persisted data and submits.
@@ -570,7 +570,10 @@ export async function renderCheckoutPage() {
     showToast('Processing your order…', 'success');
 
     // 1. Insert order row
-    const { data: orderRow, error: orderErr } = await supabase.from('orders').insert({
+    let orderRow = null;
+    let orderErr = null;
+
+    const insertPayload = {
       order_number: orderNumber,
       first_name: data.firstName,
       last_name: data.lastName,
@@ -595,7 +598,50 @@ export async function renderCheckoutPage() {
       shipping: Number(shipping.toFixed(2)),
       total: Number(finalTotal.toFixed(2)),
       status: 'pending',
-    }).select().single();
+    };
+
+    const res = await supabase.from('orders').insert(insertPayload).select().single();
+    orderRow = res.data;
+    orderErr = res.error;
+
+    // Fallback: If new columns are missing in remote schema, serialize them into special_instructions
+    if (orderErr && (orderErr.code === 'PGRST204' || orderErr.code === '42703' || orderErr.message?.includes('column'))) {
+      console.warn('New columns not found in database schema, falling back to special_instructions serialization');
+      
+      const serializedInstructions = [
+        data.customisation ? `[Customisation Requirements]\n${data.customisation}` : null,
+        data.additionalInfo ? `[Additional Info]\n${data.additionalInfo}` : null,
+        uploadedLogos.length ? `[Uploaded Logos]\n${uploadedLogos.map(l => l.name).join(', ')}` : null
+      ].filter(Boolean).join('\n\n');
+
+      const fallbackPayload = {
+        order_number: orderNumber,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        company: data.company || null,
+        gst: data.gst || null,
+        country: 'India',
+        address_line_1: data.address,
+        address_line_2: null,
+        city: data.city,
+        state: data.state,
+        postcode: data.pin,
+        phone: data.phone,
+        email: data.email,
+        special_instructions: serializedInstructions || null,
+        payment_method: paymentMethod,
+        privacy_agreed: true,
+        subtotal: Number(subtotal.toFixed(2)),
+        gst_amount: Number(gstAmount.toFixed(2)),
+        shipping: Number(shipping.toFixed(2)),
+        total: Number(finalTotal.toFixed(2)),
+        status: 'pending',
+      };
+
+      const fallbackRes = await supabase.from('orders').insert(fallbackPayload).select().single();
+      orderRow = fallbackRes.data;
+      orderErr = fallbackRes.error;
+    }
 
     if (orderErr) {
       console.error('Order insert failed:', orderErr);

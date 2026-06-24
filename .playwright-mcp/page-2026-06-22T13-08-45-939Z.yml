@@ -1,0 +1,107 @@
+- main [ref=e17]:
+  - generic [ref=e45]:
+    - complementary [ref=e46]:
+      - link "arrow_back Back to Site" [ref=e48] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e49]: arrow_back
+        - text: Back to Site
+      - navigation [ref=e50]:
+        - button "home Homepage" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: home
+          - text: Homepage
+        - button "campaign Header" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: campaign
+          - text: Header
+        - button "inventory_2 Products" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: inventory_2
+          - text: Products
+        - button "category Categories" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: category
+          - text: Categories
+        - button "perm_media Banners" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: perm_media
+          - text: Banners
+        - button "footer Footer" [ref=e61] [cursor=pointer]:
+          - generic [ref=e62]: footer
+          - text: Footer
+        - button "settings Settings" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: settings
+          - text: Settings
+        - button "inbox Enquiries" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: inbox
+          - text: Enquiries
+        - button "logout Logout" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: logout
+          - text: Logout
+    - main [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - heading "Products" [level=1] [ref=e72]
+          - generic [ref=e73]: Browse by category folder
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - generic: search
+            - textbox "Search all products by name, slug, SKU..." [ref=e76]
+          - combobox [ref=e77] [cursor=pointer]:
+            - option "All Status" [selected]
+            - option "Active"
+            - option "Inactive"
+          - button "add Add Product" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]: add
+            - text: Add Product
+      - generic [ref=e80]:
+        - button "arrow_back Back" [disabled] [ref=e81]:
+          - generic [ref=e82]: arrow_back
+          - text: Back
+        - button "Products" [disabled] [ref=e84]
+      - generic [ref=e85]:
+        - button "folder Corporate Gift Sets 4 categories 12" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]: folder
+          - generic [ref=e88]: Corporate Gift Sets
+          - generic [ref=e89]: 4 categories
+          - generic [ref=e90]: "12"
+        - button "folder Business Gifts 6 categories 57" [ref=e91] [cursor=pointer]:
+          - generic [ref=e92]: folder
+          - generic [ref=e93]: Business Gifts
+          - generic [ref=e94]: 6 categories
+          - generic [ref=e95]: "57"
+        - button "folder New Year Diary 8 categories 77" [ref=e96] [cursor=pointer]:
+          - generic [ref=e97]: folder
+          - generic [ref=e98]: New Year Diary
+          - generic [ref=e99]: 8 categories
+          - generic [ref=e100]: "77"
+        - button "folder Premium Diary 4 categories 6" [ref=e101] [cursor=pointer]:
+          - generic [ref=e102]: folder
+          - generic [ref=e103]: Premium Diary
+          - generic [ref=e104]: 4 categories
+          - generic [ref=e105]: "6"
+        - button "folder Calendars 1 category 6" [ref=e106] [cursor=pointer]:
+          - generic [ref=e107]: folder
+          - generic [ref=e108]: Calendars
+          - generic [ref=e109]: 1 category
+          - generic [ref=e110]: "6"
+        - button "folder Note Books & Pads 3 categories 13" [ref=e111] [cursor=pointer]:
+          - generic [ref=e112]: folder
+          - generic [ref=e113]: Note Books & Pads
+          - generic [ref=e114]: 3 categories
+          - generic [ref=e115]: "13"
+        - button "folder Leather Gifts 3 categories 9" [ref=e116] [cursor=pointer]:
+          - generic [ref=e117]: folder
+          - generic [ref=e118]: Leather Gifts
+          - generic [ref=e119]: 3 categories
+          - generic [ref=e120]: "9"
+        - button "folder Leather Planners 2 categories 4" [ref=e121] [cursor=pointer]:
+          - generic [ref=e122]: folder
+          - generic [ref=e123]: Leather Planners
+          - generic [ref=e124]: 2 categories
+          - generic [ref=e125]: "4"
+        - button "folder Promotional Gifts 5 categories 18" [ref=e126] [cursor=pointer]:
+          - generic [ref=e127]: folder
+          - generic [ref=e128]: Promotional Gifts
+          - generic [ref=e129]: 5 categories
+          - generic [ref=e130]: "18"
+        - button "folder_off Uncategorized unassigned 12" [ref=e131] [cursor=pointer]:
+          - generic [ref=e132]: folder_off
+          - generic [ref=e133]: Uncategorized
+          - generic [ref=e134]: unassigned
+          - generic [ref=e135]: "12"

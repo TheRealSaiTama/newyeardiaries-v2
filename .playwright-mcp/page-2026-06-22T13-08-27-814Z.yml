@@ -1,0 +1,45 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - img "New Year Diaries" [ref=e5]
+    - generic [ref=e11]:
+      - strong [ref=e12]: Preparing your 2026 collection
+      - generic [ref=e13]: Manufacturer direct diaries, planners and gifting.
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - complementary [ref=e19]:
+        - link "arrow_back Back to Site" [ref=e21] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e22]: arrow_back
+          - text: Back to Site
+        - navigation [ref=e23]:
+          - button "home Homepage" [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: home
+            - text: Homepage
+          - button "campaign Header" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: campaign
+            - text: Header
+          - button "inventory_2 Products" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: inventory_2
+            - text: Products
+          - button "category Categories" [ref=e30] [cursor=pointer]:
+            - generic [ref=e31]: category
+            - text: Categories
+          - button "perm_media Banners" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: perm_media
+            - text: Banners
+          - button "footer Footer" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]: footer
+            - text: Footer
+          - button "settings Settings" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: settings
+            - text: Settings
+          - button "inbox Enquiries" [ref=e38] [cursor=pointer]:
+            - generic [ref=e39]: inbox
+            - text: Enquiries
+          - button "logout Logout" [ref=e40] [cursor=pointer]:
+            - generic [ref=e41]: logout
+            - text: Logout
+      - main [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: progress_activity
+          - text: Loading...

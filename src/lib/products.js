@@ -74,7 +74,7 @@ export async function getProducts({ categoryId, limit, offset = 0, search } = {}
   const { data, error } = await query;
   if (error) { console.error(error); return []; }
   const rows = (data || []).map(p => {
-    const n = normalize(p);
+    const n = normalizeProduct(p);
     if (sortByJunction) n.categorySortOrder = sortByJunction.get(p.id) ?? null;
     return n;
   });
@@ -105,7 +105,7 @@ export async function getProductBySlug(slug) {
     .eq('slug', slug)
     .single();
   if (error) return null;
-  return normalize(data);
+  return normalizeProduct(data);
 }
 
 export async function getReviewsByProduct(productId) {

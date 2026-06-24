@@ -20,11 +20,47 @@ export async function renderOrderSuccessPage() {
       </div>
       <div class="success-page">
         <div class="success-icon"><span class="material-symbols-outlined">check_circle</span></div>
-        <h1>Thank You!</h1>
-        <p class="success-lede">Thank you for ordering with New Year Diaries.</p>
+        <h1>Congratulations!</h1>
+        <p class="success-lede">Thanks for your order.</p>
         <p class="success-received">We have successfully received your order${orderNumber ? ` <strong>#${orderNumber}</strong>` : ''}.</p>
-        <p class="success-status">Order Confirmed.</p>
-        <p class="success-followup">We will contact you soon for shipping and payment details.</p>
+        <p class="success-status" style="margin-bottom: var(--space-6);">Order Confirmed.</p>
+        
+        <div class="order-payment-notice" style="
+          background: var(--color-error-bg);
+          border: 1px solid var(--color-border);
+          border-left: 4px solid var(--color-error);
+          border-radius: var(--radius-md);
+          padding: var(--space-6);
+          margin: 0 auto var(--space-8);
+          max-width: 560px;
+          text-align: left;
+          color: var(--color-text-primary);
+          box-shadow: var(--shadow-sm);
+        ">
+          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3);color:var(--color-error);">
+            <span class="material-symbols-outlined" style="font-size:24px;">warning</span>
+            <strong style="font-size:var(--fs-lg);text-transform:uppercase;letter-spacing:var(--ls-wide);">PLEASE NOTE</strong>
+          </div>
+          <p style="font-size:var(--fs-base);line-height:var(--lh-normal);margin-bottom:var(--space-4);color:var(--color-text-primary); max-width: 100%; text-align: left;">
+            Amount showing below is the basic cost of your purchased items, there will be <strong>SHIPPING OR CUSTOMIZATION CHARGES</strong> to be included in this amount.
+          </p>
+          <div style="
+            background: var(--color-surface);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--space-4);
+            border: 1px solid var(--color-border);
+          ">
+            <span style="color:var(--color-error);font-weight:var(--fw-bold);font-size:var(--fs-sm);display:block;margin-bottom:var(--space-1);text-transform:uppercase;">⚠️ Critical Instructions</span>
+            <span style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-primary);line-height:var(--lh-normal);">PLEASE DO NOT PROCEED WITH PAYMENT AT THIS STAGE,</span>
+          </div>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-secondary);line-height:var(--lh-normal);margin-bottom:0; max-width: 100%; text-align: left;">
+            Our sales executive will call you shortly to discuss and give detailed proforma invoice for your order and payment.<br><br>
+            If you have any query, you can contact to our customer care at <a href="tel:+919899223130" style="color:var(--color-primary);font-weight:var(--fw-semibold);text-decoration:none;">+91 98992 23130</a>.<br><br>
+            <strong>Thanks...!!<br>New Year Diaries</strong>
+          </p>
+        </div>
+
         <div id="order-overview" class="order-overview"><span class="material-symbols-outlined spin" style="font-size:22px;color:var(--color-text-tertiary)">progress_activity</span></div>
         <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;">
           <a href="/shop" class="btn btn--accent btn--lg">Continue Shopping</a>

@@ -2344,13 +2344,15 @@ async function renderEnquiries(container, tab = 'contact') {
       const row = btn.closest('tr');
       const id = row.dataset.id;
       showConfirmDialog('Delete this item permanently?', async () => {
-        // ponytail: was fire-and-forget — showed "Deleted!" even when the row
-        // wasn't removed (RLS / error / wrong id). Check the result, and
-        // remove the row optimistically on success so it visibly vanishes
-        // even if the re-fetch is slow.
-        const { error } = await supabase.from(tableName).delete().eq('id', id);
+        // ponytail: was fire-and-forget — check if delete succeeded using .select()
+        // since Supabase returns success code even if RLS blocked deletion.
+        const { data, error } = await supabase.from(tableName).delete().eq('id', id).select();
         if (error) {
           showToast(`Delete failed: ${error.message}`, 'error');
+          return;
+        }
+        if (!data || data.length === 0) {
+          showToast(`Delete failed: Permission denied. RLS policies on the remote database are out of sync. Please push migrations using 'supabase db push' in your terminal or add DELETE policies in the Supabase Dashboard.`, 'error');
           return;
         }
         row.remove();
@@ -2388,6 +2390,22 @@ function openEnquiryDetailModal(item, type) {
         { label: 'Status', value: item.status || 'pending' },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
+    : type === 'orders' || type === 'order'
+    ? [
+        { label: 'Order Number', value: item.order_number || '—' },
+        { label: 'Customer Name', value: `${item.first_name || ''} ${item.last_name || ''}`.trim() },
+        { label: 'Email', value: item.email },
+        { label: 'Phone', value: item.phone || '—' },
+        { label: 'Company', value: item.company || '—' },
+        { label: 'GST Number', value: item.gst || '—' },
+        { label: 'Shipping Address', value: `${item.address_line_1 || ''}${item.address_line_2 ? ', ' + item.address_line_2 : ''}, ${item.city || ''}, ${item.state || ''} - ${item.postcode || ''}, ${item.country || 'India'}` },
+        { label: 'Payment Method', value: item.payment_method || '—' },
+        { label: 'Financial Summary', value: `Subtotal: ₹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): ₹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: ₹${Number(item.shipping || 0).toLocaleString()} | Total: ₹${Number(item.total || 0).toLocaleString()}` },
+        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${item.special_instructions}</div>` : '—' },
+        { label: 'Order Items', value: '<div id="modal-order-items">Loading order items...</div>' },
+        { label: 'Status', value: item.status || 'pending' },
+        { label: 'Order Date', value: new Date(item.created_at).toLocaleString() },
+      ]
     : [
         { label: 'Enquiry Code', value: item.enquiry_code || '—' },
         { label: 'Name', value: item.name },
@@ -2405,7 +2423,7 @@ function openEnquiryDetailModal(item, type) {
   overlay.innerHTML = `
     <div class="admin-modal enquiry-detail-modal">
       <div class="admin-modal-header">
-        <h2>${type === 'contact' ? 'Contact Message' : type === 'enquiry' ? 'Bulk Enquiry' : 'Quote Request'} Details</h2>
+        <h2>${type === 'contact' ? 'Contact Message' : type === 'enquiry' ? 'Bulk Enquiry' : type === 'orders' || type === 'order' ? 'Order' : 'Quote Request'} Details</h2>
         <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
       </div>
       <div class="admin-form">
@@ -2422,6 +2440,50 @@ function openEnquiryDetailModal(item, type) {
     </div>
   `;
   document.body.appendChild(overlay);
+
+  if (type === 'orders' || type === 'order') {
+    setTimeout(async () => {
+      const itemsContainer = document.getElementById('modal-order-items');
+      if (!itemsContainer) return;
+      const { data: orderItems, error } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', item.id);
+      
+      if (error) {
+        itemsContainer.innerHTML = `<div style="color:var(--color-error)">Failed to load items: ${error.message}</div>`;
+      } else if (!orderItems || orderItems.length === 0) {
+        itemsContainer.innerHTML = '<div>No items in this order.</div>';
+      } else {
+        itemsContainer.innerHTML = `
+          <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:var(--fs-sm);">
+            <thead>
+              <tr style="border-bottom:2px solid var(--color-border); text-align:left; font-weight:600;">
+                <th style="padding:8px 0;">Product</th>
+                <th style="padding:8px 0; text-align:center;">Qty</th>
+                <th style="padding:8px 0; text-align:right;">Price</th>
+                <th style="padding:8px 0; text-align:right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderItems.map(it => `
+                <tr style="border-bottom:1px solid var(--color-border-light);">
+                  <td style="padding:8px 0;">
+                    <div style="font-weight:600;">${it.product_name}</div>
+                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).join(' • ')}</div>` : ''}
+                  </td>
+                  <td style="padding:8px 0; text-align:center;">${it.quantity}</td>
+                  <td style="padding:8px 0; text-align:right;">₹${Number(it.unit_price).toLocaleString()}</td>
+                  <td style="padding:8px 0; text-align:right; font-weight:600;">₹${Number(it.line_total).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }, 0);
+  }
+
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();

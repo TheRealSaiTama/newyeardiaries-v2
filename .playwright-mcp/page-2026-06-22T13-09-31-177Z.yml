@@ -1,0 +1,466 @@
+- main [ref=e17]:
+  - generic [ref=e45]:
+    - complementary [ref=e46]:
+      - link "arrow_back Back to Site" [ref=e48] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e49]: arrow_back
+        - text: Back to Site
+      - navigation [ref=e50]:
+        - button "home Homepage" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: home
+          - text: Homepage
+        - button "campaign Header" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: campaign
+          - text: Header
+        - button "inventory_2 Products" [active] [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: inventory_2
+          - text: Products
+        - button "category Categories" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: category
+          - text: Categories
+        - button "perm_media Banners" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: perm_media
+          - text: Banners
+        - button "footer Footer" [ref=e61] [cursor=pointer]:
+          - generic [ref=e62]: footer
+          - text: Footer
+        - button "settings Settings" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: settings
+          - text: Settings
+        - button "inbox Enquiries" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: inbox
+          - text: Enquiries
+        - button "logout Logout" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: logout
+          - text: Logout
+    - main [ref=e69]:
+      - generic [ref=e1349]:
+        - generic [ref=e1350]:
+          - heading "Products" [level=1] [ref=e1351]
+          - generic [ref=e1352]: Browse by category folder
+        - generic [ref=e1353]:
+          - generic [ref=e1354]:
+            - generic: search
+            - textbox "Search all products by name, slug, SKU..." [ref=e1355]
+          - combobox [ref=e1356] [cursor=pointer]:
+            - option "All Status" [selected]
+            - option "Active"
+            - option "Inactive"
+          - button "add Add Product" [ref=e1357] [cursor=pointer]:
+            - generic [ref=e1358]: add
+            - text: Add Product
+      - generic [ref=e1359]:
+        - button "arrow_back Back" [ref=e1360] [cursor=pointer]:
+          - generic [ref=e1361]: arrow_back
+          - text: Back
+        - generic [ref=e1362]:
+          - button "Products" [ref=e1363] [cursor=pointer]
+          - generic [ref=e1364]: chevron_right
+          - button "New Year Diary" [ref=e1365] [cursor=pointer]
+          - generic [ref=e1366]: chevron_right
+          - button "A to Z Diary Collection" [disabled] [ref=e1367]
+      - table [ref=e1370]:
+        - rowgroup [ref=e1371]:
+          - row "Image Name Category Price Stock Status Actions" [ref=e1372]:
+            - columnheader "Image" [ref=e1373]
+            - columnheader "Name" [ref=e1374]
+            - columnheader "Category" [ref=e1375]
+            - columnheader "Price" [ref=e1376]
+            - columnheader "Stock" [ref=e1377]
+            - columnheader "Status" [ref=e1378]
+            - columnheader "Actions" [ref=e1379]
+        - rowgroup [ref=e1380]:
+          - row "june testing diary june testing diary jjjd A to Z Diary Collection ₹666 In Stock Active edit content_copy delete" [ref=e1381]:
+            - cell "june testing diary" [ref=e1382]:
+              - img "june testing diary" [ref=e1383] [cursor=pointer]
+            - cell "june testing diary jjjd" [ref=e1384]:
+              - strong [ref=e1385]: june testing diary
+              - text: jjjd
+            - cell "A to Z Diary Collection" [ref=e1386]
+            - cell "₹666" [ref=e1387]:
+              - strong [ref=e1388]: ₹666
+            - cell "In Stock" [ref=e1389]
+            - cell "Active" [ref=e1390]:
+              - generic [ref=e1391]: Active
+            - cell "edit content_copy delete" [ref=e1392]:
+              - button "edit" [ref=e1393] [cursor=pointer]:
+                - generic [ref=e1394]: edit
+              - button "content_copy" [ref=e1395] [cursor=pointer]:
+                - generic [ref=e1396]: content_copy
+              - button "delete" [ref=e1397] [cursor=pointer]:
+                - generic [ref=e1398]: delete
+          - row "Diary Test 1 Diary Test 1 diary-test-1 A to Z Diary Collection, Bottles Gift Sets, Buy Diary with Pen ₹100 ₹129 In Stock Active edit content_copy delete" [ref=e1399]:
+            - cell "Diary Test 1" [ref=e1400]:
+              - img "Diary Test 1" [ref=e1401] [cursor=pointer]
+            - cell "Diary Test 1 diary-test-1" [ref=e1402]:
+              - strong [ref=e1403]: Diary Test 1
+              - text: diary-test-1
+            - cell "A to Z Diary Collection, Bottles Gift Sets, Buy Diary with Pen" [ref=e1404]
+            - cell "₹100 ₹129" [ref=e1405]:
+              - strong [ref=e1406]: ₹100
+              - text: ₹129
+            - cell "In Stock" [ref=e1407]
+            - cell "Active" [ref=e1408]:
+              - generic [ref=e1409]: Active
+            - cell "edit content_copy delete" [ref=e1410]:
+              - button "edit" [ref=e1411] [cursor=pointer]:
+                - generic [ref=e1412]: edit
+              - button "content_copy" [ref=e1413] [cursor=pointer]:
+                - generic [ref=e1414]: content_copy
+              - button "delete" [ref=e1415] [cursor=pointer]:
+                - generic [ref=e1416]: delete
+          - row "dgdsgd dgdsgd dgdsgd Bottles Gift Sets, A to Z Diary Collection ₹80 ₹90 In Stock Active edit content_copy delete" [ref=e1417]:
+            - cell "dgdsgd" [ref=e1418]:
+              - img "dgdsgd" [ref=e1419] [cursor=pointer]
+            - cell "dgdsgd dgdsgd" [ref=e1420]:
+              - strong [ref=e1421]: dgdsgd
+              - text: dgdsgd
+            - cell "Bottles Gift Sets, A to Z Diary Collection" [ref=e1422]
+            - cell "₹80 ₹90" [ref=e1423]:
+              - strong [ref=e1424]: ₹80
+              - text: ₹90
+            - cell "In Stock" [ref=e1425]
+            - cell "Active" [ref=e1426]:
+              - generic [ref=e1427]: Active
+            - cell "edit content_copy delete" [ref=e1428]:
+              - button "edit" [ref=e1429] [cursor=pointer]:
+                - generic [ref=e1430]: edit
+              - button "content_copy" [ref=e1431] [cursor=pointer]:
+                - generic [ref=e1432]: content_copy
+              - button "delete" [ref=e1433] [cursor=pointer]:
+                - generic [ref=e1434]: delete
+          - row "BORDER Brown Leather Premium 2026 Diary BORDER Brown Leather Premium 2026 Diary border-brown-leather-premium-2026-diary A to Z Diary Collection ₹164 ₹178 In Stock Active edit content_copy delete" [ref=e1435]:
+            - cell "BORDER Brown Leather Premium 2026 Diary" [ref=e1436]:
+              - img "BORDER Brown Leather Premium 2026 Diary" [ref=e1437] [cursor=pointer]
+            - cell "BORDER Brown Leather Premium 2026 Diary border-brown-leather-premium-2026-diary" [ref=e1438]:
+              - strong [ref=e1439]: BORDER Brown Leather Premium 2026 Diary
+              - text: border-brown-leather-premium-2026-diary
+            - cell "A to Z Diary Collection" [ref=e1440]
+            - cell "₹164 ₹178" [ref=e1441]:
+              - strong [ref=e1442]: ₹164
+              - text: ₹178
+            - cell "In Stock" [ref=e1443]
+            - cell "Active" [ref=e1444]:
+              - generic [ref=e1445]: Active
+            - cell "edit content_copy delete" [ref=e1446]:
+              - button "edit" [ref=e1447] [cursor=pointer]:
+                - generic [ref=e1448]: edit
+              - button "content_copy" [ref=e1449] [cursor=pointer]:
+                - generic [ref=e1450]: content_copy
+              - button "delete" [ref=e1451] [cursor=pointer]:
+                - generic [ref=e1452]: delete
+          - row "NEXA ECO Paper Diary 2026 NEXA ECO Paper Diary 2026 low-budget-leather-diary-2026 A to Z Diary Collection ₹108 In Stock Active edit content_copy delete" [ref=e1453]:
+            - cell "NEXA ECO Paper Diary 2026" [ref=e1454]:
+              - img "NEXA ECO Paper Diary 2026" [ref=e1455] [cursor=pointer]
+            - cell "NEXA ECO Paper Diary 2026 low-budget-leather-diary-2026" [ref=e1456]:
+              - strong [ref=e1457]: NEXA ECO Paper Diary 2026
+              - text: low-budget-leather-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1458]
+            - cell "₹108" [ref=e1459]:
+              - strong [ref=e1460]: ₹108
+            - cell "In Stock" [ref=e1461]
+            - cell "Active" [ref=e1462]:
+              - generic [ref=e1463]: Active
+            - cell "edit content_copy delete" [ref=e1464]:
+              - button "edit" [ref=e1465] [cursor=pointer]:
+                - generic [ref=e1466]: edit
+              - button "content_copy" [ref=e1467] [cursor=pointer]:
+                - generic [ref=e1468]: content_copy
+              - button "delete" [ref=e1469] [cursor=pointer]:
+                - generic [ref=e1470]: delete
+          - row "COM Economy 2 Date HB Diary COM Economy 2 Date HB Diary com-eco-diary-2-date-hb A to Z Diary Collection ₹37 In Stock Active edit content_copy delete" [ref=e1471]:
+            - cell "COM Economy 2 Date HB Diary" [ref=e1472]:
+              - img "COM Economy 2 Date HB Diary" [ref=e1473] [cursor=pointer]
+            - cell "COM Economy 2 Date HB Diary com-eco-diary-2-date-hb" [ref=e1474]:
+              - strong [ref=e1475]: COM Economy 2 Date HB Diary
+              - text: com-eco-diary-2-date-hb
+            - cell "A to Z Diary Collection" [ref=e1476]
+            - cell "₹37" [ref=e1477]:
+              - strong [ref=e1478]: ₹37
+            - cell "In Stock" [ref=e1479]
+            - cell "Active" [ref=e1480]:
+              - generic [ref=e1481]: Active
+            - cell "edit content_copy delete" [ref=e1482]:
+              - button "edit" [ref=e1483] [cursor=pointer]:
+                - generic [ref=e1484]: edit
+              - button "content_copy" [ref=e1485] [cursor=pointer]:
+                - generic [ref=e1486]: content_copy
+              - button "delete" [ref=e1487] [cursor=pointer]:
+                - generic [ref=e1488]: delete
+          - row "Executive Full Size PLAIN HB Diary 2026 Executive Full Size PLAIN HB Diary 2026 executive-full-size-plain-hb-diary A to Z Diary Collection ₹95 In Stock Active edit content_copy delete" [ref=e1489]:
+            - cell "Executive Full Size PLAIN HB Diary 2026" [ref=e1490]:
+              - img "Executive Full Size PLAIN HB Diary 2026" [ref=e1491] [cursor=pointer]
+            - cell "Executive Full Size PLAIN HB Diary 2026 executive-full-size-plain-hb-diary" [ref=e1492]:
+              - strong [ref=e1493]: Executive Full Size PLAIN HB Diary 2026
+              - text: executive-full-size-plain-hb-diary
+            - cell "A to Z Diary Collection" [ref=e1494]
+            - cell "₹95" [ref=e1495]:
+              - strong [ref=e1496]: ₹95
+            - cell "In Stock" [ref=e1497]
+            - cell "Active" [ref=e1498]:
+              - generic [ref=e1499]: Active
+            - cell "edit content_copy delete" [ref=e1500]:
+              - button "edit" [ref=e1501] [cursor=pointer]:
+                - generic [ref=e1502]: edit
+              - button "content_copy" [ref=e1503] [cursor=pointer]:
+                - generic [ref=e1504]: content_copy
+              - button "delete" [ref=e1505] [cursor=pointer]:
+                - generic [ref=e1506]: delete
+          - row "Premium Leather Engineering Diary with Planner Premium Leather Engineering Diary with Planner premium-leather-engineering-diary-with-planner A to Z Diary Collection ₹154 In Stock Active edit content_copy delete" [ref=e1507]:
+            - cell "Premium Leather Engineering Diary with Planner" [ref=e1508]:
+              - img "Premium Leather Engineering Diary with Planner" [ref=e1509] [cursor=pointer]
+            - cell "Premium Leather Engineering Diary with Planner premium-leather-engineering-diary-with-planner" [ref=e1510]:
+              - strong [ref=e1511]: Premium Leather Engineering Diary with Planner
+              - text: premium-leather-engineering-diary-with-planner
+            - cell "A to Z Diary Collection" [ref=e1512]
+            - cell "₹154" [ref=e1513]:
+              - strong [ref=e1514]: ₹154
+            - cell "In Stock" [ref=e1515]
+            - cell "Active" [ref=e1516]:
+              - generic [ref=e1517]: Active
+            - cell "edit content_copy delete" [ref=e1518]:
+              - button "edit" [ref=e1519] [cursor=pointer]:
+                - generic [ref=e1520]: edit
+              - button "content_copy" [ref=e1521] [cursor=pointer]:
+                - generic [ref=e1522]: content_copy
+              - button "delete" [ref=e1523] [cursor=pointer]:
+                - generic [ref=e1524]: delete
+          - row "Grey Alder Textured Leather diary 2026 Grey Alder Textured Leather diary 2026 grey-alder-textured-leather-diary-2026 A to Z Diary Collection ₹158 In Stock Active edit content_copy delete" [ref=e1525]:
+            - cell "Grey Alder Textured Leather diary 2026" [ref=e1526]:
+              - img "Grey Alder Textured Leather diary 2026" [ref=e1527] [cursor=pointer]
+            - cell "Grey Alder Textured Leather diary 2026 grey-alder-textured-leather-diary-2026" [ref=e1528]:
+              - strong [ref=e1529]: Grey Alder Textured Leather diary 2026
+              - text: grey-alder-textured-leather-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1530]
+            - cell "₹158" [ref=e1531]:
+              - strong [ref=e1532]: ₹158
+            - cell "In Stock" [ref=e1533]
+            - cell "Active" [ref=e1534]:
+              - generic [ref=e1535]: Active
+            - cell "edit content_copy delete" [ref=e1536]:
+              - button "edit" [ref=e1537] [cursor=pointer]:
+                - generic [ref=e1538]: edit
+              - button "content_copy" [ref=e1539] [cursor=pointer]:
+                - generic [ref=e1540]: content_copy
+              - button "delete" [ref=e1541] [cursor=pointer]:
+                - generic [ref=e1542]: delete
+          - row "A5 ANT Leather Planner Diary 2026 A5 ANT Leather Planner Diary 2026 a5-ant-leather-planner-diary-2026 A to Z Diary Collection ₹110 In Stock Active edit content_copy delete" [ref=e1543]:
+            - cell "A5 ANT Leather Planner Diary 2026" [ref=e1544]:
+              - img "A5 ANT Leather Planner Diary 2026" [ref=e1545] [cursor=pointer]
+            - cell "A5 ANT Leather Planner Diary 2026 a5-ant-leather-planner-diary-2026" [ref=e1546]:
+              - strong [ref=e1547]: A5 ANT Leather Planner Diary 2026
+              - text: a5-ant-leather-planner-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1548]
+            - cell "₹110" [ref=e1549]:
+              - strong [ref=e1550]: ₹110
+            - cell "In Stock" [ref=e1551]
+            - cell "Active" [ref=e1552]:
+              - generic [ref=e1553]: Active
+            - cell "edit content_copy delete" [ref=e1554]:
+              - button "edit" [ref=e1555] [cursor=pointer]:
+                - generic [ref=e1556]: edit
+              - button "content_copy" [ref=e1557] [cursor=pointer]:
+                - generic [ref=e1558]: content_copy
+              - button "delete" [ref=e1559] [cursor=pointer]:
+                - generic [ref=e1560]: delete
+          - row "Clean and Green Planner Diary 2026 Clean and Green Planner Diary 2026 go-green-premium-planner A to Z Diary Collection ₹122 In Stock Active edit content_copy delete" [ref=e1561]:
+            - cell "Clean and Green Planner Diary 2026" [ref=e1562]:
+              - img "Clean and Green Planner Diary 2026" [ref=e1563] [cursor=pointer]
+            - cell "Clean and Green Planner Diary 2026 go-green-premium-planner" [ref=e1564]:
+              - strong [ref=e1565]: Clean and Green Planner Diary 2026
+              - text: go-green-premium-planner
+            - cell "A to Z Diary Collection" [ref=e1566]
+            - cell "₹122" [ref=e1567]:
+              - strong [ref=e1568]: ₹122
+            - cell "In Stock" [ref=e1569]
+            - cell "Active" [ref=e1570]:
+              - generic [ref=e1571]: Active
+            - cell "edit content_copy delete" [ref=e1572]:
+              - button "edit" [ref=e1573] [cursor=pointer]:
+                - generic [ref=e1574]: edit
+              - button "content_copy" [ref=e1575] [cursor=pointer]:
+                - generic [ref=e1576]: content_copy
+              - button "delete" [ref=e1577] [cursor=pointer]:
+                - generic [ref=e1578]: delete
+          - row "Go Green Executive Planner Diary J Go Green Executive Planner Diary J go-green-executive-planner-diary A to Z Diary Collection ₹122 In Stock Active edit content_copy delete" [ref=e1579]:
+            - cell "Go Green Executive Planner Diary J" [ref=e1580]:
+              - img "Go Green Executive Planner Diary J" [ref=e1581] [cursor=pointer]
+            - cell "Go Green Executive Planner Diary J go-green-executive-planner-diary" [ref=e1582]:
+              - strong [ref=e1583]: Go Green Executive Planner Diary J
+              - text: go-green-executive-planner-diary
+            - cell "A to Z Diary Collection" [ref=e1584]
+            - cell "₹122" [ref=e1585]:
+              - strong [ref=e1586]: ₹122
+            - cell "In Stock" [ref=e1587]
+            - cell "Active" [ref=e1588]:
+              - generic [ref=e1589]: Active
+            - cell "edit content_copy delete" [ref=e1590]:
+              - button "edit" [ref=e1591] [cursor=pointer]:
+                - generic [ref=e1592]: edit
+              - button "content_copy" [ref=e1593] [cursor=pointer]:
+                - generic [ref=e1594]: content_copy
+              - button "delete" [ref=e1595] [cursor=pointer]:
+                - generic [ref=e1596]: delete
+          - row "DIRECTORS Premium Leather Diary 2026 DIRECTORS Premium Leather Diary 2026 directors-premium-leather-diary-2026-with-sunday-full-page A to Z Diary Collection ₹172 In Stock Active edit content_copy delete" [ref=e1597]:
+            - cell "DIRECTORS Premium Leather Diary 2026" [ref=e1598]:
+              - img "DIRECTORS Premium Leather Diary 2026" [ref=e1599] [cursor=pointer]
+            - cell "DIRECTORS Premium Leather Diary 2026 directors-premium-leather-diary-2026-with-sunday-full-page" [ref=e1600]:
+              - strong [ref=e1601]: DIRECTORS Premium Leather Diary 2026
+              - text: directors-premium-leather-diary-2026-with-sunday-full-page
+            - cell "A to Z Diary Collection" [ref=e1602]
+            - cell "₹172" [ref=e1603]:
+              - strong [ref=e1604]: ₹172
+            - cell "In Stock" [ref=e1605]
+            - cell "Active" [ref=e1606]:
+              - generic [ref=e1607]: Active
+            - cell "edit content_copy delete" [ref=e1608]:
+              - button "edit" [ref=e1609] [cursor=pointer]:
+                - generic [ref=e1610]: edit
+              - button "content_copy" [ref=e1611] [cursor=pointer]:
+                - generic [ref=e1612]: content_copy
+              - button "delete" [ref=e1613] [cursor=pointer]:
+                - generic [ref=e1614]: delete
+          - row "Go Green Executive Diary 2026 HB R Go Green Executive Diary 2026 HB R environment-theme-planner-diary-2026 A to Z Diary Collection ₹117 In Stock Active edit content_copy delete" [ref=e1615]:
+            - cell "Go Green Executive Diary 2026 HB R" [ref=e1616]:
+              - img "Go Green Executive Diary 2026 HB R" [ref=e1617] [cursor=pointer]
+            - cell "Go Green Executive Diary 2026 HB R environment-theme-planner-diary-2026" [ref=e1618]:
+              - strong [ref=e1619]: Go Green Executive Diary 2026 HB R
+              - text: environment-theme-planner-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1620]
+            - cell "₹117" [ref=e1621]:
+              - strong [ref=e1622]: ₹117
+            - cell "In Stock" [ref=e1623]
+            - cell "Active" [ref=e1624]:
+              - generic [ref=e1625]: Active
+            - cell "edit content_copy delete" [ref=e1626]:
+              - button "edit" [ref=e1627] [cursor=pointer]:
+                - generic [ref=e1628]: edit
+              - button "content_copy" [ref=e1629] [cursor=pointer]:
+                - generic [ref=e1630]: content_copy
+              - button "delete" [ref=e1631] [cursor=pointer]:
+                - generic [ref=e1632]: delete
+          - row "Antique Cherry Leather Diary with Flap Antique Cherry Leather Diary with Flap antique-cherry-leather-diary-with-flap A to Z Diary Collection ₹170 ₹179 In Stock Active edit content_copy delete" [ref=e1633]:
+            - cell "Antique Cherry Leather Diary with Flap" [ref=e1634]:
+              - img "Antique Cherry Leather Diary with Flap" [ref=e1635] [cursor=pointer]
+            - cell "Antique Cherry Leather Diary with Flap antique-cherry-leather-diary-with-flap" [ref=e1636]:
+              - strong [ref=e1637]: Antique Cherry Leather Diary with Flap
+              - text: antique-cherry-leather-diary-with-flap
+            - cell "A to Z Diary Collection" [ref=e1638]
+            - cell "₹170 ₹179" [ref=e1639]:
+              - strong [ref=e1640]: ₹170
+              - text: ₹179
+            - cell "In Stock" [ref=e1641]
+            - cell "Active" [ref=e1642]:
+              - generic [ref=e1643]: Active
+            - cell "edit content_copy delete" [ref=e1644]:
+              - button "edit" [ref=e1645] [cursor=pointer]:
+                - generic [ref=e1646]: edit
+              - button "content_copy" [ref=e1647] [cursor=pointer]:
+                - generic [ref=e1648]: content_copy
+              - button "delete" [ref=e1649] [cursor=pointer]:
+                - generic [ref=e1650]: delete
+          - row "Success Theme Planner Diary 2026 Success Theme Planner Diary 2026 success-theme-planner-diary-2025 A to Z Diary Collection ₹122 In Stock Active edit content_copy delete" [ref=e1651]:
+            - cell "Success Theme Planner Diary 2026" [ref=e1652]:
+              - img "Success Theme Planner Diary 2026" [ref=e1653] [cursor=pointer]
+            - cell "Success Theme Planner Diary 2026 success-theme-planner-diary-2025" [ref=e1654]:
+              - strong [ref=e1655]: Success Theme Planner Diary 2026
+              - text: success-theme-planner-diary-2025
+            - cell "A to Z Diary Collection" [ref=e1656]
+            - cell "₹122" [ref=e1657]:
+              - strong [ref=e1658]: ₹122
+            - cell "In Stock" [ref=e1659]
+            - cell "Active" [ref=e1660]:
+              - generic [ref=e1661]: Active
+            - cell "edit content_copy delete" [ref=e1662]:
+              - button "edit" [ref=e1663] [cursor=pointer]:
+                - generic [ref=e1664]: edit
+              - button "content_copy" [ref=e1665] [cursor=pointer]:
+                - generic [ref=e1666]: content_copy
+              - button "delete" [ref=e1667] [cursor=pointer]:
+                - generic [ref=e1668]: delete
+          - row "Zing A5 Sunday Full Page Leather Diary 2026 Zing A5 Sunday Full Page Leather Diary 2026 zing-a5-sunday-full-page-leather-diary-2026 A to Z Diary Collection ₹114 In Stock Active edit content_copy delete" [ref=e1669]:
+            - cell "Zing A5 Sunday Full Page Leather Diary 2026" [ref=e1670]:
+              - img "Zing A5 Sunday Full Page Leather Diary 2026" [ref=e1671] [cursor=pointer]
+            - cell "Zing A5 Sunday Full Page Leather Diary 2026 zing-a5-sunday-full-page-leather-diary-2026" [ref=e1672]:
+              - strong [ref=e1673]: Zing A5 Sunday Full Page Leather Diary 2026
+              - text: zing-a5-sunday-full-page-leather-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1674]
+            - cell "₹114" [ref=e1675]:
+              - strong [ref=e1676]: ₹114
+            - cell "In Stock" [ref=e1677]
+            - cell "Active" [ref=e1678]:
+              - generic [ref=e1679]: Active
+            - cell "edit content_copy delete" [ref=e1680]:
+              - button "edit" [ref=e1681] [cursor=pointer]:
+                - generic [ref=e1682]: edit
+              - button "content_copy" [ref=e1683] [cursor=pointer]:
+                - generic [ref=e1684]: content_copy
+              - button "delete" [ref=e1685] [cursor=pointer]:
+                - generic [ref=e1686]: delete
+          - row "Cross Cut Economy Leather Diary 2026 Cross Cut Economy Leather Diary 2026 cross-cut-economy-leather-diary-2026 A to Z Diary Collection ₹82 In Stock Active edit content_copy delete" [ref=e1687]:
+            - cell "Cross Cut Economy Leather Diary 2026" [ref=e1688]:
+              - img "Cross Cut Economy Leather Diary 2026" [ref=e1689] [cursor=pointer]
+            - cell "Cross Cut Economy Leather Diary 2026 cross-cut-economy-leather-diary-2026" [ref=e1690]:
+              - strong [ref=e1691]: Cross Cut Economy Leather Diary 2026
+              - text: cross-cut-economy-leather-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1692]
+            - cell "₹82" [ref=e1693]:
+              - strong [ref=e1694]: ₹82
+            - cell "In Stock" [ref=e1695]
+            - cell "Active" [ref=e1696]:
+              - generic [ref=e1697]: Active
+            - cell "edit content_copy delete" [ref=e1698]:
+              - button "edit" [ref=e1699] [cursor=pointer]:
+                - generic [ref=e1700]: edit
+              - button "content_copy" [ref=e1701] [cursor=pointer]:
+                - generic [ref=e1702]: content_copy
+              - button "delete" [ref=e1703] [cursor=pointer]:
+                - generic [ref=e1704]: delete
+          - row "Engineer’s Planner HB Diary with Box G Engineer’s Planner HB Diary with Box G engineers-planner-hb-diary-with-box A to Z Diary Collection ₹130 In Stock Active edit content_copy delete" [ref=e1705]:
+            - cell "Engineer’s Planner HB Diary with Box G" [ref=e1706]:
+              - img "Engineer’s Planner HB Diary with Box G" [ref=e1707] [cursor=pointer]
+            - cell "Engineer’s Planner HB Diary with Box G engineers-planner-hb-diary-with-box" [ref=e1708]:
+              - strong [ref=e1709]: Engineer’s Planner HB Diary with Box G
+              - text: engineers-planner-hb-diary-with-box
+            - cell "A to Z Diary Collection" [ref=e1710]
+            - cell "₹130" [ref=e1711]:
+              - strong [ref=e1712]: ₹130
+            - cell "In Stock" [ref=e1713]
+            - cell "Active" [ref=e1714]:
+              - generic [ref=e1715]: Active
+            - cell "edit content_copy delete" [ref=e1716]:
+              - button "edit" [ref=e1717] [cursor=pointer]:
+                - generic [ref=e1718]: edit
+              - button "content_copy" [ref=e1719] [cursor=pointer]:
+                - generic [ref=e1720]: content_copy
+              - button "delete" [ref=e1721] [cursor=pointer]:
+                - generic [ref=e1722]: delete
+          - row "Sanmica Executive Leather Plain Diary 2026 Sanmica Executive Leather Plain Diary 2026 sanmica-executive-leather-plain-diary-2026 A to Z Diary Collection ₹127 In Stock Active edit content_copy delete" [ref=e1723]:
+            - cell "Sanmica Executive Leather Plain Diary 2026" [ref=e1724]:
+              - img "Sanmica Executive Leather Plain Diary 2026" [ref=e1725] [cursor=pointer]
+            - cell "Sanmica Executive Leather Plain Diary 2026 sanmica-executive-leather-plain-diary-2026" [ref=e1726]:
+              - strong [ref=e1727]: Sanmica Executive Leather Plain Diary 2026
+              - text: sanmica-executive-leather-plain-diary-2026
+            - cell "A to Z Diary Collection" [ref=e1728]
+            - cell "₹127" [ref=e1729]:
+              - strong [ref=e1730]: ₹127
+            - cell "In Stock" [ref=e1731]
+            - cell "Active" [ref=e1732]:
+              - generic [ref=e1733]: Active
+            - cell "edit content_copy delete" [ref=e1734]:
+              - button "edit" [ref=e1735] [cursor=pointer]:
+                - generic [ref=e1736]: edit
+              - button "content_copy" [ref=e1737] [cursor=pointer]:
+                - generic [ref=e1738]: content_copy
+              - button "delete" [ref=e1739] [cursor=pointer]:
+                - generic [ref=e1740]: delete
+      - generic [ref=e1741]:
+        - button "chevron_left" [disabled] [ref=e1742]:
+          - generic [ref=e1743]: chevron_left
+        - button "1" [ref=e1744] [cursor=pointer]
+        - button "2" [ref=e1745] [cursor=pointer]
+        - button "3" [ref=e1746] [cursor=pointer]
+        - button "4" [ref=e1747] [cursor=pointer]
+        - button "chevron_right" [ref=e1748] [cursor=pointer]:
+          - generic [ref=e1749]: chevron_right
+        - generic [ref=e1750]: 63 total

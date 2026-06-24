@@ -125,11 +125,21 @@ function setupShell() {
 
 // Show/hide the About section, floating WhatsApp button, and FAQ chatbot
 // based on the current route. They're part of the main website shell and
-// should not appear in the admin dashboard.
+// should not appear in the admin dashboard. The About section (SEO content)
+// is home-only.
 function syncShellExtras() {
-  const isAdmin = (window.location.pathname || '').startsWith('/admin');
+  const path = window.location.pathname || '/';
+  const isHome = path === '/' || path === '/index.html';
+  const isAdmin = path.startsWith('/admin');
+
   document.body.classList.toggle('is-admin-route', isAdmin);
-  document.querySelectorAll('#about-section, .nyd-about-section, #floating-buttons, #faq-chatbot')
+
+  // Show the About section only on the homepage
+  document.querySelectorAll('#about-section, .nyd-about-section')
+    .forEach(el => { el.style.display = isHome ? '' : 'none'; });
+
+  // Show floating buttons and FAQ chatbot everywhere except admin route
+  document.querySelectorAll('#floating-buttons, #faq-chatbot')
     .forEach(el => { el.style.display = isAdmin ? 'none' : ''; });
 }
 
@@ -155,8 +165,8 @@ function pageCacheKey(params) {
 
 function isPageCacheable(path) {
   const normalized = path.endsWith('/') ? path.slice(0, -1) : path;
-  const nonCacheable = ['/cart', '/checkout', '/bulk-quote', '/account'];
-  return !nonCacheable.includes(normalized || '/');
+  // Only cache homepage (which normalizes to empty string) and shop page
+  return normalized === '' || normalized === '/shop';
 }
 
 function getCachedPage(params) {
@@ -324,6 +334,7 @@ function raceWithTimeout(promise, ms, label) {
   // from the shell as the apparent page content while the route loads).
   try {
     setupShell();
+    syncShellExtras();
   } catch (e) {
     console.error('[boot] setupShell failed:', e);
   }

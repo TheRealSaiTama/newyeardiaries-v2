@@ -1,0 +1,12 @@
+- main [ref=e17]:
+  - generic [ref=e29]:
+    - generic [ref=e30]:
+      - generic [ref=e31]: lock
+      - heading "Admin Access" [level=1] [ref=e32]
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - text: Password
+        - textbox "Enter admin password" [active] [ref=e35]
+      - button "Enter Dashboard" [ref=e36] [cursor=pointer]
+    - paragraph [ref=e38]: Wrong password. Try again.
+    - paragraph [ref=e37]: Contact uncle ji if you don't have the password

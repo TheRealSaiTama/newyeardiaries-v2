@@ -225,3 +225,55 @@ export function renderCheckoutSkeleton() {
   `;
 }
 
+export function renderCartSkeleton() {
+  return `
+    <div class="page-content">
+      <div class="container section">
+        <div style="margin-bottom:var(--space-4); display:flex; gap:var(--space-2);">
+          <div class="skeleton" style="width: 50px; height: 12px; border-radius: 4px;"></div>
+          <span style="color:var(--color-text-tertiary); font-size:var(--fs-xs);">/</span>
+          <div class="skeleton" style="width: 80px; height: 12px; border-radius: 4px;"></div>
+        </div>
+        <h1 class="heading-2" style="margin-bottom:var(--space-8);">Your Curated Selection</h1>
+        <div class="cart-layout">
+          <div>
+            ${Array(3).fill('').map(() => `
+              <div class="cart-item" style="display:flex; gap:var(--space-4); align-items:center;">
+                <div class="cart-item-image" style="width:80px; height:96px; border-radius:var(--radius-md); flex-shrink:0; overflow:hidden; position:relative;">
+                  <div class="skeleton" style="position:absolute; inset:0; width:100%; height:100%; border-radius:0;"></div>
+                </div>
+                <div class="cart-item-details" style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                  <div class="skeleton" style="width:50%; height:14px; border-radius:4px;"></div>
+                  <div class="skeleton" style="width:30%; height:10px; border-radius:4px;"></div>
+                  <div class="skeleton" style="width:80px; height:24px; border-radius:4px; margin-top:4px;"></div>
+                </div>
+                <div class="cart-item-price" style="width:100px; text-align:right;">
+                  <div class="skeleton" style="width:70px; height:14px; border-radius:4px; margin-left:auto;"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="order-summary" style="height:fit-content;">
+            <div class="skeleton" style="width:120px; height:20px; margin-bottom:var(--space-6); border-radius:4px;"></div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between;">
+                <div class="skeleton" style="width:60px; height:12px; border-radius:4px;"></div>
+                <div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div>
+                <div class="skeleton" style="width:120px; height:12px; border-radius:4px;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--color-border-light);">
+                <div class="skeleton" style="width:50px; height:16px; border-radius:4px;"></div>
+                <div class="skeleton" style="width:90px; height:16px; border-radius:4px;"></div>
+              </div>
+              <div class="skeleton" style="width:100%; height:48px; border-radius:var(--radius-md); margin-top:var(--space-4);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+

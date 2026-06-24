@@ -2,7 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
-import { addToCart } from '../data/store.js';
+import { addToCart, getCart } from '../data/store.js';
 import { supabase } from '../lib/supabase.js';
 
 function renderProductMedia(src, alt) {
@@ -67,6 +67,9 @@ export async function renderProductDetailPage(params) {
     app.innerHTML = `<div class="container section" style="text-align:center;padding:var(--space-24) 0;"><h1 class="heading-2">Product Not Found</h1><p class="text-body" style="margin:var(--space-4) 0;">The product you're looking for doesn't exist.</p><a href="/shop" class="btn btn--accent">Browse Collection</a></div>`;
     return;
   }
+
+  const cart = getCart();
+  const isInCart = cart.some(item => item.productId === product.id);
 
   let productCategoryList = [];
   if (product.id) {
@@ -194,9 +197,11 @@ export async function renderProductDetailPage(params) {
                     <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
                     <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
                   </div>
-                  <button class="btn btn--accent btn--lg" id="pdp-add-cart">
-                    <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
-                    Add to Cart
+                  <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''}>
+                    ${isInCart ? 'Added to Cart' : `
+                      <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
+                      Add to Cart
+                    `}
                   </button>
                 </div>
                 <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div>
@@ -256,7 +261,15 @@ export async function renderProductDetailPage(params) {
   plusBtn?.addEventListener('click', () => { qtyInput.value = (parseInt(qtyInput.value) || pdpMOQ) + 1; });
   qtyInput?.addEventListener('change', () => { qtyInput.value = clampQty(parseInt(qtyInput.value) || pdpMOQ); });
 
-  document.getElementById('pdp-add-cart')?.addEventListener('click', () => addToCart(product.id, parseInt(qtyInput.value) || pdpMOQ));
+  document.getElementById('pdp-add-cart')?.addEventListener('click', (e) => {
+    const qty = parseInt(qtyInput.value) || pdpMOQ;
+    addToCart(product.id, qty);
+    
+    const btn = e.currentTarget;
+    btn.classList.add('btn--added');
+    btn.disabled = true;
+    btn.innerHTML = 'Added to Cart';
+  });
 
   const tabBtns = document.querySelectorAll('.pdp-tab');
   const tabPanels = {desc:document.getElementById('pdp-tab-desc'),tags:document.getElementById('pdp-tab-tags'),reviews:document.getElementById('pdp-tab-reviews')};

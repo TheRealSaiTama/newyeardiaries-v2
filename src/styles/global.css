@@ -162,6 +162,21 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.btn:disabled,
+.btn.btn--added {
+  background: #CCCCCC !important;
+  color: #FFFFFF !important;
+  border-color: #CCCCCC !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn:disabled::after,
+.btn.btn--added::after {
+  display: none !important;
+}
+
 .btn--ghost {
   background: transparent;
   color: var(--color-primary);

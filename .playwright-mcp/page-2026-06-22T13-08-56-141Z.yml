@@ -1,0 +1,100 @@
+- main [ref=e17]:
+  - generic [ref=e45]:
+    - complementary [ref=e46]:
+      - link "arrow_back Back to Site" [ref=e48] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e49]: arrow_back
+        - text: Back to Site
+      - navigation [ref=e50]:
+        - button "home Homepage" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: home
+          - text: Homepage
+        - button "campaign Header" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: campaign
+          - text: Header
+        - button "inventory_2 Products" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: inventory_2
+          - text: Products
+        - button "category Categories" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: category
+          - text: Categories
+        - button "perm_media Banners" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: perm_media
+          - text: Banners
+        - button "footer Footer" [ref=e61] [cursor=pointer]:
+          - generic [ref=e62]: footer
+          - text: Footer
+        - button "settings Settings" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: settings
+          - text: Settings
+        - button "inbox Enquiries" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: inbox
+          - text: Enquiries
+        - button "logout Logout" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: logout
+          - text: Logout
+    - main [ref=e69]:
+      - generic [ref=e136]:
+        - generic [ref=e137]:
+          - heading "Products" [level=1] [ref=e138]
+          - generic [ref=e139]: Browse by category folder
+        - generic [ref=e140]:
+          - generic [ref=e141]:
+            - generic: search
+            - textbox "Search all products by name, slug, SKU..." [ref=e142]
+          - combobox [ref=e143] [cursor=pointer]:
+            - option "All Status" [selected]
+            - option "Active"
+            - option "Inactive"
+          - button "add Add Product" [ref=e144] [cursor=pointer]:
+            - generic [ref=e145]: add
+            - text: Add Product
+      - generic [ref=e146]:
+        - button "arrow_back Back" [ref=e147] [cursor=pointer]:
+          - generic [ref=e148]: arrow_back
+          - text: Back
+        - generic [ref=e149]:
+          - button "Products" [ref=e150] [cursor=pointer]
+          - generic [ref=e151]: chevron_right
+          - button "New Year Diary" [disabled] [ref=e152]
+      - generic [ref=e153]:
+        - button "folder A to Z Diary Collection category 63" [ref=e154] [cursor=pointer]:
+          - generic [ref=e155]: folder
+          - generic [ref=e156]: A to Z Diary Collection
+          - generic [ref=e157]: category
+          - generic [ref=e158]: "63"
+        - button "folder Sunday Full Page Diary category 1" [ref=e159] [cursor=pointer]:
+          - generic [ref=e160]: folder
+          - generic [ref=e161]: Sunday Full Page Diary
+          - generic [ref=e162]: category
+          - generic [ref=e163]: "1"
+        - button "folder Corporate Diary category 1" [ref=e164] [cursor=pointer]:
+          - generic [ref=e165]: folder
+          - generic [ref=e166]: Corporate Diary
+          - generic [ref=e167]: category
+          - generic [ref=e168]: "1"
+        - button "folder Executive Diary category 3" [ref=e169] [cursor=pointer]:
+          - generic [ref=e170]: folder
+          - generic [ref=e171]: Executive Diary
+          - generic [ref=e172]: category
+          - generic [ref=e173]: "3"
+        - button "folder Engineering Diary category 1" [ref=e174] [cursor=pointer]:
+          - generic [ref=e175]: folder
+          - generic [ref=e176]: Engineering Diary
+          - generic [ref=e177]: category
+          - generic [ref=e178]: "1"
+        - button "folder Executive Folder Diary category 5" [ref=e179] [cursor=pointer]:
+          - generic [ref=e180]: folder
+          - generic [ref=e181]: Executive Folder Diary
+          - generic [ref=e182]: category
+          - generic [ref=e183]: "5"
+        - button "folder Economy Diary category 2" [ref=e184] [cursor=pointer]:
+          - generic [ref=e185]: folder
+          - generic [ref=e186]: Economy Diary
+          - generic [ref=e187]: category
+          - generic [ref=e188]: "2"
+        - button "folder Plain Diary category 1" [ref=e189] [cursor=pointer]:
+          - generic [ref=e190]: folder
+          - generic [ref=e191]: Plain Diary
+          - generic [ref=e192]: category
+          - generic [ref=e193]: "1"

@@ -1,0 +1,819 @@
+- main [ref=e17]:
+  - generic [ref=e45]:
+    - complementary [ref=e46]:
+      - link "arrow_back Back to Site" [ref=e48] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e49]: arrow_back
+        - text: Back to Site
+      - navigation [ref=e50]:
+        - button "home Homepage" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: home
+          - text: Homepage
+        - button "campaign Header" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: campaign
+          - text: Header
+        - button "inventory_2 Products" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: inventory_2
+          - text: Products
+        - button "category Categories" [active] [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: category
+          - text: Categories
+        - button "perm_media Banners" [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: perm_media
+          - text: Banners
+        - button "footer Footer" [ref=e61] [cursor=pointer]:
+          - generic [ref=e62]: footer
+          - text: Footer
+        - button "settings Settings" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: settings
+          - text: Settings
+        - button "inbox Enquiries" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: inbox
+          - text: Enquiries
+        - button "logout Logout" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: logout
+          - text: Logout
+    - main [ref=e69]:
+      - generic [ref=e598]:
+        - generic [ref=e599]:
+          - heading "Categories" [level=1] [ref=e600]
+          - generic [ref=e601]: 35 items in 9 groups
+        - generic [ref=e602]:
+          - generic [ref=e603]:
+            - generic: search
+            - textbox "Search categories..." [ref=e604]
+          - button "create_new_folder New Group" [ref=e605] [cursor=pointer]:
+            - generic [ref=e606]: create_new_folder
+            - text: New Group
+          - button "add Add Category" [ref=e607] [cursor=pointer]:
+            - generic [ref=e608]: add
+            - text: Add Category
+      - generic [ref=e609]:
+        - generic [ref=e610]:
+          - generic [ref=e611]:
+            - button "Collapse group" [expanded] [ref=e612] [cursor=pointer]:
+              - generic [ref=e613]: expand_more
+            - generic [ref=e614]:
+              - heading "Corporate Gift Sets" [level=3] [ref=e615]
+              - text: 4 items
+            - generic [ref=e616]:
+              - button "add Add" [ref=e617] [cursor=pointer]:
+                - generic [ref=e618]: add
+                - generic [ref=e619]: Add
+              - button "edit" [ref=e620] [cursor=pointer]:
+                - generic [ref=e621]: edit
+              - button "delete" [ref=e622] [cursor=pointer]:
+                - generic [ref=e623]: delete
+          - table [ref=e626]:
+            - rowgroup [ref=e627]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e628]:
+                - columnheader "Name" [ref=e629]
+                - columnheader "Slug" [ref=e630]
+                - columnheader "Group" [ref=e631]
+                - columnheader "Sort Order" [ref=e632]
+                - columnheader "Status" [ref=e633]
+                - columnheader "Actions" [ref=e634]
+            - rowgroup [ref=e635]:
+              - row "Bottles Gift Sets bottles-gift-sets bottles-gift-sets Corporate Gift Sets 2 Active edit delete" [ref=e636]:
+                - cell "Bottles Gift Sets bottles-gift-sets" [ref=e637]:
+                  - strong [ref=e638]: Bottles Gift Sets
+                  - text: bottles-gift-sets
+                - cell "bottles-gift-sets" [ref=e639]
+                - cell "Corporate Gift Sets" [ref=e640]:
+                  - generic [ref=e641]: Corporate Gift Sets
+                - cell "2" [ref=e642]
+                - cell "Active" [ref=e643]:
+                  - generic [ref=e644]: Active
+                - cell "edit delete" [ref=e645]:
+                  - button "edit" [ref=e646] [cursor=pointer]:
+                    - generic [ref=e647]: edit
+                  - button "delete" [ref=e648] [cursor=pointer]:
+                    - generic [ref=e649]: delete
+              - row "Diary with Pen Gift Set diary-with-pen-gift-set diary-with-pen-gift-set Corporate Gift Sets 10 Active edit delete" [ref=e650]:
+                - cell "Diary with Pen Gift Set diary-with-pen-gift-set" [ref=e651]:
+                  - strong [ref=e652]: Diary with Pen Gift Set
+                  - text: diary-with-pen-gift-set
+                - cell "diary-with-pen-gift-set" [ref=e653]
+                - cell "Corporate Gift Sets" [ref=e654]:
+                  - generic [ref=e655]: Corporate Gift Sets
+                - cell "10" [ref=e656]
+                - cell "Active" [ref=e657]:
+                  - generic [ref=e658]: Active
+                - cell "edit delete" [ref=e659]:
+                  - button "edit" [ref=e660] [cursor=pointer]:
+                    - generic [ref=e661]: edit
+                  - button "delete" [ref=e662] [cursor=pointer]:
+                    - generic [ref=e663]: delete
+              - row "Employee Joining Kit employee-joining-kit employee-joining-kit Corporate Gift Sets 13 Active edit delete" [ref=e664]:
+                - cell "Employee Joining Kit employee-joining-kit" [ref=e665]:
+                  - strong [ref=e666]: Employee Joining Kit
+                  - text: employee-joining-kit
+                - cell "employee-joining-kit" [ref=e667]
+                - cell "Corporate Gift Sets" [ref=e668]:
+                  - generic [ref=e669]: Corporate Gift Sets
+                - cell "13" [ref=e670]
+                - cell "Active" [ref=e671]:
+                  - generic [ref=e672]: Active
+                - cell "edit delete" [ref=e673]:
+                  - button "edit" [ref=e674] [cursor=pointer]:
+                    - generic [ref=e675]: edit
+                  - button "delete" [ref=e676] [cursor=pointer]:
+                    - generic [ref=e677]: delete
+              - row "Latest Product latest-product latest-product Corporate Gift Sets 21 Active edit delete" [ref=e678]:
+                - cell "Latest Product latest-product" [ref=e679]:
+                  - strong [ref=e680]: Latest Product
+                  - text: latest-product
+                - cell "latest-product" [ref=e681]
+                - cell "Corporate Gift Sets" [ref=e682]:
+                  - generic [ref=e683]: Corporate Gift Sets
+                - cell "21" [ref=e684]
+                - cell "Active" [ref=e685]:
+                  - generic [ref=e686]: Active
+                - cell "edit delete" [ref=e687]:
+                  - button "edit" [ref=e688] [cursor=pointer]:
+                    - generic [ref=e689]: edit
+                  - button "delete" [ref=e690] [cursor=pointer]:
+                    - generic [ref=e691]: delete
+        - generic [ref=e692]:
+          - generic [ref=e693]:
+            - button "Collapse group" [expanded] [ref=e694] [cursor=pointer]:
+              - generic [ref=e695]: expand_more
+            - generic [ref=e696]:
+              - heading "Business Gifts" [level=3] [ref=e697]
+              - text: 6 items
+            - generic [ref=e698]:
+              - button "add Add" [ref=e699] [cursor=pointer]:
+                - generic [ref=e700]: add
+                - generic [ref=e701]: Add
+              - button "edit" [ref=e702] [cursor=pointer]:
+                - generic [ref=e703]: edit
+              - button "delete" [ref=e704] [cursor=pointer]:
+                - generic [ref=e705]: delete
+          - table [ref=e708]:
+            - rowgroup [ref=e709]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e710]:
+                - columnheader "Name" [ref=e711]
+                - columnheader "Slug" [ref=e712]
+                - columnheader "Group" [ref=e713]
+                - columnheader "Sort Order" [ref=e714]
+                - columnheader "Status" [ref=e715]
+                - columnheader "Actions" [ref=e716]
+            - rowgroup [ref=e717]:
+              - row "Coffee Mug coffee-mug coffee-mug Business Gifts 8 Active edit delete" [ref=e718]:
+                - cell "Coffee Mug coffee-mug" [ref=e719]:
+                  - strong [ref=e720]: Coffee Mug
+                  - text: coffee-mug
+                - cell "coffee-mug" [ref=e721]
+                - cell "Business Gifts" [ref=e722]:
+                  - generic [ref=e723]: Business Gifts
+                - cell "8" [ref=e724]
+                - cell "Active" [ref=e725]:
+                  - generic [ref=e726]: Active
+                - cell "edit delete" [ref=e727]:
+                  - button "edit" [ref=e728] [cursor=pointer]:
+                    - generic [ref=e729]: edit
+                  - button "delete" [ref=e730] [cursor=pointer]:
+                    - generic [ref=e731]: delete
+              - row "Give Away Gifts give-away-gifts give-away-gifts Business Gifts 17 Active edit delete" [ref=e732]:
+                - cell "Give Away Gifts give-away-gifts" [ref=e733]:
+                  - strong [ref=e734]: Give Away Gifts
+                  - text: give-away-gifts
+                - cell "give-away-gifts" [ref=e735]
+                - cell "Business Gifts" [ref=e736]:
+                  - generic [ref=e737]: Business Gifts
+                - cell "17" [ref=e738]
+                - cell "Active" [ref=e739]:
+                  - generic [ref=e740]: Active
+                - cell "edit delete" [ref=e741]:
+                  - button "edit" [ref=e742] [cursor=pointer]:
+                    - generic [ref=e743]: edit
+                  - button "delete" [ref=e744] [cursor=pointer]:
+                    - generic [ref=e745]: delete
+              - row "Key Chains key-chains key-chains Business Gifts 18 Active edit delete" [ref=e746]:
+                - cell "Key Chains key-chains" [ref=e747]:
+                  - strong [ref=e748]: Key Chains
+                  - text: key-chains
+                - cell "key-chains" [ref=e749]
+                - cell "Business Gifts" [ref=e750]:
+                  - generic [ref=e751]: Business Gifts
+                - cell "18" [ref=e752]
+                - cell "Active" [ref=e753]:
+                  - generic [ref=e754]: Active
+                - cell "edit delete" [ref=e755]:
+                  - button "edit" [ref=e756] [cursor=pointer]:
+                    - generic [ref=e757]: edit
+                  - button "delete" [ref=e758] [cursor=pointer]:
+                    - generic [ref=e759]: delete
+              - row "Laptop Bags laptop-bags laptop-bags Business Gifts 20 Active edit delete" [ref=e760]:
+                - cell "Laptop Bags laptop-bags" [ref=e761]:
+                  - strong [ref=e762]: Laptop Bags
+                  - text: laptop-bags
+                - cell "laptop-bags" [ref=e763]
+                - cell "Business Gifts" [ref=e764]:
+                  - generic [ref=e765]: Business Gifts
+                - cell "20" [ref=e766]
+                - cell "Active" [ref=e767]:
+                  - generic [ref=e768]: Active
+                - cell "edit delete" [ref=e769]:
+                  - button "edit" [ref=e770] [cursor=pointer]:
+                    - generic [ref=e771]: edit
+                  - button "delete" [ref=e772] [cursor=pointer]:
+                    - generic [ref=e773]: delete
+              - row "Promotional Umbrella promotional-umbrella promotional-umbrella Business Gifts 29 Active edit delete" [ref=e774]:
+                - cell "Promotional Umbrella promotional-umbrella" [ref=e775]:
+                  - strong [ref=e776]: Promotional Umbrella
+                  - text: promotional-umbrella
+                - cell "promotional-umbrella" [ref=e777]
+                - cell "Business Gifts" [ref=e778]:
+                  - generic [ref=e779]: Business Gifts
+                - cell "29" [ref=e780]
+                - cell "Active" [ref=e781]:
+                  - generic [ref=e782]: Active
+                - cell "edit delete" [ref=e783]:
+                  - button "edit" [ref=e784] [cursor=pointer]:
+                    - generic [ref=e785]: edit
+                  - button "delete" [ref=e786] [cursor=pointer]:
+                    - generic [ref=e787]: delete
+              - row "Water Bottles water-bottles water-bottles Business Gifts 32 Active edit delete" [ref=e788]:
+                - cell "Water Bottles water-bottles" [ref=e789]:
+                  - strong [ref=e790]: Water Bottles
+                  - text: water-bottles
+                - cell "water-bottles" [ref=e791]
+                - cell "Business Gifts" [ref=e792]:
+                  - generic [ref=e793]: Business Gifts
+                - cell "32" [ref=e794]
+                - cell "Active" [ref=e795]:
+                  - generic [ref=e796]: Active
+                - cell "edit delete" [ref=e797]:
+                  - button "edit" [ref=e798] [cursor=pointer]:
+                    - generic [ref=e799]: edit
+                  - button "delete" [ref=e800] [cursor=pointer]:
+                    - generic [ref=e801]: delete
+        - generic [ref=e802]:
+          - generic [ref=e803]:
+            - button "Collapse group" [expanded] [ref=e804] [cursor=pointer]:
+              - generic [ref=e805]: expand_more
+            - generic [ref=e806]:
+              - heading "New Year Diary" [level=3] [ref=e807]
+              - text: 8 items
+            - generic [ref=e808]:
+              - button "add Add" [ref=e809] [cursor=pointer]:
+                - generic [ref=e810]: add
+                - generic [ref=e811]: Add
+              - button "edit" [ref=e812] [cursor=pointer]:
+                - generic [ref=e813]: edit
+              - button "delete" [ref=e814] [cursor=pointer]:
+                - generic [ref=e815]: delete
+          - table [ref=e818]:
+            - rowgroup [ref=e819]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e820]:
+                - columnheader "Name" [ref=e821]
+                - columnheader "Slug" [ref=e822]
+                - columnheader "Group" [ref=e823]
+                - columnheader "Sort Order" [ref=e824]
+                - columnheader "Status" [ref=e825]
+                - columnheader "Actions" [ref=e826]
+            - rowgroup [ref=e827]:
+              - row "A to Z Diary Collection a-to-z-diary-collection a-to-z-diary-collection New Year Diary 1 Active edit delete" [ref=e828]:
+                - cell "A to Z Diary Collection a-to-z-diary-collection" [ref=e829]:
+                  - strong [ref=e830]: A to Z Diary Collection
+                  - text: a-to-z-diary-collection
+                - cell "a-to-z-diary-collection" [ref=e831]
+                - cell "New Year Diary" [ref=e832]:
+                  - generic [ref=e833]: New Year Diary
+                - cell "1" [ref=e834]
+                - cell "Active" [ref=e835]:
+                  - generic [ref=e836]: Active
+                - cell "edit delete" [ref=e837]:
+                  - button "edit" [ref=e838] [cursor=pointer]:
+                    - generic [ref=e839]: edit
+                  - button "delete" [ref=e840] [cursor=pointer]:
+                    - generic [ref=e841]: delete
+              - row "Corporate Diary corporate-diary corporate-diary New Year Diary 9 Active edit delete" [ref=e842]:
+                - cell "Corporate Diary corporate-diary" [ref=e843]:
+                  - strong [ref=e844]: Corporate Diary
+                  - text: corporate-diary
+                - cell "corporate-diary" [ref=e845]
+                - cell "New Year Diary" [ref=e846]:
+                  - generic [ref=e847]: New Year Diary
+                - cell "9" [ref=e848]
+                - cell "Active" [ref=e849]:
+                  - generic [ref=e850]: Active
+                - cell "edit delete" [ref=e851]:
+                  - button "edit" [ref=e852] [cursor=pointer]:
+                    - generic [ref=e853]: edit
+                  - button "delete" [ref=e854] [cursor=pointer]:
+                    - generic [ref=e855]: delete
+              - row "Economy Diary economy-diary economy-diary New Year Diary 12 Active edit delete" [ref=e856]:
+                - cell "Economy Diary economy-diary" [ref=e857]:
+                  - strong [ref=e858]: Economy Diary
+                  - text: economy-diary
+                - cell "economy-diary" [ref=e859]
+                - cell "New Year Diary" [ref=e860]:
+                  - generic [ref=e861]: New Year Diary
+                - cell "12" [ref=e862]
+                - cell "Active" [ref=e863]:
+                  - generic [ref=e864]: Active
+                - cell "edit delete" [ref=e865]:
+                  - button "edit" [ref=e866] [cursor=pointer]:
+                    - generic [ref=e867]: edit
+                  - button "delete" [ref=e868] [cursor=pointer]:
+                    - generic [ref=e869]: delete
+              - row "Engineering Diary engineering-diary engineering-diary New Year Diary 14 Active edit delete" [ref=e870]:
+                - cell "Engineering Diary engineering-diary" [ref=e871]:
+                  - strong [ref=e872]: Engineering Diary
+                  - text: engineering-diary
+                - cell "engineering-diary" [ref=e873]
+                - cell "New Year Diary" [ref=e874]:
+                  - generic [ref=e875]: New Year Diary
+                - cell "14" [ref=e876]
+                - cell "Active" [ref=e877]:
+                  - generic [ref=e878]: Active
+                - cell "edit delete" [ref=e879]:
+                  - button "edit" [ref=e880] [cursor=pointer]:
+                    - generic [ref=e881]: edit
+                  - button "delete" [ref=e882] [cursor=pointer]:
+                    - generic [ref=e883]: delete
+              - row "Executive Diary executive-diary executive-diary New Year Diary 15 Active edit delete" [ref=e884]:
+                - cell "Executive Diary executive-diary" [ref=e885]:
+                  - strong [ref=e886]: Executive Diary
+                  - text: executive-diary
+                - cell "executive-diary" [ref=e887]
+                - cell "New Year Diary" [ref=e888]:
+                  - generic [ref=e889]: New Year Diary
+                - cell "15" [ref=e890]
+                - cell "Active" [ref=e891]:
+                  - generic [ref=e892]: Active
+                - cell "edit delete" [ref=e893]:
+                  - button "edit" [ref=e894] [cursor=pointer]:
+                    - generic [ref=e895]: edit
+                  - button "delete" [ref=e896] [cursor=pointer]:
+                    - generic [ref=e897]: delete
+              - row "Executive Folder Diary executive-folder-diary executive-folder-diary New Year Diary 16 Active edit delete" [ref=e898]:
+                - cell "Executive Folder Diary executive-folder-diary" [ref=e899]:
+                  - strong [ref=e900]: Executive Folder Diary
+                  - text: executive-folder-diary
+                - cell "executive-folder-diary" [ref=e901]
+                - cell "New Year Diary" [ref=e902]:
+                  - generic [ref=e903]: New Year Diary
+                - cell "16" [ref=e904]
+                - cell "Active" [ref=e905]:
+                  - generic [ref=e906]: Active
+                - cell "edit delete" [ref=e907]:
+                  - button "edit" [ref=e908] [cursor=pointer]:
+                    - generic [ref=e909]: edit
+                  - button "delete" [ref=e910] [cursor=pointer]:
+                    - generic [ref=e911]: delete
+              - row "Plain Diary plain-diary plain-diary New Year Diary 27 Active edit delete" [ref=e912]:
+                - cell "Plain Diary plain-diary" [ref=e913]:
+                  - strong [ref=e914]: Plain Diary
+                  - text: plain-diary
+                - cell "plain-diary" [ref=e915]
+                - cell "New Year Diary" [ref=e916]:
+                  - generic [ref=e917]: New Year Diary
+                - cell "27" [ref=e918]
+                - cell "Active" [ref=e919]:
+                  - generic [ref=e920]: Active
+                - cell "edit delete" [ref=e921]:
+                  - button "edit" [ref=e922] [cursor=pointer]:
+                    - generic [ref=e923]: edit
+                  - button "delete" [ref=e924] [cursor=pointer]:
+                    - generic [ref=e925]: delete
+              - row "Sunday Full Page Diary sunday-full-page-diary sunday-full-page-diary New Year Diary 30 Active edit delete" [ref=e926]:
+                - cell "Sunday Full Page Diary sunday-full-page-diary" [ref=e927]:
+                  - strong [ref=e928]: Sunday Full Page Diary
+                  - text: sunday-full-page-diary
+                - cell "sunday-full-page-diary" [ref=e929]
+                - cell "New Year Diary" [ref=e930]:
+                  - generic [ref=e931]: New Year Diary
+                - cell "30" [ref=e932]
+                - cell "Active" [ref=e933]:
+                  - generic [ref=e934]: Active
+                - cell "edit delete" [ref=e935]:
+                  - button "edit" [ref=e936] [cursor=pointer]:
+                    - generic [ref=e937]: edit
+                  - button "delete" [ref=e938] [cursor=pointer]:
+                    - generic [ref=e939]: delete
+        - generic [ref=e940]:
+          - generic [ref=e941]:
+            - button "Collapse group" [expanded] [ref=e942] [cursor=pointer]:
+              - generic [ref=e943]: expand_more
+            - generic [ref=e944]:
+              - heading "Premium Diary" [level=3] [ref=e945]
+              - text: 4 items
+            - generic [ref=e946]:
+              - button "add Add" [ref=e947] [cursor=pointer]:
+                - generic [ref=e948]: add
+                - generic [ref=e949]: Add
+              - button "edit" [ref=e950] [cursor=pointer]:
+                - generic [ref=e951]: edit
+              - button "delete" [ref=e952] [cursor=pointer]:
+                - generic [ref=e953]: delete
+          - table [ref=e956]:
+            - rowgroup [ref=e957]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e958]:
+                - columnheader "Name" [ref=e959]
+                - columnheader "Slug" [ref=e960]
+                - columnheader "Group" [ref=e961]
+                - columnheader "Sort Order" [ref=e962]
+                - columnheader "Status" [ref=e963]
+                - columnheader "Actions" [ref=e964]
+            - rowgroup [ref=e965]:
+              - row "LEATHER PLANNERS leather-planners leather-planners Premium Diary 19 Active edit delete" [ref=e966]:
+                - cell "LEATHER PLANNERS leather-planners" [ref=e967]:
+                  - strong [ref=e968]: LEATHER PLANNERS
+                  - text: leather-planners
+                - cell "leather-planners" [ref=e969]
+                - cell "Premium Diary" [ref=e970]:
+                  - generic [ref=e971]: Premium Diary
+                - cell "19" [ref=e972]
+                - cell "Active" [ref=e973]:
+                  - generic [ref=e974]: Active
+                - cell "edit delete" [ref=e975]:
+                  - button "edit" [ref=e976] [cursor=pointer]:
+                    - generic [ref=e977]: edit
+                  - button "delete" [ref=e978] [cursor=pointer]:
+                    - generic [ref=e979]: delete
+              - row "Leather Diary leather-diary leather-diary Premium Diary 22 Active edit delete" [ref=e980]:
+                - cell "Leather Diary leather-diary" [ref=e981]:
+                  - strong [ref=e982]: Leather Diary
+                  - text: leather-diary
+                - cell "leather-diary" [ref=e983]
+                - cell "Premium Diary" [ref=e984]:
+                  - generic [ref=e985]: Premium Diary
+                - cell "22" [ref=e986]
+                - cell "Active" [ref=e987]:
+                  - generic [ref=e988]: Active
+                - cell "edit delete" [ref=e989]:
+                  - button "edit" [ref=e990] [cursor=pointer]:
+                    - generic [ref=e991]: edit
+                  - button "delete" [ref=e992] [cursor=pointer]:
+                    - generic [ref=e993]: delete
+              - row "Leather Planner leather-planner leather-planner Premium Diary 23 Active edit delete" [ref=e994]:
+                - cell "Leather Planner leather-planner" [ref=e995]:
+                  - strong [ref=e996]: Leather Planner
+                  - text: leather-planner
+                - cell "leather-planner" [ref=e997]
+                - cell "Premium Diary" [ref=e998]:
+                  - generic [ref=e999]: Premium Diary
+                - cell "23" [ref=e1000]
+                - cell "Active" [ref=e1001]:
+                  - generic [ref=e1002]: Active
+                - cell "edit delete" [ref=e1003]:
+                  - button "edit" [ref=e1004] [cursor=pointer]:
+                    - generic [ref=e1005]: edit
+                  - button "delete" [ref=e1006] [cursor=pointer]:
+                    - generic [ref=e1007]: delete
+              - row "Premium Diary premium-diary premium-diary Premium Diary 28 Active edit delete" [ref=e1008]:
+                - cell "Premium Diary premium-diary" [ref=e1009]:
+                  - strong [ref=e1010]: Premium Diary
+                  - text: premium-diary
+                - cell "premium-diary" [ref=e1011]
+                - cell "Premium Diary" [ref=e1012]:
+                  - generic [ref=e1013]: Premium Diary
+                - cell "28" [ref=e1014]
+                - cell "Active" [ref=e1015]:
+                  - generic [ref=e1016]: Active
+                - cell "edit delete" [ref=e1017]:
+                  - button "edit" [ref=e1018] [cursor=pointer]:
+                    - generic [ref=e1019]: edit
+                  - button "delete" [ref=e1020] [cursor=pointer]:
+                    - generic [ref=e1021]: delete
+        - generic [ref=e1022]:
+          - generic [ref=e1023]:
+            - button "Collapse group" [expanded] [ref=e1024] [cursor=pointer]:
+              - generic [ref=e1025]: expand_more
+            - generic [ref=e1026]:
+              - heading "Calendars" [level=3] [ref=e1027]
+              - text: 1 item
+            - generic [ref=e1028]:
+              - button "add Add" [ref=e1029] [cursor=pointer]:
+                - generic [ref=e1030]: add
+                - generic [ref=e1031]: Add
+              - button "edit" [ref=e1032] [cursor=pointer]:
+                - generic [ref=e1033]: edit
+              - button "delete" [ref=e1034] [cursor=pointer]:
+                - generic [ref=e1035]: delete
+          - table [ref=e1038]:
+            - rowgroup [ref=e1039]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e1040]:
+                - columnheader "Name" [ref=e1041]
+                - columnheader "Slug" [ref=e1042]
+                - columnheader "Group" [ref=e1043]
+                - columnheader "Sort Order" [ref=e1044]
+                - columnheader "Status" [ref=e1045]
+                - columnheader "Actions" [ref=e1046]
+            - rowgroup [ref=e1047]:
+              - row "Table Calendar table-calendar table-calendar Calendars 31 Active edit delete" [ref=e1048]:
+                - cell "Table Calendar table-calendar" [ref=e1049]:
+                  - strong [ref=e1050]: Table Calendar
+                  - text: table-calendar
+                - cell "table-calendar" [ref=e1051]
+                - cell "Calendars" [ref=e1052]:
+                  - generic [ref=e1053]: Calendars
+                - cell "31" [ref=e1054]
+                - cell "Active" [ref=e1055]:
+                  - generic [ref=e1056]: Active
+                - cell "edit delete" [ref=e1057]:
+                  - button "edit" [ref=e1058] [cursor=pointer]:
+                    - generic [ref=e1059]: edit
+                  - button "delete" [ref=e1060] [cursor=pointer]:
+                    - generic [ref=e1061]: delete
+        - generic [ref=e1062]:
+          - generic [ref=e1063]:
+            - button "Collapse group" [expanded] [ref=e1064] [cursor=pointer]:
+              - generic [ref=e1065]: expand_more
+            - generic [ref=e1066]:
+              - heading "Note Books & Pads" [level=3] [ref=e1067]
+              - text: 3 items
+            - generic [ref=e1068]:
+              - button "add Add" [ref=e1069] [cursor=pointer]:
+                - generic [ref=e1070]: add
+                - generic [ref=e1071]: Add
+              - button "edit" [ref=e1072] [cursor=pointer]:
+                - generic [ref=e1073]: edit
+              - button "delete" [ref=e1074] [cursor=pointer]:
+                - generic [ref=e1075]: delete
+          - table [ref=e1078]:
+            - rowgroup [ref=e1079]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e1080]:
+                - columnheader "Name" [ref=e1081]
+                - columnheader "Slug" [ref=e1082]
+                - columnheader "Group" [ref=e1083]
+                - columnheader "Sort Order" [ref=e1084]
+                - columnheader "Status" [ref=e1085]
+                - columnheader "Actions" [ref=e1086]
+            - rowgroup [ref=e1087]:
+              - row "Eco Friendly Memo Pads eco-friendly-memo-pads eco-friendly-memo-pads Note Books & Pads 11 Active edit delete" [ref=e1088]:
+                - cell "Eco Friendly Memo Pads eco-friendly-memo-pads" [ref=e1089]:
+                  - strong [ref=e1090]: Eco Friendly Memo Pads
+                  - text: eco-friendly-memo-pads
+                - cell "eco-friendly-memo-pads" [ref=e1091]
+                - cell "Note Books & Pads" [ref=e1092]:
+                  - generic [ref=e1093]: Note Books & Pads
+                - cell "11" [ref=e1094]
+                - cell "Active" [ref=e1095]:
+                  - generic [ref=e1096]: Active
+                - cell "edit delete" [ref=e1097]:
+                  - button "edit" [ref=e1098] [cursor=pointer]:
+                    - generic [ref=e1099]: edit
+                  - button "delete" [ref=e1100] [cursor=pointer]:
+                    - generic [ref=e1101]: delete
+              - row "Notebook with Pen notebook-with-pen notebook-with-pen Note Books & Pads 26 Active edit delete" [ref=e1102]:
+                - cell "Notebook with Pen notebook-with-pen" [ref=e1103]:
+                  - strong [ref=e1104]: Notebook with Pen
+                  - text: notebook-with-pen
+                - cell "notebook-with-pen" [ref=e1105]
+                - cell "Note Books & Pads" [ref=e1106]:
+                  - generic [ref=e1107]: Note Books & Pads
+                - cell "26" [ref=e1108]
+                - cell "Active" [ref=e1109]:
+                  - generic [ref=e1110]: Active
+                - cell "edit delete" [ref=e1111]:
+                  - button "edit" [ref=e1112] [cursor=pointer]:
+                    - generic [ref=e1113]: edit
+                  - button "delete" [ref=e1114] [cursor=pointer]:
+                    - generic [ref=e1115]: delete
+              - row "Personalized Notebooks personalized-notebooks personalized-notebooks Note Books & Pads 33 Active edit delete" [ref=e1116]:
+                - cell "Personalized Notebooks personalized-notebooks" [ref=e1117]:
+                  - strong [ref=e1118]: Personalized Notebooks
+                  - text: personalized-notebooks
+                - cell "personalized-notebooks" [ref=e1119]
+                - cell "Note Books & Pads" [ref=e1120]:
+                  - generic [ref=e1121]: Note Books & Pads
+                - cell "33" [ref=e1122]
+                - cell "Active" [ref=e1123]:
+                  - generic [ref=e1124]: Active
+                - cell "edit delete" [ref=e1125]:
+                  - button "edit" [ref=e1126] [cursor=pointer]:
+                    - generic [ref=e1127]: edit
+                  - button "delete" [ref=e1128] [cursor=pointer]:
+                    - generic [ref=e1129]: delete
+        - generic [ref=e1130]:
+          - generic [ref=e1131]:
+            - button "Collapse group" [expanded] [ref=e1132] [cursor=pointer]:
+              - generic [ref=e1133]: expand_more
+            - generic [ref=e1134]:
+              - heading "Leather Gifts" [level=3] [ref=e1135]
+              - text: 3 items
+            - generic [ref=e1136]:
+              - button "add Add" [ref=e1137] [cursor=pointer]:
+                - generic [ref=e1138]: add
+                - generic [ref=e1139]: Add
+              - button "edit" [ref=e1140] [cursor=pointer]:
+                - generic [ref=e1141]: edit
+              - button "delete" [ref=e1142] [cursor=pointer]:
+                - generic [ref=e1143]: delete
+          - table [ref=e1146]:
+            - rowgroup [ref=e1147]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e1148]:
+                - columnheader "Name" [ref=e1149]
+                - columnheader "Slug" [ref=e1150]
+                - columnheader "Group" [ref=e1151]
+                - columnheader "Sort Order" [ref=e1152]
+                - columnheader "Status" [ref=e1153]
+                - columnheader "Actions" [ref=e1154]
+            - rowgroup [ref=e1155]:
+              - row "Certificate Folders certificate-folders certificate-folders Leather Gifts 6 Active edit delete" [ref=e1156]:
+                - cell "Certificate Folders certificate-folders" [ref=e1157]:
+                  - strong [ref=e1158]: Certificate Folders
+                  - text: certificate-folders
+                - cell "certificate-folders" [ref=e1159]
+                - cell "Leather Gifts" [ref=e1160]:
+                  - generic [ref=e1161]: Leather Gifts
+                - cell "6" [ref=e1162]
+                - cell "Active" [ref=e1163]:
+                  - generic [ref=e1164]: Active
+                - cell "edit delete" [ref=e1165]:
+                  - button "edit" [ref=e1166] [cursor=pointer]:
+                    - generic [ref=e1167]: edit
+                  - button "delete" [ref=e1168] [cursor=pointer]:
+                    - generic [ref=e1169]: delete
+              - row "Cheque Book Holders cheque-book-holders cheque-book-holders Leather Gifts 7 Active edit delete" [ref=e1170]:
+                - cell "Cheque Book Holders cheque-book-holders" [ref=e1171]:
+                  - strong [ref=e1172]: Cheque Book Holders
+                  - text: cheque-book-holders
+                - cell "cheque-book-holders" [ref=e1173]
+                - cell "Leather Gifts" [ref=e1174]:
+                  - generic [ref=e1175]: Leather Gifts
+                - cell "7" [ref=e1176]
+                - cell "Active" [ref=e1177]:
+                  - generic [ref=e1178]: Active
+                - cell "edit delete" [ref=e1179]:
+                  - button "edit" [ref=e1180] [cursor=pointer]:
+                    - generic [ref=e1181]: edit
+                  - button "delete" [ref=e1182] [cursor=pointer]:
+                    - generic [ref=e1183]: delete
+              - row "Leather Wallets leather-wallets leather-wallets Leather Gifts 25 Active edit delete" [ref=e1184]:
+                - cell "Leather Wallets leather-wallets" [ref=e1185]:
+                  - strong [ref=e1186]: Leather Wallets
+                  - text: leather-wallets
+                - cell "leather-wallets" [ref=e1187]
+                - cell "Leather Gifts" [ref=e1188]:
+                  - generic [ref=e1189]: Leather Gifts
+                - cell "25" [ref=e1190]
+                - cell "Active" [ref=e1191]:
+                  - generic [ref=e1192]: Active
+                - cell "edit delete" [ref=e1193]:
+                  - button "edit" [ref=e1194] [cursor=pointer]:
+                    - generic [ref=e1195]: edit
+                  - button "delete" [ref=e1196] [cursor=pointer]:
+                    - generic [ref=e1197]: delete
+        - generic [ref=e1198]:
+          - generic [ref=e1199]:
+            - button "Collapse group" [expanded] [ref=e1200] [cursor=pointer]:
+              - generic [ref=e1201]: expand_more
+            - generic [ref=e1202]:
+              - heading "Leather Planners" [level=3] [ref=e1203]
+              - text: 0 items
+            - generic [ref=e1204]:
+              - button "add Add" [ref=e1205] [cursor=pointer]:
+                - generic [ref=e1206]: add
+                - generic [ref=e1207]: Add
+              - button "edit" [ref=e1208] [cursor=pointer]:
+                - generic [ref=e1209]: edit
+              - button "delete" [ref=e1210] [cursor=pointer]:
+                - generic [ref=e1211]: delete
+          - generic [ref=e1212]:
+            - text: No subcategories yet.
+            - button "add Add one" [ref=e1213] [cursor=pointer]:
+              - generic [ref=e1214]: add
+              - text: Add one
+        - generic [ref=e1215]:
+          - generic [ref=e1216]:
+            - button "Collapse group" [expanded] [ref=e1217] [cursor=pointer]:
+              - generic [ref=e1218]: expand_more
+            - generic [ref=e1219]:
+              - heading "Promotional Gifts" [level=3] [ref=e1220]
+              - text: 2 items
+            - generic [ref=e1221]:
+              - button "add Add" [ref=e1222] [cursor=pointer]:
+                - generic [ref=e1223]: add
+                - generic [ref=e1224]: Add
+              - button "edit" [ref=e1225] [cursor=pointer]:
+                - generic [ref=e1226]: edit
+              - button "delete" [ref=e1227] [cursor=pointer]:
+                - generic [ref=e1228]: delete
+          - table [ref=e1231]:
+            - rowgroup [ref=e1232]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e1233]:
+                - columnheader "Name" [ref=e1234]
+                - columnheader "Slug" [ref=e1235]
+                - columnheader "Group" [ref=e1236]
+                - columnheader "Sort Order" [ref=e1237]
+                - columnheader "Status" [ref=e1238]
+                - columnheader "Actions" [ref=e1239]
+            - rowgroup [ref=e1240]:
+              - row "Card Holder card-holder card-holder Promotional Gifts 4 Active edit delete" [ref=e1241]:
+                - cell "Card Holder card-holder" [ref=e1242]:
+                  - strong [ref=e1243]: Card Holder
+                  - text: card-holder
+                - cell "card-holder" [ref=e1244]
+                - cell "Promotional Gifts" [ref=e1245]:
+                  - generic [ref=e1246]: Promotional Gifts
+                - cell "4" [ref=e1247]
+                - cell "Active" [ref=e1248]:
+                  - generic [ref=e1249]: Active
+                - cell "edit delete" [ref=e1250]:
+                  - button "edit" [ref=e1251] [cursor=pointer]:
+                    - generic [ref=e1252]: edit
+                  - button "delete" [ref=e1253] [cursor=pointer]:
+                    - generic [ref=e1254]: delete
+              - row "Carry Bags carry-bags carry-bags Promotional Gifts 5 Active edit delete" [ref=e1255]:
+                - cell "Carry Bags carry-bags" [ref=e1256]:
+                  - strong [ref=e1257]: Carry Bags
+                  - text: carry-bags
+                - cell "carry-bags" [ref=e1258]
+                - cell "Promotional Gifts" [ref=e1259]:
+                  - generic [ref=e1260]: Promotional Gifts
+                - cell "5" [ref=e1261]
+                - cell "Active" [ref=e1262]:
+                  - generic [ref=e1263]: Active
+                - cell "edit delete" [ref=e1264]:
+                  - button "edit" [ref=e1265] [cursor=pointer]:
+                    - generic [ref=e1266]: edit
+                  - button "delete" [ref=e1267] [cursor=pointer]:
+                    - generic [ref=e1268]: delete
+        - generic [ref=e1269]:
+          - generic [ref=e1270]:
+            - button "Collapse group" [expanded] [ref=e1271] [cursor=pointer]:
+              - generic [ref=e1272]: expand_more
+            - generic [ref=e1273]:
+              - heading "Uncategorized" [level=3] [ref=e1274]
+              - text: 4 items
+            - generic [ref=e1275]:
+              - button "add Add" [ref=e1276] [cursor=pointer]:
+                - generic [ref=e1277]: add
+                - generic [ref=e1278]: Add
+              - button "delete" [ref=e1279] [cursor=pointer]:
+                - generic [ref=e1280]: delete
+          - table [ref=e1283]:
+            - rowgroup [ref=e1284]:
+              - row "Name Slug Group Sort Order Status Actions" [ref=e1285]:
+                - columnheader "Name" [ref=e1286]
+                - columnheader "Slug" [ref=e1287]
+                - columnheader "Group" [ref=e1288]
+                - columnheader "Sort Order" [ref=e1289]
+                - columnheader "Status" [ref=e1290]
+                - columnheader "Actions" [ref=e1291]
+            - rowgroup [ref=e1292]:
+              - row "Test test test Uncategorized 1 Active edit delete" [ref=e1293]:
+                - cell "Test test" [ref=e1294]:
+                  - strong [ref=e1295]: Test
+                  - text: test
+                - cell "test" [ref=e1296]
+                - cell "Uncategorized" [ref=e1297]:
+                  - generic [ref=e1298]: Uncategorized
+                - cell "1" [ref=e1299]
+                - cell "Active" [ref=e1300]:
+                  - generic [ref=e1301]: Active
+                - cell "edit delete" [ref=e1302]:
+                  - button "edit" [ref=e1303] [cursor=pointer]:
+                    - generic [ref=e1304]: edit
+                  - button "delete" [ref=e1305] [cursor=pointer]:
+                    - generic [ref=e1306]: delete
+              - row "Buy Diary with Pen buy-diary-with-pen buy-diary-with-pen Uncategorized 3 Active edit delete" [ref=e1307]:
+                - cell "Buy Diary with Pen buy-diary-with-pen" [ref=e1308]:
+                  - strong [ref=e1309]: Buy Diary with Pen
+                  - text: buy-diary-with-pen
+                - cell "buy-diary-with-pen" [ref=e1310]
+                - cell "Uncategorized" [ref=e1311]:
+                  - generic [ref=e1312]: Uncategorized
+                - cell "3" [ref=e1313]
+                - cell "Active" [ref=e1314]:
+                  - generic [ref=e1315]: Active
+                - cell "edit delete" [ref=e1316]:
+                  - button "edit" [ref=e1317] [cursor=pointer]:
+                    - generic [ref=e1318]: edit
+                  - button "delete" [ref=e1319] [cursor=pointer]:
+                    - generic [ref=e1320]: delete
+              - row "Leather Planners leather-planners-2 leather-planners-2 Uncategorized 24 Active edit delete" [ref=e1321]:
+                - cell "Leather Planners leather-planners-2" [ref=e1322]:
+                  - strong [ref=e1323]: Leather Planners
+                  - text: leather-planners-2
+                - cell "leather-planners-2" [ref=e1324]
+                - cell "Uncategorized" [ref=e1325]:
+                  - generic [ref=e1326]: Uncategorized
+                - cell "24" [ref=e1327]
+                - cell "Active" [ref=e1328]:
+                  - generic [ref=e1329]: Active
+                - cell "edit delete" [ref=e1330]:
+                  - button "edit" [ref=e1331] [cursor=pointer]:
+                    - generic [ref=e1332]: edit
+                  - button "delete" [ref=e1333] [cursor=pointer]:
+                    - generic [ref=e1334]: delete
+              - row "PU Leather Diary pu-leather-diary pu-leather-diary Uncategorized 34 Active edit delete" [ref=e1335]:
+                - cell "PU Leather Diary pu-leather-diary" [ref=e1336]:
+                  - strong [ref=e1337]: PU Leather Diary
+                  - text: pu-leather-diary
+                - cell "pu-leather-diary" [ref=e1338]
+                - cell "Uncategorized" [ref=e1339]:
+                  - generic [ref=e1340]: Uncategorized
+                - cell "34" [ref=e1341]
+                - cell "Active" [ref=e1342]:
+                  - generic [ref=e1343]: Active
+                - cell "edit delete" [ref=e1344]:
+                  - button "edit" [ref=e1345] [cursor=pointer]:
+                    - generic [ref=e1346]: edit
+                  - button "delete" [ref=e1347] [cursor=pointer]:
+                    - generic [ref=e1348]: delete

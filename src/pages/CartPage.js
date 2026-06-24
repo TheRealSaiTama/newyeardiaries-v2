@@ -2,6 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { getCart, removeFromCart, updateCartQty } from '../data/store.js';
 import { getProductById, formatPrice } from '../data/products.js';
 import { supabase } from '../lib/supabase.js';
+import { renderCartSkeleton } from '../components/Skeleton.js';
 
 // ponytail: getProductById reads from the active-only 30s cache, so an
 // inactive/just-edited product returns null and the cart silently drops the
@@ -37,6 +38,9 @@ async function resolveCartItem(item) {
 
 export async function renderCartPage() {
   const app = document.getElementById('app');
+  if (app) {
+    app.innerHTML = renderCartSkeleton();
+  }
   const cart = getCart();
 
   let cartItems = (await Promise.all(
