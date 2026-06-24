@@ -3,6 +3,7 @@ import { getProductById, formatPrice } from '../data/products.js';
 import { navigateTo } from '../router.js';
 import { supabase } from '../lib/supabase.js';
 import { sendOrderEmail } from '../lib/notify.js';
+import { renderCheckoutSkeleton } from '../components/Skeleton.js';
 
 // Module-level storage for logo uploads (too large for sessionStorage).
 let uploadedLogos = []; // Array of { name, dataUrl (image/jpeg;base64,...) }
@@ -40,6 +41,10 @@ function setCheckoutStep(step) {
   sessionStorage.setItem('checkoutStep', step);
 }
 
+// Module-level cache to keep cart item data and avoid redundant Supabase requests on step change
+let cachedCartItems = null;
+let lastCartJson = '';
+
 function required(label) {
   return `${label}<span style="color:var(--color-error);margin-left:2px;">*</span>`;
 }
@@ -49,6 +54,8 @@ export async function renderCheckoutPage() {
   const cart = getCart();
 
   if (cart.length === 0) {
+    cachedCartItems = null;
+    lastCartJson = '';
     app.innerHTML = `
       <div class="page-content">
         <div class="container section" style="text-align:center;padding:var(--space-24) 0;">
@@ -62,12 +69,25 @@ export async function renderCheckoutPage() {
     return;
   }
 
-  let cartItems = (await Promise.all(
-    cart.map(async item => {
-      const product = await getProductById(item.productId);
-      return product ? { ...item, product } : null;
-    })
-  )).filter(Boolean);
+  const currentCartJson = JSON.stringify(cart);
+  let cartItems;
+
+  if (cachedCartItems && currentCartJson === lastCartJson) {
+    cartItems = cachedCartItems;
+  } else {
+    // Show a clean skeleton loader instantly while fetching from Supabase
+    app.innerHTML = renderCheckoutSkeleton();
+
+    cartItems = (await Promise.all(
+      cart.map(async item => {
+        const product = await getProductById(item.productId);
+        return product ? { ...item, product } : null;
+      })
+    )).filter(Boolean);
+
+    cachedCartItems = cartItems;
+    lastCartJson = currentCartJson;
+  }
 
   // Enforce MOQ on existing cart items
   cartItems.forEach(item => {
@@ -625,6 +645,8 @@ export async function renderCheckoutPage() {
 
     // 4. Clear cart + redirect to success
     clearCart();
+    cachedCartItems = null;
+    lastCartJson = '';
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
     sessionStorage.setItem('lastOrderNumber', orderNumber);

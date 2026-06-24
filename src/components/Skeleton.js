@@ -134,3 +134,94 @@ export function renderHomeSkeleton() {
     </div>
   `;
 }
+
+export function renderCheckoutSkeleton() {
+  return `
+    <div class="page-content">
+      <div class="container section">
+        <!-- Stepper -->
+        <div class="checkout-stepper" style="margin-bottom: var(--space-8);">
+          <div class="step active"><span class="step-indicator">1</span><span class="step-label">Contact Info</span></div>
+          <div class="step-connector"></div>
+          <div class="step"><span class="step-indicator">2</span><span class="step-label">Review</span></div>
+          <div class="step-connector"></div>
+          <div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:3fr 2fr;gap:var(--space-8);align-items:flex-start;">
+          <!-- Left Column (Form groups) -->
+          <div>
+            <div style="margin-bottom:var(--space-6);background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
+              <div class="skeleton" style="width:200px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div>
+              <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+                <div>
+                  <div class="skeleton" style="width:100px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
+                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
+                </div>
+                <div>
+                  <div class="skeleton" style="width:120px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
+                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
+              <div class="skeleton" style="width:160px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div>
+              <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
+                  <div>
+                    <div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
+                    <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
+                  </div>
+                  <div>
+                    <div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
+                    <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="skeleton" style="width:150px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
+                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column (Order Summary) -->
+          <div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
+            <div class="skeleton" style="width:150px;height:20px;margin-bottom:var(--space-6);border-radius:4px;"></div>
+            
+            <!-- Items skeleton -->
+            <div style="display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-6);">
+              ${Array(3).fill('').map(() => `
+                <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--color-border-light);">
+                  <div class="skeleton" style="width:50px;height:50px;border-radius:6px;flex-shrink:0;"></div>
+                  <div style="flex:1;">
+                    <div class="skeleton" style="width:70%;height:12px;margin-bottom:6px;border-radius:4px;"></div>
+                    <div class="skeleton" style="width:40%;height:10px;border-radius:4px;"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Pricing skeleton -->
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;">
+                <div class="skeleton" style="width:80px;height:12px;border-radius:4px;"></div>
+                <div class="skeleton" style="width:60px;height:12px;border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <div class="skeleton" style="width:90px;height:12px;border-radius:4px;"></div>
+                <div class="skeleton" style="width:50px;height:12px;border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--color-border-light);">
+                <div class="skeleton" style="width:100px;height:16px;border-radius:4px;"></div>
+                <div class="skeleton" style="width:80px;height:16px;border-radius:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
