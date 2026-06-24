@@ -93,11 +93,12 @@ export async function renderCartPage() {
                   <div class="cart-item-details">
                     <div class="cart-item-title">${item.product.title}</div>
                     <div class="cart-item-variant">${item.product.material} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
-                    <div class="qty-selector">
-                      <button class="qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
-                      <span class="qty-value">${item.qty}</span>
-                      <button class="qty-plus" data-id="${item.product.id}">+</button>
+                    <div class="qty-stepper" style="align-self:flex-start;">
+                      <button class="qty-step-btn qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
+                      <input type="number" class="qty-step-input qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}">
+                      <button class="qty-step-btn qty-plus" data-id="${item.product.id}">+</button>
                     </div>
+                    <button class="btn btn--accent btn--sm update-cart-item-btn" data-id="${item.product.id}" data-original-qty="${item.qty}" style="display:none;align-self:flex-start;margin-top:var(--space-1);">Update Cart</button>
                     <button class="btn btn--ghost btn--sm remove-cart-item" data-id="${item.product.id}" style="align-self:flex-start;color:var(--color-error);padding-left:0;">Remove</button>
                   </div>
                   <div class="cart-item-price">${formatPrice(item.product.price * item.qty)}</div>
@@ -124,72 +125,85 @@ export async function renderCartPage() {
     </div>
   `;
 
+  function checkQtyChange(id) {
+    const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+    const btn = document.querySelector(`.update-cart-item-btn[data-id="${id}"]`);
+    if (!input || !btn) return;
+    
+    const originalQty = parseInt(btn.dataset.originalQty) || 0;
+    const moq = parseInt(input.dataset.moq) || 1;
+    let currentVal = parseInt(input.value);
+    
+    if (isNaN(currentVal)) {
+      btn.style.display = 'none';
+      return;
+    }
+    
+    if (currentVal !== originalQty && currentVal >= moq) {
+      btn.style.display = 'block';
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+
   document.querySelectorAll('.qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = btn.dataset.id; // UUID string — parseInt corrupts it, leaving +/- dead
+      const id = btn.dataset.id;
       const moq = parseInt(btn.dataset.moq) || 1;
-      const item = cart.find(i => i.productId === id);
-      if (item && item.qty > moq) { updateCartQty(id, item.qty - 1, moq); renderCartPage(); }
+      const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+      if (!input) return;
+      const currentVal = parseInt(input.value) || moq;
+      const newQty = Math.max(moq, currentVal - 1);
+      input.value = newQty;
+      checkQtyChange(id);
     });
   });
+
   document.querySelectorAll('.qty-plus').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
-      const item = cart.find(i => i.productId === id);
-      if (!item) return;
-      const newQty = item.qty + 1;
-      const lineItem = cartItems.find(ci => ci.productId === id);
-      confirmQtyChange(lineItem, newQty, (confirmed) => {
-        if (confirmed) { updateCartQty(id, newQty, parseInt(btn.dataset.moq) || 1); renderCartPage(); }
-      });
+      const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+      if (!input) return;
+      const currentVal = parseInt(input.value) || 1;
+      const newQty = currentVal + 1;
+      input.value = newQty;
+      checkQtyChange(id);
     });
   });
-  document.querySelectorAll('.remove-cart-item').forEach(btn => {
-    btn.addEventListener('click', () => { removeFromCart(btn.dataset.id); renderCartPage(); });
+
+  document.querySelectorAll('.qty-input').forEach(input => {
+    const id = input.dataset.id;
+    const check = () => checkQtyChange(id);
+    
+    input.addEventListener('input', check);
+    input.addEventListener('change', () => {
+      const moq = parseInt(input.dataset.moq) || 1;
+      let val = parseInt(input.value);
+      if (isNaN(val) || val < moq) {
+        val = moq;
+      }
+      input.value = val;
+      check();
+    });
   });
-}
 
-// ponytail: self-contained confirm modal (no admin cross-import). Shows the
-// proposed new quantity and the revised line + cart totals; user must hit OK
-// before the cart is revised. Decreases apply directly; this gates increases
-// where the bill goes up and a misclick is costly.
-function confirmQtyChange(lineItem, newQty, cb) {
-  const price = lineItem.product.price;
-  const newLineTotal = price * newQty;
+  document.querySelectorAll('.update-cart-item-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+      if (!input) return;
+      const moq = parseInt(input.dataset.moq) || 1;
+      const newQty = Math.max(moq, parseInt(input.value) || moq);
+      
+      updateCartQty(id, newQty, moq);
+      renderCartPage();
+    });
+  });
 
-  // Revised cart total = current subtotal − this line's current total + new line total
-  const cart = getCart();
-  const allItems = window.__cartItemsCache || [];
-  const curLineTotal = price * (cart.find(i => i.productId === lineItem.productId)?.qty || 0);
-  const curSubtotal = allItems.reduce((s, it) => s + it.product.price * (cart.find(c => c.productId === it.productId)?.qty || 0), 0);
-  const revisedTotal = curSubtotal - curLineTotal + newLineTotal;
-
-  const overlay = document.createElement('div');
-  overlay.className = 'cart-qty-confirm-overlay';
-  overlay.innerHTML = `
-    <div class="cart-qty-confirm" role="dialog" aria-modal="true">
-      <div class="cart-qty-confirm__head">
-        <h3>Update quantity?</h3>
-        <button class="cart-qty-confirm__x" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div class="cart-qty-confirm__body">
-        <p class="cart-qty-confirm__product">${lineItem.product.title}</p>
-        <p class="cart-qty-confirm__line">Change quantity from <strong>${cart.find(i => i.productId === lineItem.productId)?.qty || 0}</strong> to <strong>${newQty}</strong> units?</p>
-        <div class="cart-qty-confirm__rows">
-          <div class="cart-qty-confirm__row"><span>Item total</span><strong>${formatPrice(newLineTotal)}</strong></div>
-          <div class="cart-qty-confirm__row cart-qty-confirm__row--total"><span>Revised cart total</span><strong>${formatPrice(revisedTotal)}</strong></div>
-        </div>
-      </div>
-      <div class="cart-qty-confirm__actions">
-        <button type="button" class="btn btn--ghost cart-qty-confirm__cancel">Cancel</button>
-        <button type="button" class="btn btn--accent cart-qty-confirm__ok">Update to ${newQty}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-
-  const close = (result) => { overlay.remove(); cb(result); };
-  overlay.querySelector('.cart-qty-confirm__ok').addEventListener('click', () => close(true));
-  overlay.querySelector('.cart-qty-confirm__cancel').addEventListener('click', () => close(false));
-  overlay.querySelector('.cart-qty-confirm__x').addEventListener('click', () => close(false));
-  overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) close(false); });
+  document.querySelectorAll('.remove-cart-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      removeFromCart(btn.dataset.id);
+      renderCartPage();
+    });
+  });
 }

@@ -153,8 +153,17 @@ function pageCacheKey(params) {
   return PAGE_CACHE_PREFIX + path + search;
 }
 
+function isPageCacheable(path) {
+  const normalized = path.endsWith('/') ? path.slice(0, -1) : path;
+  const nonCacheable = ['/cart', '/checkout', '/bulk-quote', '/account'];
+  return !nonCacheable.includes(normalized || '/');
+}
+
 function getCachedPage(params) {
   try {
+    const path = window.location.pathname || '/';
+    if (!isPageCacheable(path)) return null;
+
     const key = pageCacheKey(params);
     if (key === PAGE_CACHE_PREFIX + '/' && window.__nydHomeHtmlCache?.html) return window.__nydHomeHtmlCache;
     const raw = sessionStorage.getItem(key) || (key === PAGE_CACHE_PREFIX + '/' ? localStorage.getItem(HOME_CACHE_KEY) : null);
@@ -165,6 +174,9 @@ function getCachedPage(params) {
 
 function setCachedPage(params, html) {
   if (!html) return;
+  const path = window.location.pathname || '/';
+  if (!isPageCacheable(path)) return;
+
   const key = pageCacheKey(params);
   if (key === PAGE_CACHE_PREFIX + '/') window.__nydHomeHtmlCache = { html, t: Date.now() };
   if (html.length > PAGE_CACHE_MAX_HTML_BYTES) return;
