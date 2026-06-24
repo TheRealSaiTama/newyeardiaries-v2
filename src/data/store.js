@@ -52,6 +52,7 @@ function showToast(message) {
     `;
     document.body.appendChild(toast);
   }
+  toast.style.background = '#1A1A1A';
   toast.textContent = message;
   requestAnimationFrame(() => {
     toast.style.transform = 'translateY(0)';

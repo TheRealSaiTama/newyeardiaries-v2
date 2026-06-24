@@ -261,14 +261,20 @@ export async function renderProductDetailPage(params) {
   plusBtn?.addEventListener('click', () => { qtyInput.value = (parseInt(qtyInput.value) || pdpMOQ) + 1; });
   qtyInput?.addEventListener('change', () => { qtyInput.value = clampQty(parseInt(qtyInput.value) || pdpMOQ); });
 
-  document.getElementById('pdp-add-cart')?.addEventListener('click', (e) => {
-    const qty = parseInt(qtyInput.value) || pdpMOQ;
-    addToCart(product.id, qty);
-    
-    const btn = e.currentTarget;
-    btn.classList.add('btn--added');
-    btn.disabled = true;
-    btn.innerHTML = 'Added to Cart';
+  document.getElementById('pdp-add-cart')?.addEventListener('click', () => {
+    try {
+      const qty = parseInt(qtyInput.value) || pdpMOQ;
+      addToCart(product.id, qty);
+      
+      const btn = document.getElementById('pdp-add-cart');
+      if (btn) {
+        btn.classList.add('btn--added');
+        btn.disabled = true;
+        btn.innerHTML = 'Added to Cart';
+      }
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+    }
   });
 
   const tabBtns = document.querySelectorAll('.pdp-tab');

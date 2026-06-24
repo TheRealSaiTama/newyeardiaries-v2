@@ -71,13 +71,19 @@ export async function openQuickView(productId) {
   qvPlus?.addEventListener('click', () => { if (qvQty) qvQty.value = (parseInt(qvQty.value) || moq) + 1; });
   qvQty?.addEventListener('change', () => { qvQty.value = clampQv(parseInt(qvQty.value) || moq); });
 
-  document.getElementById('qv-add-cart')?.addEventListener('click', (e) => {
-    const qty = parseInt(qvQty?.value) || moq;
-    addToCart(product.id, qty);
+  document.getElementById('qv-add-cart')?.addEventListener('click', () => {
+    try {
+      const qty = parseInt(qvQty?.value) || moq;
+      addToCart(product.id, qty);
 
-    const btn = e.currentTarget;
-    btn.classList.add('btn--added');
-    btn.disabled = true;
-    btn.innerHTML = 'Added to Cart';
+      const btn = document.getElementById('qv-add-cart');
+      if (btn) {
+        btn.classList.add('btn--added');
+        btn.disabled = true;
+        btn.innerHTML = 'Added to Cart';
+      }
+    } catch (err) {
+      console.error('Quick view add to cart failed:', err);
+    }
   });
 }
