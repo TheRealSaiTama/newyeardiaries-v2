@@ -2341,9 +2341,19 @@ async function renderEnquiries(container, tab = 'contact') {
 
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.onclick = () => {
-      const id = btn.closest('tr').dataset.id;
+      const row = btn.closest('tr');
+      const id = row.dataset.id;
       showConfirmDialog('Delete this item permanently?', async () => {
-        await supabase.from(tableName).delete().eq('id', id);
+        // ponytail: was fire-and-forget — showed "Deleted!" even when the row
+        // wasn't removed (RLS / error / wrong id). Check the result, and
+        // remove the row optimistically on success so it visibly vanishes
+        // even if the re-fetch is slow.
+        const { error } = await supabase.from(tableName).delete().eq('id', id);
+        if (error) {
+          showToast(`Delete failed: ${error.message}`, 'error');
+          return;
+        }
+        row.remove();
         showToast('Deleted!');
         await renderEnquiries(container, tab);
       });
