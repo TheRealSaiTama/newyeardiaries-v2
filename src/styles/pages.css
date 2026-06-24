@@ -701,6 +701,24 @@ body.is-admin-route #faq-chatbot {
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border-light);
 }
+
+/* ---- Checkout review card (step 2) ---- */
+.checkout-review-card {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.checkout-review-field {
+  display: flex; gap: var(--space-4); padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--fs-sm);
+}
+.checkout-review-field:last-child { border-bottom: none; }
+.checkout-review-field__label { color: var(--color-text-tertiary); min-width: 110px; flex-shrink: 0; }
+.checkout-review-field__value { color: var(--color-text-primary); font-weight: var(--fw-medium); }
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

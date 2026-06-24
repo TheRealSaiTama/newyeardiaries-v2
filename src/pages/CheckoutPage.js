@@ -76,6 +76,7 @@ export async function renderCheckoutPage() {
   });
 
   const checkoutData = getCheckoutData();
+  const currentStep = getCheckoutStep(); // 'shipping' (step 1) | 'review' (step 2)
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
   const gstRate = 0.18;
@@ -84,11 +85,14 @@ export async function renderCheckoutPage() {
   const shipping = subtotal >= 5000 ? 0 : 250;
   const total = subtotal + (subtotal * gstRate);
 
+  // Stepper reflects the active step.
+  const stepState = (n) => n < (currentStep === 'review' ? 2 : 1) ? 'completed'
+    : n === (currentStep === 'review' ? 2 : 1) ? 'active' : '';
   const stepperHtml = `
     <div class="checkout-stepper">
-      <div class="step active"><span class="step-indicator">1</span><span class="step-label">Contact Info</span></div>
-      <div class="step-connector"></div>
-      <div class="step"><span class="step-indicator">2</span><span class="step-label">Review</span></div>
+      <div class="step ${stepState(1)}"><span class="step-indicator">${stepState(1) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '1'}</span><span class="step-label">Contact Info</span></div>
+      <div class="step-connector ${stepState(1) === 'completed' ? 'completed' : ''}"></div>
+      <div class="step ${stepState(2)}"><span class="step-indicator">${stepState(2) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '2'}</span><span class="step-label">Review</span></div>
       <div class="step-connector"></div>
       <div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div>
     </div>
@@ -209,10 +213,46 @@ export async function renderCheckoutPage() {
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
           <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
-          <button class="btn btn--accent btn--lg" id="btn-place-order">Place Order</button>
+          <button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button>
         </div>
       </div>
     `;
+
+  // Step 2 — read-only review of the saved info, with Edit Info (back) + Place Order.
+  const reviewHtml = `
+    <div class="checkout-form-section">
+      <div class="checkout-form-group">
+        <h2>Review Your Information</h2>
+        <p style="color:var(--color-text-secondary);font-size:var(--fs-sm);margin-bottom:var(--space-4);">
+          Please confirm the details below before placing your order.
+        </p>
+        <div class="checkout-review-card">
+          ${[
+            ['Name', `${checkoutData.firstName || ''} ${checkoutData.lastName || ''}`.trim()],
+            ['Email', checkoutData.email],
+            ['Phone', checkoutData.phone],
+            ['Company', checkoutData.company],
+            ['Address', checkoutData.address],
+            ['City', checkoutData.city],
+            ['PIN Code', checkoutData.pin],
+            ['State', checkoutData.state],
+            ['GST Number', checkoutData.gst],
+          ].filter(([, v]) => v).map(([k, v]) => `
+            <div class="checkout-review-field">
+              <span class="checkout-review-field__label">${k}</span>
+              <span class="checkout-review-field__value">${v}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
+        <button class="btn btn--ghost btn--lg" id="btn-edit-info"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Edit Info</button>
+        <button class="btn btn--accent btn--lg" id="btn-place-order">Place Order</button>
+      </div>
+    </div>
+  `;
+
+  const mainContent = currentStep === 'review' ? reviewHtml : formHtml;
 
   app.innerHTML = `
     <div class="page-content">
@@ -220,7 +260,7 @@ export async function renderCheckoutPage() {
         <a href="/" style="font-family:var(--font-family-heading);font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--color-text-primary);display:block;margin-bottom:var(--space-6);">New Year Diaries</a>
         ${stepperHtml}
         <div class="checkout-layout">
-          ${formHtml}
+          ${mainContent}
           ${orderSummaryHtml}
         </div>
       </div>
@@ -256,7 +296,7 @@ export async function renderCheckoutPage() {
 
   document.querySelectorAll('.checkout-qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id; // UUID string — parseInt corrupts it
       const moq = parseInt(btn.dataset.moq);
       const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
       const newQty = Math.max(moq, (parseInt(input.value) || moq) - 1);
@@ -268,7 +308,7 @@ export async function renderCheckoutPage() {
 
   document.querySelectorAll('.checkout-qty-plus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id;
       const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
       const newQty = (parseInt(input.value) || 1) + 1;
       input.value = newQty;
@@ -279,7 +319,7 @@ export async function renderCheckoutPage() {
 
   document.querySelectorAll('.checkout-qty-input').forEach(input => {
     input.addEventListener('change', () => {
-      const id = parseInt(input.dataset.id);
+      const id = input.dataset.id;
       const moq = parseInt(input.dataset.moq);
       const newQty = Math.max(moq, parseInt(input.value) || moq);
       input.value = newQty;
@@ -288,11 +328,9 @@ export async function renderCheckoutPage() {
     });
   });
 
-  // Place Order — validates the shipping form, then submits the order directly
-  // (no separate payment step; payment is confirmed offline per the notices).
-  document.getElementById('btn-place-order')?.addEventListener('click', async () => {
-    const btn = document.getElementById('btn-place-order');
-
+  // Step 1 → Step 2: validate the form, persist the data, advance to review.
+  // ponytail: validation + collection shared with submit via collectCheckoutData().
+  function collectCheckoutData() {
     const email = document.getElementById('chk-email')?.value.trim();
     const phone = document.getElementById('chk-phone')?.value.trim();
     const firstName = document.getElementById('chk-firstname')?.value.trim();
@@ -301,23 +339,59 @@ export async function renderCheckoutPage() {
     const city = document.getElementById('chk-city')?.value.trim();
     const pin = document.getElementById('chk-pin')?.value.trim();
     const state = document.getElementById('chk-state')?.value;
-
     const requiredFields = { email, phone, firstName, lastName, address, city, pin, state };
-    const empty = Object.entries(requiredFields).filter(([k, v]) => !v);
+    const empty = Object.entries(requiredFields).filter(([, v]) => !v);
+    return {
+      data: {
+        email, phone, firstName, lastName,
+        company: document.getElementById('chk-company')?.value.trim() || '',
+        address, city, pin, state,
+        gst: document.getElementById('chk-gst')?.value.trim() || '',
+      },
+      empty,
+    };
+  }
+
+  document.getElementById('btn-save-proceed')?.addEventListener('click', () => {
+    const { data, empty } = collectCheckoutData();
     if (empty.length) {
       const labels = { email: 'Email', phone: 'Phone', firstName: 'First Name', lastName: 'Last Name', address: 'Address', city: 'City', pin: 'PIN Code', state: 'State' };
       showToast(`Please fill in: ${empty.map(([k]) => labels[k]).join(', ')}`, 'error');
-      const firstEmpty = document.getElementById(`chk-${empty[0][0]}`);
-      firstEmpty?.focus();
+      document.getElementById(`chk-${empty[0][0]}`)?.focus();
+      return;
+    }
+    setCheckoutData(data);
+    setCheckoutStep('review');
+    renderCheckoutPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Step 2 → Step 1: go back to edit (data already persisted, so the form
+  // stays populated — user doesn't rewrite anything).
+  document.getElementById('btn-edit-info')?.addEventListener('click', () => {
+    setCheckoutStep('shipping');
+    renderCheckoutPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Place Order (step 2) — reads the persisted data and submits.
+  document.getElementById('btn-place-order')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-place-order');
+
+    // On step 2 the form isn't in the DOM — use the persisted data.
+    const data = getCheckoutData();
+    const requiredFields = {
+      email: data.email, phone: data.phone, firstName: data.firstName,
+      lastName: data.lastName, address: data.address, city: data.city,
+      pin: data.pin, state: data.state,
+    };
+    const empty = Object.entries(requiredFields).filter(([, v]) => !v);
+    if (empty.length) {
+      const labels = { email: 'Email', phone: 'Phone', firstName: 'First Name', lastName: 'Last Name', address: 'Address', city: 'City', pin: 'PIN Code', state: 'State' };
+      showToast(`Missing info: ${empty.map(([k]) => labels[k]).join(', ')}. Please go back and fill it in.`, 'error');
       return;
     }
 
-    const data = {
-      email, phone, firstName, lastName,
-      company: document.getElementById('chk-company')?.value.trim() || '',
-      address, city, pin, state,
-      gst: document.getElementById('chk-gst')?.value.trim() || ''
-    };
     // ponytail: no payment UI now → default to bank transfer (offline confirmation).
     const paymentMethod = 'bank';
 
