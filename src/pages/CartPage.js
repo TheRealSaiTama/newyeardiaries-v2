@@ -22,6 +22,10 @@ export async function renderCartPage() {
     }
   });
 
+  // ponytail: cache the resolved items (product + qty) on window so the
+  // confirm modal can compute the revised totals without re-fetching.
+  window.__cartItemsCache = cartItems;
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
 
   app.innerHTML = `
@@ -85,7 +89,7 @@ export async function renderCartPage() {
 
   document.querySelectorAll('.qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id; // UUID string — parseInt corrupts it, leaving +/- dead
       const moq = parseInt(btn.dataset.moq) || 1;
       const item = cart.find(i => i.productId === id);
       if (item && item.qty > moq) { updateCartQty(id, item.qty - 1, moq); renderCartPage(); }
@@ -93,12 +97,62 @@ export async function renderCartPage() {
   });
   document.querySelectorAll('.qty-plus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id;
       const item = cart.find(i => i.productId === id);
-      if (item) { updateCartQty(id, item.qty + 1); renderCartPage(); }
+      if (!item) return;
+      const newQty = item.qty + 1;
+      const lineItem = cartItems.find(ci => ci.productId === id);
+      confirmQtyChange(lineItem, newQty, (confirmed) => {
+        if (confirmed) { updateCartQty(id, newQty, parseInt(btn.dataset.moq) || 1); renderCartPage(); }
+      });
     });
   });
   document.querySelectorAll('.remove-cart-item').forEach(btn => {
-    btn.addEventListener('click', () => { removeFromCart(parseInt(btn.dataset.id)); renderCartPage(); });
+    btn.addEventListener('click', () => { removeFromCart(btn.dataset.id); renderCartPage(); });
   });
+}
+
+// ponytail: self-contained confirm modal (no admin cross-import). Shows the
+// proposed new quantity and the revised line + cart totals; user must hit OK
+// before the cart is revised. Decreases apply directly; this gates increases
+// where the bill goes up and a misclick is costly.
+function confirmQtyChange(lineItem, newQty, cb) {
+  const price = lineItem.product.price;
+  const newLineTotal = price * newQty;
+
+  // Revised cart total = current subtotal − this line's current total + new line total
+  const cart = getCart();
+  const allItems = window.__cartItemsCache || [];
+  const curLineTotal = price * (cart.find(i => i.productId === lineItem.productId)?.qty || 0);
+  const curSubtotal = allItems.reduce((s, it) => s + it.product.price * (cart.find(c => c.productId === it.productId)?.qty || 0), 0);
+  const revisedTotal = curSubtotal - curLineTotal + newLineTotal;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cart-qty-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="cart-qty-confirm" role="dialog" aria-modal="true">
+      <div class="cart-qty-confirm__head">
+        <h3>Update quantity?</h3>
+        <button class="cart-qty-confirm__x" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="cart-qty-confirm__body">
+        <p class="cart-qty-confirm__product">${lineItem.product.title}</p>
+        <p class="cart-qty-confirm__line">Change quantity from <strong>${cart.find(i => i.productId === lineItem.productId)?.qty || 0}</strong> to <strong>${newQty}</strong> units?</p>
+        <div class="cart-qty-confirm__rows">
+          <div class="cart-qty-confirm__row"><span>Item total</span><strong>${formatPrice(newLineTotal)}</strong></div>
+          <div class="cart-qty-confirm__row cart-qty-confirm__row--total"><span>Revised cart total</span><strong>${formatPrice(revisedTotal)}</strong></div>
+        </div>
+      </div>
+      <div class="cart-qty-confirm__actions">
+        <button type="button" class="btn btn--ghost cart-qty-confirm__cancel">Cancel</button>
+        <button type="button" class="btn btn--accent cart-qty-confirm__ok">Update to ${newQty}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = (result) => { overlay.remove(); cb(result); };
+  overlay.querySelector('.cart-qty-confirm__ok').addEventListener('click', () => close(true));
+  overlay.querySelector('.cart-qty-confirm__cancel').addEventListener('click', () => close(false));
+  overlay.querySelector('.cart-qty-confirm__x').addEventListener('click', () => close(false));
+  overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) close(false); });
 }
