@@ -4,6 +4,9 @@ import { navigateTo } from '../router.js';
 import { supabase } from '../lib/supabase.js';
 import { sendOrderEmail } from '../lib/notify.js';
 
+// Module-level storage for logo uploads (too large for sessionStorage).
+let uploadedLogos = []; // Array of { name, dataUrl (image/jpeg;base64,...) }
+
 function showToast(message, type = 'success') {
   let toast = document.getElementById('toast-notification');
   if (!toast) {
@@ -186,6 +189,32 @@ export async function renderCheckoutPage() {
           <h2>Tax Information (Optional)</h2>
           <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
         </div>
+        <div class="checkout-form-group">
+          <h2>Customisation <a href="/branding" target="_blank" rel="noopener" class="checkout-form-link">Our customisation options →</a></h2>
+          <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Additional Information</h2>
+          <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Your Logo to be Printed</h2>
+          <p class="checkout-logo-hint">Upload logo files you'd like printed on your products. Images will be converted to JPG.</p>
+          <div class="checkout-logo-upload-area" id="logo-upload-area">
+            <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
+            <span class="checkout-logo-upload-text">Drag &amp; drop images here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
+            <input type="file" id="logo-file-input" accept="image/*" multiple hidden>
+          </div>
+          <div id="logo-previews" class="checkout-logo-previews">${uploadedLogos.map((logo, i) => `
+            <div class="checkout-logo-thumb" data-index="${i}">
+              <img src="${logo.dataUrl}" alt="${logo.name}">
+              <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
+                <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+              </button>
+              <span class="checkout-logo-filename">${logo.name}</span>
+            </div>
+          `).join('')}</div>
+        </div>
         <div class="checkout-notice checkout-notice--warning">
           <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
           <div class="checkout-notice__body">
@@ -237,12 +266,27 @@ export async function renderCheckoutPage() {
             ['PIN Code', checkoutData.pin],
             ['State', checkoutData.state],
             ['GST Number', checkoutData.gst],
+            ['Customisation', checkoutData.customisation],
+            ['Additional Info', checkoutData.additionalInfo],
           ].filter(([, v]) => v).map(([k, v]) => `
             <div class="checkout-review-field">
               <span class="checkout-review-field__label">${k}</span>
               <span class="checkout-review-field__value">${v}</span>
             </div>
           `).join('')}
+          ${uploadedLogos.length ? `
+          <div style="margin-top:var(--space-4);">
+            <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-primary);margin-bottom:var(--space-2);">
+              Logo Files (${uploadedLogos.length} uploaded)
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">
+              ${uploadedLogos.map(logo => `
+                <div style="width:64px;height:64px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border-light);">
+                  <img src="${logo.dataUrl}" alt="${logo.name}" style="width:100%;height:100%;object-fit:cover;">
+                </div>
+              `).join('')}
+            </div>
+          </div>` : ''}
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
@@ -328,6 +372,93 @@ export async function renderCheckoutPage() {
     });
   });
 
+  // ---- Logo upload handling ----
+  function convertToJpg(file, maxWidth = 1200) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(1, maxWidth / img.width);
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => resolve(null);
+        img.src = reader.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderLogoPreviews() {
+    const container = document.getElementById('logo-previews');
+    if (!container) return;
+    container.innerHTML = uploadedLogos.map((logo, i) => `
+      <div class="checkout-logo-thumb" data-index="${i}">
+        <img src="${logo.dataUrl}" alt="${logo.name}">
+        <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
+          <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+        </button>
+        <span class="checkout-logo-filename">${logo.name}</span>
+      </div>
+    `).join('');
+    container.querySelectorAll('.checkout-logo-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        uploadedLogos.splice(parseInt(btn.dataset.index), 1);
+        renderLogoPreviews();
+      });
+    });
+  }
+
+  async function handleLogoFiles(files) {
+    const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!validFiles.length) return;
+    const results = await Promise.all(
+      validFiles.map(async f => {
+        const dataUrl = await convertToJpg(f);
+        if (!dataUrl) return null;
+        const name = f.name.replace(/\.[^.]+$/, '') + '.jpg';
+        return { name, dataUrl };
+      })
+    );
+    results.filter(Boolean).forEach(r => uploadedLogos.push(r));
+    renderLogoPreviews();
+  }
+
+  const uploadArea = document.getElementById('logo-upload-area');
+  const fileInput = document.getElementById('logo-file-input');
+
+  if (uploadArea) {
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target.closest('.checkout-logo-browse-link')) return;
+      fileInput?.click();
+    });
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      handleLogoFiles(e.dataTransfer.files);
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) handleLogoFiles(fileInput.files);
+      fileInput.value = '';
+    });
+  }
+
+  // Render any previously uploaded logos (when step 1 is re-rendered)
+  renderLogoPreviews();
+
   // Step 1 → Step 2: validate the form, persist the data, advance to review.
   // ponytail: validation + collection shared with submit via collectCheckoutData().
   function collectCheckoutData() {
@@ -347,6 +478,8 @@ export async function renderCheckoutPage() {
         company: document.getElementById('chk-company')?.value.trim() || '',
         address, city, pin, state,
         gst: document.getElementById('chk-gst')?.value.trim() || '',
+        customisation: document.getElementById('chk-customisation')?.value.trim() || '',
+        additionalInfo: document.getElementById('chk-additional-info')?.value.trim() || '',
       },
       empty,
     };
@@ -432,6 +565,9 @@ export async function renderCheckoutPage() {
       phone: data.phone,
       email: data.email,
       special_instructions: null,
+      customisation: data.customisation || null,
+      additional_info: data.additionalInfo || null,
+      logo_images: uploadedLogos.length ? uploadedLogos.map(l => ({ name: l.name, data: l.dataUrl })) : [],
       payment_method: paymentMethod,
       privacy_agreed: true,
       subtotal: Number(subtotal.toFixed(2)),
@@ -482,6 +618,9 @@ export async function renderCheckoutPage() {
       gstAmount: Number(gstAmount.toFixed(2)),
       shipping: Number(shipping.toFixed(2)),
       total: Number(finalTotal.toFixed(2)),
+      customisation: data.customisation || '',
+      additionalInfo: data.additionalInfo || '',
+      logos: uploadedLogos,
     }).catch(e => console.error('Order email failed:', e));
 
     // 4. Clear cart + redirect to success
@@ -489,6 +628,7 @@ export async function renderCheckoutPage() {
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
     sessionStorage.setItem('lastOrderNumber', orderNumber);
+    uploadedLogos = [];
     navigateTo('/order-success');
   });
 }

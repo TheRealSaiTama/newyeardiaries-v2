@@ -717,7 +717,109 @@ body.is-admin-route #faq-chatbot {
 }
 .checkout-review-field:last-child { border-bottom: none; }
 .checkout-review-field__label { color: var(--color-text-tertiary); min-width: 110px; flex-shrink: 0; }
-.checkout-review-field__value { color: var(--color-text-primary); font-weight: var(--fw-medium); }
+.checkout-review-field__value { color: var(--color-text-primary); font-weight: var(--fw-medium); white-space: pre-wrap; max-width: 500px; }
+
+/* ---- Checkout customisation link ---- */
+.checkout-form-link {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-left: var(--space-2);
+}
+.checkout-form-link:hover { text-decoration: underline; color: var(--color-primary); }
+
+/* ---- Checkout logo upload ---- */
+.checkout-logo-hint {
+  font-size: var(--fs-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-3);
+}
+.checkout-logo-upload-area {
+  border: 2px dashed var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--color-surface-alt);
+}
+.checkout-logo-upload-area:hover,
+.checkout-logo-upload-area.drag-over {
+  border-color: var(--color-accent);
+  background: #f5f0e8;
+}
+.checkout-logo-upload-icon {
+  font-size: 36px;
+  color: var(--color-accent);
+  opacity: 0.6;
+}
+.checkout-logo-upload-text {
+  font-size: var(--fs-sm);
+  color: var(--color-text-tertiary);
+}
+.checkout-logo-browse-link {
+  color: var(--color-accent);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.checkout-logo-browse-link:hover { color: var(--color-primary); }
+
+.checkout-logo-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.checkout-logo-thumb {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  background: #fff;
+}
+.checkout-logo-thumb img {
+  width: 100%;
+  height: 72px;
+  object-fit: contain;
+  background: #f5f0e8;
+  display: block;
+}
+.checkout-logo-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s;
+}
+.checkout-logo-remove:hover { background: #c0392b; }
+.checkout-logo-filename {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  padding: 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
 
 .form-row {
   display: grid;

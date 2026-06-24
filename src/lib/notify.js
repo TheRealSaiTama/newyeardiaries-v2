@@ -196,6 +196,37 @@ export function sendOrderEmail(data) {
       <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.specialInstructions) || '— None —'}</div>
     </div>
 
+    ${data.customisation ? `
+    <!-- Customisation -->
+    <div style="margin-top:16px;padding:14px 16px;background:#f0f7ff;border:1px solid #d0e3f7;border-radius:6px;">
+      <div style="font-size:12px;font-weight:bold;color:#003366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Customisation Request</div>
+      <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.customisation)}</div>
+    </div>` : ''}
+
+    ${data.additionalInfo ? `
+    <!-- Additional Information -->
+    <div style="margin-top:16px;padding:14px 16px;background:#fdf9f3;border:1px solid #e5e0d6;border-radius:6px;">
+      <div style="font-size:12px;font-weight:bold;color:#A0522D;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Additional Information</div>
+      <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.additionalInfo)}</div>
+    </div>` : ''}
+
+    ${data.logos && data.logos.length ? `
+    <!-- Uploaded Logos -->
+    <div style="margin-top:16px;padding:14px 16px;background:#f5f0e8;border:1px solid #e5e0d6;border-radius:6px;">
+      <div style="font-size:12px;font-weight:bold;color:#A0522D;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Uploaded Logos (${data.logos.length} file${data.logos.length > 1 ? 's' : ''})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${data.logos.map(logo => `
+          <div style="text-align:center;">
+            <div style="width:120px;height:120px;border:1px solid #e5e0d6;border-radius:8px;overflow:hidden;background:#fff;">
+              <img src="${esc(logo.dataUrl)}" alt="${esc(logo.name)}" style="width:100%;height:100%;object-fit:contain;">
+            </div>
+            <div style="font-size:10px;color:#666;margin-top:4px;word-break:break-all;max-width:120px;">${esc(logo.name)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#888;">Right-click on any logo image above and select "Save image as…" to download the JPG file.</div>
+    </div>` : ''}
+
   </div>
 </div>`;
 
