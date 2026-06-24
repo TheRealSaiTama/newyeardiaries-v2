@@ -10,6 +10,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
   <link rel="modulepreload" href="/src/main.js">
+  <style>
+    /* ponytail: hide Material Symbols ligatures until the icon font is ready,
+       otherwise the raw word (e.g. "expand_more") flashes as text (FOUT).
+       .icons-ready is set by the inline script below via the Font Loading API. */
+    .material-symbols-outlined { opacity: 0; transition: opacity .15s ease; }
+    html.icons-ready .material-symbols-outlined { opacity: 1; }
+  </style>
+  <script>
+    // Mark <html> ready as soon as the Material Symbols font is loaded. If the
+    // Font Loading API is missing or the font fails, show icons anyway after a
+    // short timeout so they're never permanently hidden.
+    (function () {
+      var guards = 0;
+      function reveal() { document.documentElement.classList.add('icons-ready'); }
+      function scheduleFallback(ms) { setTimeout(function () { if (!document.documentElement.classList.contains('icons-ready')) reveal(); }, ms); }
+      scheduleFallback(4000); // hard ceiling — never hide icons forever
+      function tryFont() {
+        if (guards++ > 200 || !document.fonts || !document.fonts.load) { reveal(); return; }
+        document.fonts.load('24px "Material Symbols Outlined"', "expand_more").then(reveal, function () {
+          // Font not available yet — retry shortly until it lands or the ceiling hits.
+          setTimeout(tryFont, 100);
+        });
+      }
+      tryFont();
+    })();
+  </script>
 </head>
 <body>
   <div id="app-loader">
