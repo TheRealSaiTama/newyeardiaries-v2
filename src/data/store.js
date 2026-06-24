@@ -7,7 +7,7 @@ export function getCart() {
 
 export function addToCart(productId, qty = 1) {
   const cart = getCart();
-  const existing = cart.find(item => item.productId === productId);
+  const existing = cart.find(item => String(item.productId) === String(productId));
   if (existing) {
     existing.qty = qty;
   } else {
@@ -20,14 +20,14 @@ export function addToCart(productId, qty = 1) {
 
 export function removeFromCart(productId) {
   let cart = getCart();
-  cart = cart.filter(item => item.productId !== productId);
+  cart = cart.filter(item => String(item.productId) !== String(productId));
   localStorage.setItem('cart', JSON.stringify(cart));
   updateHeaderCounts();
 }
 
 export function updateCartQty(productId, qty, minQty = 1) {
   const cart = getCart();
-  const item = cart.find(i => i.productId === productId);
+  const item = cart.find(i => String(i.productId) === String(productId));
   if (item) item.qty = Math.max(minQty, qty);
   localStorage.setItem('cart', JSON.stringify(cart));
   updateHeaderCounts();

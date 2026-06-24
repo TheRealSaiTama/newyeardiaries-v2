@@ -205,36 +205,6 @@ export async function renderCheckoutPage() {
             </select>
           </div>
         </div>
-        <div class="checkout-form-group">
-          <h2>Tax Information (Optional)</h2>
-          <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
-        </div>
-        <div class="checkout-form-group">
-          <h2>Customisation <a href="/branding" target="_blank" rel="noopener" class="checkout-form-link">Our customisation options →</a></h2>
-          <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
-        </div>
-        <div class="checkout-form-group">
-          <h2>Additional Information</h2>
-          <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
-        </div>
-        <div class="checkout-form-group">
-          <h2>Your Logo to be Printed</h2>
-          <p class="checkout-logo-hint">Upload logo files you'd like printed on your products. Images will be converted to JPG.</p>
-          <div class="checkout-logo-upload-area" id="logo-upload-area">
-            <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
-            <span class="checkout-logo-upload-text">Drag &amp; drop images here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
-            <input type="file" id="logo-file-input" accept="image/*" multiple hidden>
-          </div>
-          <div id="logo-previews" class="checkout-logo-previews">${uploadedLogos.map((logo, i) => `
-            <div class="checkout-logo-thumb" data-index="${i}">
-              <img src="${logo.dataUrl}" alt="${logo.name}">
-              <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
-                <span class="material-symbols-outlined" style="font-size:14px;">close</span>
-              </button>
-              <span class="checkout-logo-filename">${logo.name}</span>
-            </div>
-          `).join('')}</div>
-        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
           <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
           <button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button>
@@ -242,13 +212,13 @@ export async function renderCheckoutPage() {
       </div>
     `;
 
-  // Step 2 — read-only review of the saved info, with Edit Info (back) + Place Order.
+  // Step 2 — read-only review of the saved shipping/contact info, and interactive inputs for GST, Customisation, Additional Info, and Logo.
   const reviewHtml = `
     <div class="checkout-form-section">
       <div class="checkout-form-group">
         <h2>Review Your Information</h2>
         <p style="color:var(--color-text-secondary);font-size:var(--fs-sm);margin-bottom:var(--space-4);">
-          Please confirm the details below before placing your order.
+          Please confirm your contact and shipping details below, and fill in any branding or customisation requests.
         </p>
         <div class="checkout-review-card">
           ${[
@@ -260,29 +230,43 @@ export async function renderCheckoutPage() {
             ['City', checkoutData.city],
             ['PIN Code', checkoutData.pin],
             ['State', checkoutData.state],
-            ['GST Number', checkoutData.gst],
-            ['Customisation', checkoutData.customisation],
-            ['Additional Info', checkoutData.additionalInfo],
           ].filter(([, v]) => v).map(([k, v]) => `
             <div class="checkout-review-field">
               <span class="checkout-review-field__label">${k}</span>
               <span class="checkout-review-field__value">${v}</span>
             </div>
           `).join('')}
-          ${uploadedLogos.length ? `
-          <div style="margin-top:var(--space-4);">
-            <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--color-text-primary);margin-bottom:var(--space-2);">
-              Logo Files (${uploadedLogos.length} uploaded)
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);">
-              ${uploadedLogos.map(logo => `
-                <div style="width:64px;height:64px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border-light);">
-                  <img src="${logo.dataUrl}" alt="${logo.name}" style="width:100%;height:100%;object-fit:cover;">
-                </div>
-              `).join('')}
-            </div>
-          </div>` : ''}
         </div>
+      </div>
+      <div class="checkout-form-group">
+        <h2>Tax Information (Optional)</h2>
+        <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
+      </div>
+      <div class="checkout-form-group">
+        <h2>Customisation <a href="/branding" target="_blank" rel="noopener" class="checkout-form-link">Our customisation options →</a></h2>
+        <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
+      </div>
+      <div class="checkout-form-group">
+        <h2>Additional Information</h2>
+        <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
+      </div>
+      <div class="checkout-form-group">
+        <h2>Your Logo to be Printed</h2>
+        <p class="checkout-logo-hint">Upload logo files you'd like printed on your products. Images will be converted to JPG.</p>
+        <div class="checkout-logo-upload-area" id="logo-upload-area">
+          <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
+          <span class="checkout-logo-upload-text">Drag &amp; drop images here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
+          <input type="file" id="logo-file-input" accept="image/*" multiple hidden>
+        </div>
+        <div id="logo-previews" class="checkout-logo-previews">${uploadedLogos.map((logo, i) => `
+          <div class="checkout-logo-thumb" data-index="${i}">
+            <img src="${logo.dataUrl}" alt="${logo.name}">
+            <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
+              <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+            </button>
+            <span class="checkout-logo-filename">${logo.name}</span>
+          </div>
+        `).join('')}</div>
       </div>
       <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
         <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
@@ -492,14 +476,17 @@ export async function renderCheckoutPage() {
     const state = document.getElementById('chk-state')?.value;
     const requiredFields = { email, phone, firstName, lastName, address, city, pin, state };
     const empty = Object.entries(requiredFields).filter(([, v]) => !v);
+
+    const existing = getCheckoutData();
+
     return {
       data: {
         email, phone, firstName, lastName,
         company: document.getElementById('chk-company')?.value.trim() || '',
         address, city, pin, state,
-        gst: document.getElementById('chk-gst')?.value.trim() || '',
-        customisation: document.getElementById('chk-customisation')?.value.trim() || '',
-        additionalInfo: document.getElementById('chk-additional-info')?.value.trim() || '',
+        gst: document.getElementById('chk-gst') ? document.getElementById('chk-gst').value.trim() : (existing.gst || ''),
+        customisation: document.getElementById('chk-customisation') ? document.getElementById('chk-customisation').value.trim() : (existing.customisation || ''),
+        additionalInfo: document.getElementById('chk-additional-info') ? document.getElementById('chk-additional-info').value.trim() : (existing.additionalInfo || ''),
       },
       empty,
     };
@@ -522,6 +509,16 @@ export async function renderCheckoutPage() {
   // Step 2 → Step 1: go back to edit (data already persisted, so the form
   // stays populated — user doesn't rewrite anything).
   document.getElementById('btn-edit-info')?.addEventListener('click', () => {
+    const gstVal = document.getElementById('chk-gst')?.value.trim() || '';
+    const customisationVal = document.getElementById('chk-customisation')?.value.trim() || '';
+    const additionalInfoVal = document.getElementById('chk-additional-info')?.value.trim() || '';
+
+    const data = getCheckoutData();
+    data.gst = gstVal;
+    data.customisation = customisationVal;
+    data.additionalInfo = additionalInfoVal;
+    setCheckoutData(data);
+
     setCheckoutStep('shipping');
     renderCheckoutPage();
     window.scrollTo(0, 0);
@@ -531,8 +528,17 @@ export async function renderCheckoutPage() {
   document.getElementById('btn-place-order')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-place-order');
 
-    // On step 2 the form isn't in the DOM — use the persisted data.
+    // On step 2 the form is interactive. Read the values directly from the DOM!
+    const gstVal = document.getElementById('chk-gst')?.value.trim() || '';
+    const customisationVal = document.getElementById('chk-customisation')?.value.trim() || '';
+    const additionalInfoVal = document.getElementById('chk-additional-info')?.value.trim() || '';
+
     const data = getCheckoutData();
+    data.gst = gstVal;
+    data.customisation = customisationVal;
+    data.additionalInfo = additionalInfoVal;
+    setCheckoutData(data);
+
     const requiredFields = {
       email: data.email, phone: data.phone, firstName: data.firstName,
       lastName: data.lastName, address: data.address, city: data.city,

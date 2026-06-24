@@ -18,7 +18,7 @@ export async function openQuickView(productId) {
   if (!product) return;
 
   const cart = getCart();
-  const isInCart = cart.some(item => item.productId === product.id);
+  const isInCart = cart.some(item => String(item.productId) === String(product.id));
 
   const content = document.getElementById('quick-view-content');
   const modal = document.getElementById('quick-view-modal');
