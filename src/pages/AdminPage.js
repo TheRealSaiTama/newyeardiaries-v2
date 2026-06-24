@@ -244,6 +244,13 @@ export function renderAdminPage() {
     .enquiry-field:last-child { border-bottom: none; }
     .enquiry-field label { font-size: var(--fs-xs); color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: var(--ls-wider); }
     .enquiry-field .value { font-size: var(--fs-base); color: var(--color-text-primary); }
+    /* ponytail: Gmail-style read/unread — unread rows pop (bold + tint + accent rail),
+       reviewed rows recede (normal weight, muted). */
+    .admin-table tbody tr.is-unread { background: var(--color-primary-bg, rgba(160, 82, 45, 0.04)); font-weight: var(--fw-medium); }
+    .admin-table tbody tr.is-unread td:first-child { box-shadow: inset 3px 0 0 var(--color-primary); }
+    .admin-table tbody tr.is-reviewed { color: var(--color-text-tertiary); }
+    .admin-table tbody tr.is-reviewed a { color: var(--color-text-tertiary); }
+    .admin-table tbody tr.is-reviewed code { opacity: .7; }
 
     /* Confirm dialog */
     .confirm-dialog { max-width: 400px; }
@@ -2196,7 +2203,7 @@ async function renderEnquiries(container, tab = 'contact') {
     <table class="admin-table">
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
-        ${contacts.map(c => `<tr data-id="${c.id}">
+        ${contacts.map(c => `<tr data-id="${c.id}" class="${c.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
           <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${c.enquiry_code || '—'}</code></td>
           <td>${c.name}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${c.address}</span>` : ''}</td>
           <td><a href="mailto:${c.email}">${c.email}</a></td>
@@ -2218,7 +2225,7 @@ async function renderEnquiries(container, tab = 'contact') {
     <table class="admin-table">
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
-        ${enquiries.map(e => `<tr data-id="${e.id}">
+        ${enquiries.map(e => `<tr data-id="${e.id}" class="${e.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
           <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${e.enquiry_code || '—'}</code></td>
           <td>${e.name}</td>
           <td><a href="mailto:${e.email}">${e.email}</a></td>
@@ -2307,9 +2314,16 @@ async function renderEnquiries(container, tab = 'contact') {
   const tableName = tab === 'contact' ? 'contact_submissions' : tab === 'enquiry' ? 'enquiries' : 'orders';
 
   document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = async () => {
       const id = btn.closest('tr').dataset.id;
       const item = currentData.find(d => d.id === id);
+      // ponytail: opening an enquiry marks it reviewed (Gmail-style: viewed = read).
+      // Orders have no reviewed status, so only contact + enquiry auto-mark.
+      if (item && tableName !== 'orders' && item.status !== 'reviewed') {
+        await supabase.from(tableName).update({ status: 'reviewed' }).eq('id', id);
+        item.status = 'reviewed';
+        await renderEnquiries(container, tab);
+      }
       openEnquiryDetailModal(item, tab);
     };
   });
