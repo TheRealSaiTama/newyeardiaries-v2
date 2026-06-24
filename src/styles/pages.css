@@ -829,8 +829,8 @@ body.is-admin-route #faq-chatbot {
 /* ---- Checkout notices (Please Note / Payment Options) ---- */
 .checkout-notice {
   display: flex;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-md);
   border-left: 4px solid;
 }
@@ -851,7 +851,7 @@ body.is-admin-route #faq-chatbot {
 .checkout-notice--important .checkout-notice__icon { color: #b91c1c; }
 .checkout-notice--important .checkout-notice__title { color: #b91c1c; }
 .checkout-notice__icon {
-  font-size: 24px;
+  font-size: 28px;
   flex-shrink: 0;
   line-height: 1.2;
 }
@@ -860,14 +860,14 @@ body.is-admin-route #faq-chatbot {
 .checkout-notice__body { flex: 1; }
 .checkout-notice__title {
   font-weight: var(--fw-bold);
-  font-size: var(--fs-base);
-  margin-bottom: var(--space-2);
+  font-size: var(--fs-xl);
+  margin-bottom: var(--space-3);
   color: var(--color-text-primary);
 }
 .checkout-notice__body p {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-sm);
-  line-height: 1.5;
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-base);
+  line-height: 1.6;
   color: var(--color-text-secondary);
 }
 .checkout-notice__body p:last-child { margin-bottom: 0; }
