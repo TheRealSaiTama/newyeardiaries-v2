@@ -222,6 +222,29 @@ body {
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
+/* Prevent browser autofill from turning inputs blue */
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus,
+.input-field:-webkit-autofill:active,
+textarea.input-field:-webkit-autofill,
+textarea.input-field:-webkit-autofill:hover,
+textarea.input-field:-webkit-autofill:focus,
+textarea.input-field:-webkit-autofill:active,
+select.input-field:-webkit-autofill,
+select.input-field:-webkit-autofill:hover,
+select.input-field:-webkit-autofill:focus,
+select.input-field:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--color-surface) inset !important;
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  caret-color: var(--color-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+.input-field:-moz-autofill,
+.input-field:-moz-autofill-preview {
+  filter: none;
+}
+
 .input-field::placeholder {
   color: var(--color-text-tertiary);
 }

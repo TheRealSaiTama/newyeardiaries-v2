@@ -239,10 +239,11 @@ export function initHeaderEvents() {
 export function updateHeaderCounts() {
   const cartCount = document.getElementById('cart-count');
   const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+  const totalQty = cartItems.reduce((sum, item) => sum + (item.qty || 0), 0);
 
   if (cartCount) {
-    cartCount.textContent = cartItems.length;
-    cartCount.style.display = cartItems.length > 0 ? 'flex' : 'none';
+    cartCount.textContent = totalQty;
+    cartCount.style.display = totalQty > 0 ? 'flex' : 'none';
   }
 }
 
