@@ -220,39 +220,81 @@ export function getCategorySlugsByGroupName(groupName, categories) {
 }
 
 // Seed categories on first run if the table is empty.
+let _seedingPromise = null;
 export async function seedCategoriesIfEmpty() {
   if (localStorage.getItem('__nyd_categories_seeded') === 'true') return;
+  if (_seedingPromise) return _seedingPromise;
 
-  const { data: existing } = await supabase.from('categories').select('slug');
-  if (existing && existing.length > 0) {
+  _seedingPromise = (async () => {
     try {
-      localStorage.setItem('__nyd_categories_seeded', 'true');
-    } catch (e) {}
-    return;
-  }
+      const { data: existing } = await supabase.from('categories').select('slug').limit(1);
+      if (existing && existing.length > 0) {
+        localStorage.setItem('__nyd_categories_seeded', 'true');
+        return;
+      }
 
-  // Also try to seed groups if the table exists and is empty.
-  const slugsByGroup = {};
-  const flatList = [];
-  for (const [group, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
-    if (!slugsByGroup[group]) slugsByGroup[group] = [];
-    for (const slug of slugs) {
-      flatList.push({ slug, name: slug.replace(/-/g, ' '), group });
-      slugsByGroup[group].push(slug);
+      // 1. Seed or retrieve groups
+      const { data: dbGroups, error: gError } = await supabase
+        .from('category_groups')
+        .select('id, name');
+      
+      const groupByName = new Map();
+      if (!gError && dbGroups) {
+        for (const g of dbGroups) {
+          groupByName.set(g.name, g.id);
+        }
+      }
+
+      // If no groups exist in DB, seed them
+      if (groupByName.size === 0) {
+        const groupPayload = Object.keys(CATEGORY_GROUPS_FALLBACK).map((name, idx) => ({
+          name,
+          sort_order: idx + 1
+        }));
+        const { data: insertedGroups, error: grpInsError } = await supabase
+          .from('category_groups')
+          .insert(groupPayload)
+          .select('id, name');
+        
+        if (!grpInsError && insertedGroups) {
+          for (const g of insertedGroups) {
+            groupByName.set(g.name, g.id);
+          }
+        }
+      }
+
+      // 2. Build flat list of unique categories, resolving group_id
+      const uniqueCategories = new Map();
+      let sortOrder = 1;
+      for (const [groupName, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
+        const groupId = groupByName.get(groupName) || null;
+        for (const slug of slugs) {
+          if (!uniqueCategories.has(slug)) {
+            uniqueCategories.set(slug, {
+              slug,
+              name: slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
+              group_id: groupId,
+              sort_order: sortOrder++,
+              active: true
+            });
+          }
+        }
+      }
+
+      // 3. Batch insert unique categories
+      if (uniqueCategories.size > 0) {
+        const payload = Array.from(uniqueCategories.values());
+        const { error } = await supabase.from('categories').insert(payload);
+        if (error) throw error;
+      }
+
+      localStorage.setItem('__nyd_categories_seeded', 'true');
+    } catch (err) {
+      console.error('[categories] Seeding failed:', err);
     }
-  }
-  if (flatList.length) {
-    const { error } = await supabase
-      .from('categories')
-      .insert(flatList.map((c, i) => ({
-        slug: c.slug, name: c.slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
-        sort_order: i + 1, active: true,
-      })));
-    if (error) throw error;
-  }
-  try {
-    localStorage.setItem('__nyd_categories_seeded', 'true');
-  } catch (e) {}
+  })();
+
+  return _seedingPromise;
 }
 
 // Backwards-compat export so existing imports (e.g. ShopPage's static fallback)

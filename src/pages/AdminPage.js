@@ -376,6 +376,10 @@ async function loadTab(tab) {
     case 'settings': await renderSettings(content); break;
     case 'enquiries': await renderEnquiries(content); break;
   }
+  if (currentTab !== tab) {
+    loadTab(currentTab);
+    return;
+  }
   tabCache.set(tab, content.innerHTML);
   content.style.transition = 'opacity 0.15s';
   content.style.opacity = '1';
@@ -392,6 +396,8 @@ function closeModal() {
 // Covers the Trust Badge, Slider Section, and Shop Category modals (id-less)
 // alongside the older id-ed ones. Attached once on the admin shell.
 function setupAdminModalCloseDelegation() {
+  if (window.__adminModalCloseDelegated) return;
+  window.__adminModalCloseDelegated = true;
   document.addEventListener('click', (e) => {
     const overlay = e.target.closest('.admin-modal-overlay');
     if (!overlay) return;
@@ -401,7 +407,13 @@ function setupAdminModalCloseDelegation() {
     const isCancelBtn = e.target.closest('.modal-cancel');
     if (isBackdrop || isCloseBtn || isCancelBtn) {
       e.preventDefault();
-      overlay.remove();
+      if (typeof overlay.closeModal === 'function') {
+        overlay.closeModal({ isBackdrop, isCloseBtn, isCancelBtn });
+      } else {
+        const hasForm = overlay.querySelector('form') !== null;
+        if (isBackdrop && hasForm) return; // Prevent losing form data on accidental clicks
+        overlay.remove();
+      }
     }
   });
 }
@@ -525,13 +537,21 @@ function renderFsBreadcrumb(nav) {
 
 // Folder grid view (root shows Groups, group-level shows Categories)
 async function renderFolderGrid(container, header, breadcrumb, opts) {
-  // Fetch all categories + product_categories counts (single query each, no N+1)
-  const [{ data: categories }, { data: pcRows }] = await Promise.all([
+  // Fetch all categories, junction rows, and products to compute distinct uncategorized counts
+  const [{ data: categories }, { data: pcRows }, { data: products }] = await Promise.all([
     supabase.from('categories').select('id, name, slug, active').order('name'),
-    supabase.from('product_categories').select('category_id'),
+    supabase.from('product_categories').select('product_id, category_id'),
+    supabase.from('products').select('id, category_id'),
   ]);
+
   const countByCat = new Map();
-  (pcRows || []).forEach(r => countByCat.set(r.category_id, (countByCat.get(r.category_id) || 0) + 1));
+  const productsByCat = new Map(); // category_id -> Set(product_id)
+  (pcRows || []).forEach(r => {
+    if (!productsByCat.has(r.category_id)) productsByCat.set(r.category_id, new Set());
+    productsByCat.get(r.category_id).add(r.product_id);
+  });
+  productsByCat.forEach((pSet, catId) => countByCat.set(catId, pSet.size));
+
   const activeCats = (categories || []).filter(c => c.active !== false);
   const catBySlug = new Map(activeCats.map(c => [c.slug, c]));
 
@@ -555,10 +575,21 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         system: false,
       };
     });
-    // Uncategorized = products whose category_id is null OR not in any group
+    // Uncategorized = products not in any of the grouped categories (distinct count)
     const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
     const groupedCatIds = new Set(activeCats.filter(c => allGroupedSlugs.has(c.slug)).map(c => c.id));
-    const uncatCount = (pcRows || []).filter(r => !groupedCatIds.has(r.category_id)).length;
+    
+    const groupedProductIds = new Set();
+    (pcRows || []).forEach(r => {
+      if (groupedCatIds.has(r.category_id)) groupedProductIds.add(r.product_id);
+    });
+
+    const uncategorizedProductIds = new Set();
+    (products || []).forEach(p => {
+      if (!groupedProductIds.has(p.id)) uncategorizedProductIds.add(p.id);
+    });
+
+    const uncatCount = uncategorizedProductIds.size;
     if (uncatCount > 0) {
       folders.push({
         key: '__uncategorized',
@@ -573,7 +604,7 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   } else if (opts.type === 'categories') {
     const groupName = opts.group;
     if (groupName === '__uncategorized') {
-      // Show categories not in any group (or products with no category)
+      // Show categories not in any group
       const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
       const cats = activeCats.filter(c => !allGroupedSlugs.has(c.slug));
       folders = cats.map(c => ({
@@ -585,6 +616,24 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         nav: { level: 'category', group: groupName, category: c.id, categoryName: c.name },
         system: false,
       }));
+
+      // Add a virtual folder for products with NO category at all
+      const noCategoryProductIds = new Set();
+      (products || []).forEach(p => {
+        const inAnyCat = (pcRows || []).some(r => r.product_id === p.id);
+        if (!inAnyCat) noCategoryProductIds.add(p.id);
+      });
+      if (noCategoryProductIds.size > 0) {
+        folders.push({
+          key: '__no_category',
+          name: 'No Category',
+          count: noCategoryProductIds.size,
+          meta: 'unassigned products',
+          icon: 'folder_off',
+          nav: { level: 'category', group: groupName, category: '__no_category', categoryName: 'No Category' },
+          system: true,
+        });
+      }
     } else {
       const slugs = CATEGORY_GROUPS[groupName] || [];
       folders = slugs.map(s => catBySlug.get(s)).filter(Boolean).map(c => ({
@@ -664,21 +713,33 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
     query = query.or(`name.ilike.%${search}%,slug.ilike.%${search}%,sku.ilike.%${search}%`);
   }
   if (filterCategory) {
-    const { data: catRow } = await supabase.from('categories').select('slug').eq('id', filterCategory).maybeSingle();
-    categorySlug = catRow?.slug || null;
-    const pcKey = `pcFilter:${filterCategory}`;
-    let pcFilter = acGet(pcKey);
-    if (!pcFilter) {
-      const { data } = await supabase.from('product_categories').select('product_id, sort_order').eq('category_id', filterCategory);
-      pcFilter = data || [];
-      acSet(pcKey, pcFilter);
-    }
-    sortByProduct = new Map(pcFilter.map(r => [r.product_id, r.sort_order]));
-    const filterIds = pcFilter.map(r => r.product_id);
-    if (filterIds.length) {
-      query = query.in('id', filterIds);
+    if (filterCategory === '__no_category') {
+      const { data: junction } = await supabase.from('product_categories').select('product_id');
+      const allProductIdsWithCat = new Set((junction || []).map(r => r.product_id));
+      const { data: allProds } = await supabase.from('products').select('id');
+      const noCatIds = (allProds || []).map(p => p.id).filter(id => !allProductIdsWithCat.has(id));
+      if (noCatIds.length) {
+        query = query.in('id', noCatIds);
+      } else {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+      }
     } else {
-      query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+      const { data: catRow } = await supabase.from('categories').select('slug').eq('id', filterCategory).maybeSingle();
+      categorySlug = catRow?.slug || null;
+      const pcKey = `pcFilter:${filterCategory}`;
+      let pcFilter = acGet(pcKey);
+      if (!pcFilter) {
+        const { data } = await supabase.from('product_categories').select('product_id, sort_order').eq('category_id', filterCategory);
+        pcFilter = data || [];
+        acSet(pcKey, pcFilter);
+      }
+      sortByProduct = new Map(pcFilter.map(r => [r.product_id, r.sort_order]));
+      const filterIds = pcFilter.map(r => r.product_id);
+      if (filterIds.length) {
+        query = query.in('id', filterIds);
+      } else {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+      }
     }
   }
   if (filterActive !== '') {
@@ -798,11 +859,15 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
 
   document.querySelectorAll('.category-sort-input').forEach(input => {
     input.onchange = async () => {
-      const sort = Number(input.value);
-      if (!sort || sort < 1 || sort > 100) {
-        input.value = '';
-        showToast('Sort order must be 1-100.', 'error');
-        return;
+      const rawValue = input.value.trim();
+      let sort = null;
+      if (rawValue !== '') {
+        sort = Number(rawValue);
+        if (isNaN(sort) || sort < 1 || sort > 100) {
+          input.value = '';
+          showToast('Sort order must be 1-100.', 'error');
+          return;
+        }
       }
       const { error } = await supabase
         .from('product_categories')
@@ -815,7 +880,7 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
       }
       acBust('prods:');
       acBust(`pcFilter:${input.dataset.categoryId}`);
-      showToast('Sort order saved.');
+      showToast(sort === null ? 'Sort order cleared.' : 'Sort order saved.');
     };
   });
 
@@ -837,7 +902,11 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
-        await supabase.from('products').delete().eq('id', id);
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) {
+          showToast(`Failed to delete product: ${error.message}`, 'error');
+          return;
+        }
         showToast('Product deleted!');
         acBust('prods:');
         const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
@@ -951,17 +1020,24 @@ async function readMediaFiles(input, allowedTypes) {
 async function validateBannerImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       const minW = 1920;
       const minH = 720;
       if (img.width < minW || img.height < minH) {
         reject(new Error(`Banner image must be at least ${minW}×${minH} pixels (16:6 ratio). Current: ${img.width}×${img.height}`));
+      } else if (Math.abs((img.width / img.height) - (16 / 6)) > 0.05) {
+        reject(new Error(`Banner image must match the 16:6 aspect ratio. Current aspect ratio is ${(img.width / img.height).toFixed(2)}:1`));
       } else {
         resolve();
       }
     };
-    img.onerror = () => reject(new Error('Invalid image file'));
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Invalid image file'));
+    };
+    img.src = objectUrl;
   });
 }
 
@@ -987,7 +1063,7 @@ async function duplicateProduct(source, container) {
   const { data: existing } = await supabase
     .from('products')
     .select('name')
-    .ilike('name', `${baseName.replace(/[%_]/g, '\$&')}%`);
+    .ilike('name', `${baseName.replace(/[%_]/g, '\\$&')}%`);
   const taken = new Set((existing || []).map(r => r.name));
   let newName = baseName;
   if (taken.has(newName)) {
@@ -1301,6 +1377,10 @@ async function openProductModal(container, product = null) {
     secondaryObjectUrls.forEach(url => URL.revokeObjectURL(url));
     closeModal();
   };
+  overlay.closeModal = ({ isBackdrop }) => {
+    if (isBackdrop) return;
+    closeProductModal();
+  };
   // Close handlers — only the X button (or Cancel) closes. Backdrop click
   // and ESC are intentionally no-ops so dad doesn't lose form data from a
   // stray click. ponytail: keep the X/Cancel handlers since TinyMCE's
@@ -1523,20 +1603,23 @@ async function openProductModal(container, product = null) {
       const sortByCat = new Map((existingPc || []).map(r => [r.category_id, r.sort_order]));
 
       const { error: delError } = await supabase.from('product_categories').delete().eq('product_id', savedProduct.id);
-      if (delError) console.error('Category delete failed:', delError);
+      if (delError) {
+        console.error('Category delete failed:', delError);
+        showToast(`Failed to update category associations: ${delError.message}`, 'error');
+        return;
+      }
       if (selectedCatIds.length) {
         const productSort = Number(payload.sort_order) || null;
         const rows = selectedCatIds.map(cid => ({
           product_id: savedProduct.id,
           category_id: cid,
-          // If the per-category row had a sort, keep it; otherwise seed from
-          // the product-level sort_order so the list column shows something.
           sort_order: sortByCat.has(cid) ? sortByCat.get(cid) : (productSort != null && productSort >= 1 && productSort <= 100 ? productSort : null),
         }));
         const { error: pcError } = await supabase.from('product_categories').insert(rows);
         if (pcError) {
           console.error('Category assignment failed:', pcError);
           showToast(`Category assignment failed: ${pcError.message}`, 'error');
+          return;
         }
       }
     }
@@ -1966,7 +2049,12 @@ async function renderBanners(container) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this banner?', async () => {
-        await supabase.from('banners').delete().eq('id', id);
+        const { error } = await supabase.from('banners').delete().eq('id', id);
+        if (error) {
+          showToast(`Failed to delete banner: ${error.message}`, 'error');
+          return;
+        }
+        bustContentCache();
         showToast('Banner deleted!');
         await renderBanners(container);
       });
@@ -2069,6 +2157,10 @@ function openBannerModal(container, banner = null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     closeModal();
   };
+  overlay.closeModal = ({ isBackdrop }) => {
+    if (isBackdrop) return;
+    closeBannerModal();
+  };
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2169,21 +2261,10 @@ async function renderSettings(container) {
       { key: 'contact_phone', value: fd.get('contact_phone') },
       { key: 'contact_address', value: fd.get('contact_address') },
     ];
-    for (const field of fields) {
-      const existing = settings?.find(s => s.key === field.key);
-      if (existing) {
-        const { error } = await supabase.from('site_settings').update({ value: field.value }).eq('id', existing.id);
-        if (error) {
-          showToast(`Failed to save ${field.key}: ${error.message}`, 'error');
-          return;
-        }
-      } else {
-        const { error } = await supabase.from('site_settings').insert({ key: field.key, value: field.value });
-        if (error) {
-          showToast(`Failed to save ${field.key}: ${error.message}`, 'error');
-          return;
-        }
-      }
+    const { error } = await supabase.from('site_settings').upsert(fields, { onConflict: 'key' });
+    if (error) {
+      showToast(`Failed to save settings: ${error.message}`, 'error');
+      return;
     }
     bustContentCache();
     showToast('Settings saved!');
@@ -2215,12 +2296,12 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${contacts.map(c => `<tr data-id="${c.id}" class="${c.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${c.enquiry_code || '—'}</code></td>
-          <td>${c.name}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${c.address}</span>` : ''}</td>
-          <td><a href="mailto:${c.email}">${c.email}</a></td>
-          <td>${c.mobile ? `<a href="tel:${c.mobile}">${c.mobile}</a>` : '—'}</td>
-          <td>${c.state || '—'}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.message || '').replace(/"/g, '&quot;')}">${c.message || '—'}</td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(c.enquiry_code || '—')}</code></td>
+          <td>${escHtml(c.name)}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(c.address)}</span>` : ''}</td>
+          <td><a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a></td>
+          <td>${c.mobile ? `<a href="tel:${escHtml(c.mobile)}">${escHtml(c.mobile)}</a>` : '—'}</td>
+          <td>${escHtml(c.state || '—')}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.message || '')}">${escHtml(c.message || '—')}</td>
           <td>${new Date(c.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
@@ -2237,11 +2318,11 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${enquiries.map(e => `<tr data-id="${e.id}" class="${e.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${e.enquiry_code || '—'}</code></td>
-          <td>${e.name}</td>
-          <td><a href="mailto:${e.email}">${e.email}</a></td>
-          <td>${e.company || '—'}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.product_names || e.products || '—'}</td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(e.enquiry_code || '—')}</code></td>
+          <td>${escHtml(e.name)}</td>
+          <td><a href="mailto:${escHtml(e.email)}">${escHtml(e.email)}</a></td>
+          <td>${escHtml(e.company || '—')}</td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.product_names || e.products || '—')}</td>
           <td>${new Date(e.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${e.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${e.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
@@ -2258,13 +2339,13 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Order #</th><th>Name</th><th>Email</th><th>Phone</th><th>Total</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${orders.map(o => `<tr data-id="${o.id}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${o.order_number || '—'}</code></td>
-          <td>${o.first_name} ${o.last_name}</td>
-          <td><a href="mailto:${o.email}">${o.email}</a></td>
-          <td>${o.phone || '—'}</td>
-          <td>₹${o.total}</td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(o.order_number || '—')}</code></td>
+          <td>${escHtml(o.first_name)} ${escHtml(o.last_name)}</td>
+          <td><a href="mailto:${escHtml(o.email)}">${escHtml(o.email)}</a></td>
+          <td>${escHtml(o.phone || '—')}</td>
+          <td>₹${Number(o.total).toLocaleString()}</td>
           <td>${new Date(o.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${o.status || 'Pending'}</span></td>
+          <td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${escHtml(o.status || 'Pending')}</span></td>
           <td class="col-actions">
             <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
           </td>
@@ -2381,53 +2462,53 @@ function openEnquiryDetailModal(item, type) {
 
   const fields = type === 'contact'
     ? [
-        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
-        { label: 'Name', value: item.name },
-        { label: 'Email', value: item.email },
-        { label: 'Phone', value: item.phone || '—' },
-        { label: 'Subject', value: item.subject || '—' },
-        { label: 'Message', value: item.message || '—' },
-        { label: 'Status', value: item.status || 'pending' },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Name', value: escHtml(item.name) },
+        { label: 'Email', value: escHtml(item.email) },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Subject', value: escHtml(item.subject || '—') },
+        { label: 'Message', value: escHtml(item.message || '—') },
+        { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'enquiry'
     ? [
-        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
-        { label: 'Name', value: item.name },
-        { label: 'Email', value: item.email },
-        { label: 'Company', value: item.company || '—' },
-        { label: 'Products', value: item.product_names || item.products || '—' },
-        { label: 'Message', value: item.message || '—' },
-        { label: 'Status', value: item.status || 'pending' },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Name', value: escHtml(item.name) },
+        { label: 'Email', value: escHtml(item.email) },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'Products', value: escHtml(item.product_names || item.products || '—') },
+        { label: 'Message', value: escHtml(item.message || '—') },
+        { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'orders' || type === 'order'
     ? [
-        { label: 'Order Number', value: item.order_number || '—' },
-        { label: 'Customer Name', value: `${item.first_name || ''} ${item.last_name || ''}`.trim() },
-        { label: 'Email', value: item.email },
-        { label: 'Phone', value: item.phone || '—' },
-        { label: 'Company', value: item.company || '—' },
-        { label: 'GST Number', value: item.gst || '—' },
-        { label: 'Shipping Address', value: `${item.address_line_1 || ''}${item.address_line_2 ? ', ' + item.address_line_2 : ''}, ${item.city || ''}, ${item.state || ''} - ${item.postcode || ''}, ${item.country || 'India'}` },
-        { label: 'Payment Method', value: item.payment_method || '—' },
+        { label: 'Order Number', value: escHtml(item.order_number || '—') },
+        { label: 'Customer Name', value: escHtml(`${item.first_name || ''} ${item.last_name || ''}`.trim()) },
+        { label: 'Email', value: escHtml(item.email) },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'GST Number', value: escHtml(item.gst || '—') },
+        { label: 'Shipping Address', value: escHtml(`${item.address_line_1 || ''}${item.address_line_2 ? ', ' + item.address_line_2 : ''}, ${item.city || ''}, ${item.state || ''} - ${item.postcode || ''}, ${item.country || 'India'}`) },
+        { label: 'Payment Method', value: escHtml(item.payment_method || '—') },
         { label: 'Financial Summary', value: `Subtotal: ₹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): ₹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: ₹${Number(item.shipping || 0).toLocaleString()} | Total: ₹${Number(item.total || 0).toLocaleString()}` },
-        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${item.special_instructions}</div>` : '—' },
+        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${escHtml(item.special_instructions)}</div>` : '—' },
         { label: 'Order Items', value: '<div id="modal-order-items">Loading order items...</div>' },
-        { label: 'Status', value: item.status || 'pending' },
+        { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Order Date', value: new Date(item.created_at).toLocaleString() },
       ]
     : [
-        { label: 'Enquiry Code', value: item.enquiry_code || '—' },
-        { label: 'Name', value: item.name },
-        { label: 'Email', value: item.email },
-        { label: 'Phone', value: item.phone || '—' },
-        { label: 'Company', value: item.company || '—' },
-        { label: 'Product Interest', value: item.product_type || '—' },
-        { label: 'Products', value: item.product_names || '—' },
-        { label: 'Quantity', value: item.quantity || '—' },
-        { label: 'Requirements', value: item.custom_requirements || '—' },
-        { label: 'Status', value: item.status || 'pending' },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Name', value: escHtml(item.name) },
+        { label: 'Email', value: escHtml(item.email) },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'Product Interest', value: escHtml(item.product_type || '—') },
+        { label: 'Products', value: escHtml(item.product_names || '—') },
+        { label: 'Quantity', value: escHtml(item.quantity || '—') },
+        { label: 'Requirements', value: escHtml(item.custom_requirements || '—') },
+        { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ];
 
@@ -2480,8 +2561,8 @@ function openEnquiryDetailModal(item, type) {
               ${orderItems.map(it => `
                 <tr style="border-bottom:1px solid var(--color-border-light);">
                   <td style="padding:8px 0;">
-                    <div style="font-weight:600;">${it.product_name}</div>
-                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).join(' • ')}</div>` : ''}
+                    <div style="font-weight:600;">${escHtml(it.product_name)}</div>
+                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).map(escHtml).join(' • ')}</div>` : ''}
                   </td>
                   <td style="padding:8px 0; text-align:center;">${it.quantity}</td>
                   <td style="padding:8px 0; text-align:right;">₹${Number(it.unit_price).toLocaleString()}</td>
@@ -2564,7 +2645,15 @@ async function renderHeaderSection(container) {
   document.querySelectorAll('.ann-del-btn').forEach(btn => {
     btn.onclick = () => {
       if (confirm('Delete this announcement?')) {
-        supabase.from('announcements').delete().eq('id', btn.dataset.id).then(() => renderHeaderSection(container));
+        supabase.from('announcements').delete().eq('id', btn.dataset.id).then(({ error }) => {
+          if (error) {
+            showToast(`Failed to delete announcement: ${error.message}`, 'error');
+            return;
+          }
+          bustContentCache();
+          showToast('Announcement deleted!');
+          renderHeaderSection(container);
+        });
       }
     };
   });
@@ -2809,7 +2898,11 @@ async function renderHomepageSection(container) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this trust badge?', async () => {
-        await supabase.from('trust_badges').delete().eq('id', id);
+        const { error } = await supabase.from('trust_badges').delete().eq('id', id);
+        if (error) {
+          showToast(`Failed to delete trust badge: ${error.message}`, 'error');
+          return;
+        }
         bustContentCache();
         showToast('Trust badge deleted!');
         renderHomepageSection(container);
@@ -2843,7 +2936,12 @@ async function renderHomepageSection(container) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this shop category?', async () => {
-        await supabase.from('shop_categories').delete().eq('id', id);
+        const { error } = await supabase.from('shop_categories').delete().eq('id', id);
+        if (error) {
+          showToast(`Failed to delete shop category: ${error.message}`, 'error');
+          return;
+        }
+        bustContentCache();
         showToast('Shop category deleted!');
         renderHomepageSection(container);
       });
@@ -3443,6 +3541,7 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
       ? await supabase.from('shop_categories').update(payload).eq('id', shopCat.id)
       : await supabase.from('shop_categories').insert(payload);
     if (error) { showToast('Failed: ' + error.message, 'error'); return; }
+    bustContentCache();
     closeModal();
     showToast(isEdit ? 'Shop category updated!' : 'Shop category added!');
     renderHomepageSection(container);
@@ -3530,22 +3629,15 @@ async function renderFooterSection(container) {
       payment_icons_url: 'payment_icons_url',
       map_embed_url: 'map_embed_url'
     };
+    const settingsPayload = [];
     for (const [formKey, dbKey] of Object.entries(keyMap)) {
-      const existing = rows?.find(r => r.key === dbKey);
       const value = fd.get(formKey) || '';
-      if (existing) {
-        const { error } = await supabase.from('site_settings').update({ value }).eq('id', existing.id);
-        if (error) {
-          showToast(`Failed to save ${formKey}: ${error.message}`, 'error');
-          return;
-        }
-      } else {
-        const { error } = await supabase.from('site_settings').insert({ key: dbKey, value });
-        if (error) {
-          showToast(`Failed to save ${formKey}: ${error.message}`, 'error');
-          return;
-        }
-      }
+      settingsPayload.push({ key: dbKey, value });
+    }
+    const { error: settingsError } = await supabase.from('site_settings').upsert(settingsPayload, { onConflict: 'key' });
+    if (settingsError) {
+      showToast(`Failed to save footer settings: ${settingsError.message}`, 'error');
+      return;
     }
     const footerKeys = ['about_left', 'exporter_right', 'services_list'];
     for (const key of footerKeys) {
