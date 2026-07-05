@@ -165,6 +165,18 @@ export async function renderShopPage() {
     products = allProducts;
   }
 
+  // Compute per-category featured slugs once, used for both initial render
+  // and the sort/filter event handlers.
+  const featuredSlugs = resolveFeaturedSlugs(products, { cat: catSlug, group: groupName, _groupSlugs: (groupName ? (getCategorySlugsByGroupName(groupName).length ? getCategorySlugsByGroupName(groupName) : (CATEGORY_GROUPS[groupName] || [])) : []) });
+  const usePerCategoryFeatured = featuredSlugs.length > 0;
+
+  // Apply default sorting (Featured is the default option) before slicing
+  if (usePerCategoryFeatured) {
+    products = products.slice().sort(categoryFeaturedSort(featuredSlugs));
+  } else {
+    products = products.slice().sort(globalFeaturedSort);
+  }
+
   const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
   const currentPage = Math.min(pageParam, totalPages);
   const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -203,16 +215,7 @@ export async function renderShopPage() {
     mainEl.appendChild(pagDiv);
   }
 
-  // Compute per-category featured slugs once, used for both initial render
-  // and the sort/filter event handlers.
-  const featuredSlugs = resolveFeaturedSlugs(products, { cat: pageCat, group: groupName, _groupSlugs: (groupName ? (getCategorySlugsByGroupName(groupName).length ? getCategorySlugsByGroupName(groupName) : (CATEGORY_GROUPS[groupName] || [])) : []) });
-  const usePerCategoryFeatured = featuredSlugs.length > 0;
-
-  // Apply per-category featured sort for the initial render (Featured is the default option)
-  if (usePerCategoryFeatured) {
-    products = products.slice().sort(categoryFeaturedSort(featuredSlugs));
-  }
-  initShopEvents(products, currentPage, totalPages, searchQ);
+  initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs);
   initGoTopButton();
 
   // Cache the rendered HTML for this filter state so re-navigating to
@@ -286,6 +289,28 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
     } else {
       products = allProducts;
     }
+    // Apply sorting before pagination
+    const sortSelect = document.getElementById('sort-select');
+    const sortVal = sortSelect ? sortSelect.value : 'Sort by: Featured';
+
+    const featuredSlugs = resolveFeaturedSlugs(products, { cat: catSlug, group: groupName, _groupSlugs: (groupName ? (getCategorySlugsByGroupName(groupName).length ? getCategorySlugsByGroupName(groupName) : (CATEGORY_GROUPS[groupName] || [])) : []) });
+    const usePerCategoryFeatured = featuredSlugs.length > 0;
+
+    if (sortVal.includes('Low to High')) {
+      products = products.slice().sort((a, b) => a.price - b.price);
+    } else if (sortVal.includes('High to Low')) {
+      products = products.slice().sort((a, b) => b.price - a.price);
+    } else if (sortVal.includes('Newest')) {
+      products = products.slice().sort((a, b) => {
+        if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
+        return (b.sortOrder || 0) - (a.sortOrder || 0);
+      });
+    } else if (usePerCategoryFeatured) {
+      products = products.slice().sort(categoryFeaturedSort(featuredSlugs));
+    } else {
+      products = products.slice().sort(globalFeaturedSort);
+    }
+
     const totalPages = Math.max(1, Math.ceil(products.length / PRODUCTS_PER_PAGE));
     const pageParam = parseInt(params.get('page')) || 1;
     const currentPage = Math.min(pageParam, totalPages);
@@ -350,10 +375,10 @@ function categoryFeaturedSort(slugs) {
       if (sb == null && b.categorySortOrders && b.categorySortOrders[s] != null) sb = b.categorySortOrders[s];
       if (sa != null && sb != null) break;
     }
-    if (sa == null && sb == null) return 0;
-    if (sa == null) return 1;
-    if (sb == null) return -1;
-    if (sa !== sb) return sa - sb;
+    const valA = (sa != null && sa > 0) ? sa : ((a.sortOrder && a.sortOrder > 0) ? a.sortOrder : 999999);
+    const valB = (sb != null && sb > 0) ? sb : ((b.sortOrder && b.sortOrder > 0) ? b.sortOrder : 999999);
+    if (valA !== valB) return valA - valB;
+    if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
     return (a.name || '').localeCompare(b.name || '');
   };
 }
@@ -361,7 +386,10 @@ function categoryFeaturedSort(slugs) {
 function globalFeaturedSort(a, b) {
   const sa = a.sortOrder || 0;
   const sb = b.sortOrder || 0;
-  if (sa !== sb) return sa - sb;
+  const valA = sa <= 0 ? 999999 : sa;
+  const valB = sb <= 0 ? 999999 : sb;
+  if (valA !== valB) return valA - valB;
+  if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
   return (a.name || '').localeCompare(b.name || '');
 }
 function getActiveFilters() {
@@ -419,7 +447,7 @@ function applyFilters(allProducts) {
   return filtered;
 }
 
-function initShopEvents(products, currentPage, totalPages, searchQ) {
+function initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs) {
   document.getElementById('filter-toggle')?.addEventListener('click', () => {
     document.getElementById('filter-sidebar')?.classList.toggle('mobile-active');
   });
@@ -429,7 +457,12 @@ function initShopEvents(products, currentPage, totalPages, searchQ) {
     const val = e.target.value;
     if (val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
     else if (val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
-    else if (val.includes('Newest')) sorted.sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0));
+    else if (val.includes('Newest')) {
+      sorted.sort((a, b) => {
+        if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
+        return (b.sortOrder || 0) - (a.sortOrder || 0);
+      });
+    }
     else if (usePerCategoryFeatured) sorted.sort(categoryFeaturedSort(featuredSlugs));
     else sorted.sort(globalFeaturedSort);
     renderFilteredGrid(sorted, 1, Math.max(1, Math.ceil(sorted.length / PRODUCTS_PER_PAGE)), searchQ);
@@ -441,7 +474,12 @@ function initShopEvents(products, currentPage, totalPages, searchQ) {
       const sortVal = document.getElementById('sort-select')?.value || '';
       if (sortVal.includes('Low to High')) filtered.sort((a, b) => a.price - b.price);
       else if (sortVal.includes('High to Low')) filtered.sort((a, b) => b.price - a.price);
-      else if (sortVal.includes('Newest')) filtered.sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0));
+      else if (sortVal.includes('Newest')) {
+        filtered.sort((a, b) => {
+          if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
+          return (b.sortOrder || 0) - (a.sortOrder || 0);
+        });
+      }
       else if (usePerCategoryFeatured) filtered.sort(categoryFeaturedSort(featuredSlugs));
       else filtered.sort(globalFeaturedSort);
       renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), searchQ);

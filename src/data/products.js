@@ -37,6 +37,7 @@ function normalize(p) {
     inStock: p.in_stock !== false,
     active: p.active !== false,
     sortOrder: p.sort_order || 0,
+    createdAt: p.created_at,
   };
 }
 

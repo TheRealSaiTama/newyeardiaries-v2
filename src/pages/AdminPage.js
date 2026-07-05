@@ -190,11 +190,14 @@ export function renderAdminPage() {
     .admin-modal-close:hover { background: var(--color-surface-alt); color: var(--color-text-primary); }
     .admin-form { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
     .form-group { display: flex; flex-direction: column; gap: var(--space-2); }
-    .form-group label { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--color-text-secondary); }
+    .form-group > label { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--color-primary); }
+    .form-group.checkbox label { font-weight: var(--fw-medium); color: var(--color-text-secondary); cursor: pointer; }
     .form-group input, .form-group select, .form-group textarea { padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: var(--fs-base); background: var(--color-surface); color: var(--color-text-primary); transition: var(--transition-fast); }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(160, 82, 45, 0.12); }
     .form-group input[readonly] { background: var(--color-surface-alt); color: var(--color-text-secondary); cursor: not-allowed; }
     .form-group textarea { resize: vertical; min-height: 80px; }
+    .nyd-rte { min-height: 250px; }
+    #rte-description.nyd-rte { min-height: 450px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
     .form-group.checkbox { flex-direction: row; align-items: center; gap: var(--space-3); }
     .form-group.checkbox input { width: 18px; height: 18px; accent-color: var(--color-primary); }
@@ -212,11 +215,11 @@ export function renderAdminPage() {
     .admin-media-add:hover { border-color: var(--color-primary); color: var(--color-primary); box-shadow: var(--shadow-sm); }
     .admin-media-add .material-symbols-outlined { font-size: 18px; }
     .admin-media-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
-    .admin-cat-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-2); max-height: 160px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
-    .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; }
-    .admin-cat-group-label { font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-tertiary); padding: var(--space-2) var(--space-2) var(--space-1); margin-top: var(--space-2); border-bottom: 1px solid var(--color-border-light); width: 100%; }
-    .admin-cat-group-label:first-child { margin-top: 0; }
-    .admin-cat-checkboxes { flex-direction: column; align-items: stretch !important; }
+    .admin-cat-groups-container { max-height: 320px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: flex; flex-direction: column; gap: var(--space-4); }
+    .admin-cat-group { display: flex; flex-direction: column; gap: var(--space-2); }
+    .admin-cat-group-label { font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); padding-bottom: var(--space-1); border-bottom: 1px solid var(--color-border-light); width: 100%; }
+    .admin-cat-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-1); padding-left: var(--space-1); }
+    .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; font-weight: var(--fw-medium); color: var(--color-text-secondary); }
     .admin-cat-checkbox:hover { background: var(--color-surface-alt); }
     .admin-cat-checkbox input { accent-color: var(--color-primary); }
     .admin-modal-actions { display: flex; gap: var(--space-3); justify-content: flex-end; padding: var(--space-6); border-top: 1px solid var(--color-border); }
@@ -1109,10 +1112,14 @@ async function openProductModal(container, product = null) {
         </div>
         <div class="form-row">
           <div class="form-group" style="flex:1"><label>Categories</label>
-            <div class="admin-cat-checkboxes">
+            <div class="admin-cat-groups-container">
               ${ordered.map(g => `
-                <div class="admin-cat-group-label">${g.name}</div>
-                ${g.items.map(c => `<label class="admin-cat-checkbox" style="padding-left:24px"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+                <div class="admin-cat-group">
+                  <div class="admin-cat-group-label">${g.name}</div>
+                  <div class="admin-cat-group-items">
+                    ${g.items.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+                  </div>
+                </div>
               `).join('')}
             </div>
           </div>
@@ -1264,15 +1271,14 @@ async function openProductModal(container, product = null) {
           '1B5E20', 'Green', 'FBC02D', 'Yellow', 'FFFFFF', 'White',
         ],
       };
-      // Short description: smaller height
+      // Short description: expanded height
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-short-description',
-        height: 140,
+        height: 400,
         toolbar:
           'undo redo | blocks fontsize | bold italic underline | forecolor backcolor | ' +
           'link | bullist numlist | blockquote | removeformat',
-        statusbar: false,
       });
       rteInstances.push('rte-short-description');
 
@@ -1280,7 +1286,7 @@ async function openProductModal(container, product = null) {
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-description',
-        height: 360,
+        height: 600,
       });
       rteInstances.push('rte-description');
     } catch (e) {

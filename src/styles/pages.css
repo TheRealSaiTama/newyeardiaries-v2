@@ -591,6 +591,18 @@ body.is-admin-route #faq-chatbot {
   line-height: var(--lh-relaxed);
   color: var(--color-text-primary);
 }
+.pdp-description,
+.pdp-description p,
+.pdp-description span,
+.pdp-description li,
+.pdp-description td,
+.pdp-long-desc,
+.pdp-long-desc p,
+.pdp-long-desc span,
+.pdp-long-desc li,
+.pdp-long-desc td {
+  white-space: pre-wrap;
+}
 .pdp-description p,
 .pdp-description ul,
 .pdp-description ol,

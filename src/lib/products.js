@@ -31,6 +31,7 @@ export function normalizeProduct(product) {
     inStock: product.in_stock !== false,
     active: product.active !== false,
     sortOrder: product.sort_order || 0,
+    createdAt: product.created_at,
   };
 }
 
