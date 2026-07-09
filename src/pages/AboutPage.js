@@ -1,6 +1,10 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 
-export function renderAboutPage() {
+export function renderAboutPage(params, appContent) {
+  const siteName = appContent?.siteSettings?.site_name || 'New Year Diaries';
+  const rawAddress = appContent?.siteSettings?.contact_address || '174 D, Bawana Industrial Area, Delhi, India 110039';
+  const address = rawAddress.replace(/\n/g, '<br>');
+
   document.getElementById('app').innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -14,11 +18,11 @@ export function renderAboutPage() {
       </div>
       <div class="static-content">
         <h2>Our Heritage</h2>
-        <p>Founded in a workshop in the heart of New Delhi, Vani Binders & Diaries began with a singular vision: to create objects that hold memory. In an increasingly digital world, the tangible weight of a well-crafted diary offers a necessary grounding.</p>
+        <p>Founded in a workshop in the heart of New Delhi, ${siteName} began with a singular vision: to create objects that hold memory. In an increasingly digital world, the tangible weight of a well-crafted diary offers a necessary grounding.</p>
         <p>We source only the finest materials — acid-free paper, full-grain leathers, and robust binding threads. Every stage of our manufacturing process honors traditional bookbinding techniques while integrating precision modern tooling to ensure longevity.</p>
 
         <h2>Manufacturing Excellence</h2>
-        <p>Our state-of-the-art facility in Okhla Industrial Estate produces over 500,000 diaries annually. We manage the entire production lifecycle from raw material sourcing to final packaging, ensuring unbeatable quality at manufacturer-direct pricing.</p>
+        <p>Our state-of-the-art facility produces over 500,000 diaries annually. We manage the entire production lifecycle from raw material sourcing to final packaging, ensuring unbeatable quality at manufacturer-direct pricing.</p>
 
         <h3>Sustainable Craft</h3>
         <p>Our commitment to the environment is as strong as our commitment to quality. We partner exclusively with paper mills that practice responsible forestry and utilize closed-loop water systems.</p>
@@ -30,8 +34,8 @@ export function renderAboutPage() {
           <div style="display:flex;align-items:flex-start;gap:var(--space-4);">
             <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:24px;">location_on</span>
             <div>
-              <strong>Vani Binders & Diaries</strong><br>
-              <span class="text-body">Okhla Industrial Estate, Phase II<br>New Delhi, India 110020</span><br>
+              <strong>${siteName}</strong><br>
+              <span class="text-body">${address}</span><br>
               <a href="/contact" class="auth-link" style="margin-top:var(--space-2);display:inline-block;">Schedule a Visit →</a>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
-import { addToCart, getCart } from '../data/store.js';
+import { addToCart, getCart, addToQuoteList, getQuoteList } from '../data/store.js';
 import { supabase } from '../lib/supabase.js';
 
 function renderProductMedia(src, alt) {
@@ -70,6 +70,8 @@ export async function renderProductDetailPage(params) {
 
   const cart = getCart();
   const isInCart = cart.some(item => String(item.productId) === String(product.id));
+  const quoteList = getQuoteList();
+  const isInQuoteList = quoteList.some(item => String(item.productId) === String(product.id));
 
   let productCategoryList = [];
   if (product.id) {
@@ -191,18 +193,26 @@ export async function renderProductDetailPage(params) {
             <div class="pdp-actions">
               <div class="pdp-qty-wrap">
                 <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label>
-                <div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);">
+                <div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
                   <div style="display:flex;align-items:center;">
                     <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
                     <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
                     <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
                   </div>
-                  <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''}>
-                    ${isInCart ? 'Added to Cart' : `
-                      <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
-                      Add to Cart
-                    `}
-                  </button>
+                  <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;width:100%;">
+                    <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''} style="flex:1;">
+                      ${isInCart ? 'Added to Cart' : `
+                        <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
+                        Add to Cart
+                      `}
+                    </button>
+                    <button class="btn btn--secondary btn--lg${isInQuoteList ? ' btn--added' : ''}" id="pdp-add-quote"${isInQuoteList ? ' disabled' : ''} style="flex:1;">
+                      ${isInQuoteList ? 'Added to Quote List' : `
+                        <span class="material-symbols-outlined" style="font-size:18px;">request_quote</span>
+                        Add to Quote List
+                      `}
+                    </button>
+                  </div>
                 </div>
                 <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div>
               </div>
@@ -274,6 +284,22 @@ export async function renderProductDetailPage(params) {
       }
     } catch (err) {
       console.error('Failed to add to cart:', err);
+    }
+  });
+
+  document.getElementById('pdp-add-quote')?.addEventListener('click', () => {
+    try {
+      const qty = parseInt(qtyInput.value) || pdpMOQ;
+      addToQuoteList(product.id, qty);
+      
+      const btn = document.getElementById('pdp-add-quote');
+      if (btn) {
+        btn.classList.add('btn--added');
+        btn.disabled = true;
+        btn.innerHTML = 'Added to Quote List';
+      }
+    } catch (err) {
+      console.error('Failed to add to quote list:', err);
     }
   });
 

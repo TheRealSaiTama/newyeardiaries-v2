@@ -1,6 +1,9 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 
-export function renderPrivacyPolicyPage() {
+export function renderPrivacyPolicyPage(params, appContent) {
+  const email = appContent?.siteSettings?.contact_email || 'newyeardiaries@gmail.com';
+  const address = appContent?.siteSettings?.contact_address || '174 D, Bawana Industrial Area, Delhi, India 110039';
+
   document.getElementById('app').innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -23,10 +26,10 @@ export function renderPrivacyPolicyPage() {
         <p>We implement industry-standard security measures including SSL encryption, secure payment gateways, and regular security audits to protect your personal information.</p>
 
         <h2>Your Rights</h2>
-        <p>You have the right to access, correct, or delete your personal data. You may also opt out of marketing communications at any time by contacting us at privacy@vanidiaries.com.</p>
+        <p>You have the right to access, correct, or delete your personal data. You may also opt out of marketing communications at any time by contacting us at ${email}.</p>
 
         <h2>Contact</h2>
-        <p>For privacy-related queries, contact us at <strong>privacy@vanidiaries.com</strong> or write to our registered office at Okhla Industrial Estate, Phase II, New Delhi 110020.</p>
+        <p>For privacy-related queries, contact us at <strong>${email}</strong> or write to our registered office at ${address.replace(/\n/g, ', ')}.</p>
       </div>
     </div>
   `;

@@ -1,6 +1,8 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 
-export function renderTermsPage() {
+export function renderTermsPage(params, appContent) {
+  const siteName = appContent?.siteSettings?.site_name || 'New Year Diaries';
+
   document.getElementById('app').innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -11,7 +13,7 @@ export function renderTermsPage() {
         <p class="text-xs" style="margin-bottom:var(--space-8);">Last updated: January 2026</p>
 
         <h2>General</h2>
-        <p>By accessing and using this website, you accept and agree to be bound by these terms. Vani Binders & Diaries reserves the right to modify these terms at any time.</p>
+        <p>By accessing and using this website, you accept and agree to be bound by these terms. ${siteName} reserves the right to modify these terms at any time.</p>
 
         <h2>Products & Pricing</h2>
         <p>All product descriptions and prices are as accurate as possible. We reserve the right to correct errors and update information without prior notice. Bulk order pricing is provided on a quote basis and may vary based on quantity, customization, and delivery requirements.</p>
@@ -23,10 +25,10 @@ export function renderTermsPage() {
         <p>Custom-branded products are manufactured to your specifications. Once production begins, custom orders cannot be cancelled. Please ensure all branding details are confirmed before approval.</p>
 
         <h2>Intellectual Property</h2>
-        <p>All content on this website, including designs, logos, text, and images, is the property of Vani Binders & Diaries and is protected under applicable intellectual property laws.</p>
+        <p>All content on this website, including designs, logos, text, and images, is the property of ${siteName} and is protected under applicable intellectual property laws.</p>
 
         <h2>Limitation of Liability</h2>
-        <p>Vani Binders & Diaries shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services.</p>
+        <p>${siteName} shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services.</p>
 
         <h2>Governing Law</h2>
         <p>These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in New Delhi.</p>

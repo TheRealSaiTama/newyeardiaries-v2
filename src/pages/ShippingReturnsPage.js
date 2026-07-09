@@ -1,6 +1,8 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 
-export function renderShippingReturnsPage() {
+export function renderShippingReturnsPage(params, appContent) {
+  const email = appContent?.siteSettings?.contact_email || 'newyeardiaries@gmail.com';
+
   document.getElementById('app').innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -30,7 +32,7 @@ export function renderShippingReturnsPage() {
         <p>If you receive a defective product, please contact us within 48 hours of delivery with photos of the defect. We will arrange a replacement or full refund at no additional cost.</p>
 
         <h2>How to Initiate a Return</h2>
-        <p>Email us at <strong>returns@vanidiaries.com</strong> with your order number and reason for return. Our team will process your request within 2 business days.</p>
+        <p>Email us at <strong>${email}</strong> with your order number and reason for return. Our team will process your request within 2 business days.</p>
       </div>
     </div>
   `;

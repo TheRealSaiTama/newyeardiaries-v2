@@ -59,7 +59,15 @@ export function renderFooter(content) {
 
           <div class="nyd-footer__col nyd-footer__map-col">
             <h4 class="nyd-footer__heading">Find Us</h4>
-            <img class="nyd-footer__map" src="/images/footer-map.png" alt="New Year Diaries location map" loading="lazy">
+            ${f.mapEmbed
+              ? `<div class="nyd-footer__map-container" style="border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border-light)">
+                  ${f.mapEmbed.trim().startsWith('<iframe')
+                    ? f.mapEmbed
+                    : `<iframe src="${f.mapEmbed}" style="width:100%;height:150px;border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`
+                  }
+                 </div>`
+              : `<img class="nyd-footer__map" src="/images/footer-map.png" alt="New Year Diaries location map" loading="lazy">`
+            }
           </div>
         </div>
 

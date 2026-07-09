@@ -3,7 +3,14 @@ import { supabase } from '../lib/supabase.js';
 import { sendContactEmail } from '../lib/notify.js';
 import { generateEnquiryCode } from '../lib/enquiry-code.js';
 
-export function renderContactPage() {
+export function renderContactPage(params, appContent) {
+  const get = (key, fallback = '') => appContent?.siteSettings?.[key] || appContent?.siteContent?.[`footer.${key}`] || fallback;
+  const phone = get('contact_phone', '+91 9899223130');
+  const phone2 = get('contact_phone2');
+  const email = get('contact_email', 'newyeardiaries@gmail.com');
+  const rawAddress = get('contact_address', '174 D, Bawana Industrial Area, Delhi, India 110039');
+  const address = rawAddress.replace(/\n/g, '<br>');
+
   document.getElementById('app').innerHTML = `
     <div class="page-content">
       <div class="container section">
@@ -18,15 +25,15 @@ export function renderContactPage() {
             <div class="contact-info-cards">
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">call</span>
-                <div><strong>Phone</strong><br><span class="text-sm">+91 9899223130</span><br><span class="text-xs">Mon–Sat, 9am–6pm IST</span></div>
+                <div><strong>Phone</strong><br><span class="text-sm">${phone}${phone2 ? ' | ' + phone2 : ''}</span><br><span class="text-xs">Mon–Sat, 9am–6pm IST</span></div>
               </div>
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">mail</span>
-                <div><strong>Email</strong><br><span class="text-sm">newyeardiaries@gmail.com</span><br><span class="text-xs">Response within 24 hours</span></div>
+                <div><strong>Email</strong><br><span class="text-sm">${email}</span><br><span class="text-xs">Response within 24 hours</span></div>
               </div>
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">location_on</span>
-                <div><strong>Address</strong><br><span class="text-sm">174 D, Bawana Industrial Area<br>Delhi, India 110039</span></div>
+                <div><strong>Address</strong><br><span class="text-sm">${address}</span></div>
               </div>
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">factory</span>
