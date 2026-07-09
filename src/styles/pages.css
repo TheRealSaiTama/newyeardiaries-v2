@@ -594,13 +594,27 @@ body.is-admin-route #faq-chatbot {
 .pdp-description,
 .pdp-description p,
 .pdp-description span,
+.pdp-description div,
 .pdp-description li,
 .pdp-description td,
+.pdp-description th,
+.pdp-description strong,
+.pdp-description em,
+.pdp-description b,
+.pdp-description i,
+.pdp-description a,
 .pdp-long-desc,
 .pdp-long-desc p,
 .pdp-long-desc span,
+.pdp-long-desc div,
 .pdp-long-desc li,
-.pdp-long-desc td {
+.pdp-long-desc td,
+.pdp-long-desc th,
+.pdp-long-desc strong,
+.pdp-long-desc em,
+.pdp-long-desc b,
+.pdp-long-desc i,
+.pdp-long-desc a {
   white-space: pre-wrap;
 }
 .pdp-description p,

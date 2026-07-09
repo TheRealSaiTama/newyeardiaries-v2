@@ -196,8 +196,8 @@ export function renderAdminPage() {
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(160, 82, 45, 0.12); }
     .form-group input[readonly] { background: var(--color-surface-alt); color: var(--color-text-secondary); cursor: not-allowed; }
     .form-group textarea { resize: vertical; min-height: 80px; }
-    .nyd-rte { min-height: 250px; }
-    #rte-description.nyd-rte { min-height: 450px; }
+    .nyd-rte { min-height: 400px; }
+    #rte-description.nyd-rte { min-height: 700px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
     .form-group.checkbox { flex-direction: row; align-items: center; gap: var(--space-3); }
     .form-group.checkbox input { width: 18px; height: 18px; accent-color: var(--color-primary); }
@@ -215,10 +215,10 @@ export function renderAdminPage() {
     .admin-media-add:hover { border-color: var(--color-primary); color: var(--color-primary); box-shadow: var(--shadow-sm); }
     .admin-media-add .material-symbols-outlined { font-size: 18px; }
     .admin-media-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
-    .admin-cat-groups-container { max-height: 320px; overflow-y: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: flex; flex-direction: column; gap: var(--space-4); }
-    .admin-cat-group { display: flex; flex-direction: column; gap: var(--space-2); }
-    .admin-cat-group-label { font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); padding-bottom: var(--space-1); border-bottom: 1px solid var(--color-border-light); width: 100%; }
-    .admin-cat-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-1); padding-left: var(--space-1); }
+    .admin-cat-groups-container { max-height: 400px; overflow-y: auto; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-alt); display: flex; flex-direction: column; gap: var(--space-4); }
+    .admin-cat-group { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+    .admin-cat-group-label { font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); padding: var(--space-1) var(--space-3); background: rgba(160, 82, 45, 0.08); border-radius: var(--radius-sm); width: fit-content; }
+    .admin-cat-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-2); padding-left: 0; }
     .admin-cat-checkbox { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); transition: background 0.15s; font-weight: var(--fw-medium); color: var(--color-text-secondary); }
     .admin-cat-checkbox:hover { background: var(--color-surface-alt); }
     .admin-cat-checkbox input { accent-color: var(--color-primary); }
@@ -1186,34 +1186,34 @@ async function openProductModal(container, product = null) {
           <div class="form-group"><label>Name *</label><input name="name" value="${product?.name || ''}" required id="p-name"></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${product?.slug || ''}" required id="p-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1"><label>Categories</label>
-            <div class="admin-cat-groups-container">
-              ${ordered.map(g => `
-                <div class="admin-cat-group">
-                  <div class="admin-cat-group-label">${g.name}</div>
-                  <div class="admin-cat-group-items">
-                    ${g.items.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
-                  </div>
+        <div class="form-group"><label>Categories</label>
+          <div class="admin-cat-groups-container">
+            ${ordered.map(g => `
+              <div class="admin-cat-group">
+                <div class="admin-cat-group-label">${g.name}</div>
+                <div class="admin-cat-group-items">
+                  ${g.items.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
                 </div>
-              `).join('')}
-            </div>
+              </div>
+            `).join('')}
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group"><label>Price *</label><input name="price" type="number" step="0.01" value="${product?.price || ''}" required></div>
-        </div>
-        <div class="form-row">
           <div class="form-group"><label>Original Price</label><input name="original_price" type="number" step="0.01" value="${product?.original_price || ''}"></div>
-          <div class="form-group"><label>SKU</label><input name="sku" value="${product?.sku || ''}"></div>
         </div>
         <div class="form-row">
+          <div class="form-group"><label>SKU</label><input name="sku" value="${product?.sku || ''}"></div>
           <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
-          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div>
         </div>
-        <div class="form-group">
-          <label>Product Highlights</label>
-          <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);">
-            <label class="admin-cat-checkbox"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">moq restriction</span></label>
-            <label class="admin-cat-checkbox"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">no COD</span></label>
+        <div class="form-row">
+          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div>
+          <div class="form-group">
+            <label>Product Highlights</label>
+            <div style="display:flex;gap:var(--space-6);align-items:center;height:48px;padding:0 var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);">
+              <label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">moq restriction</span></label>
+              <label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">no COD</span></label>
+            </div>
           </div>
         </div>
         <div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div>
@@ -1321,6 +1321,10 @@ async function openProductModal(container, product = null) {
         skin: 'oxide',
         skin_url: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/ui/oxide',
         content_css: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/skins/content/default/content.min.css',
+        content_style: 'body { font-family: Arimo, Helvetica, Arial, sans-serif; font-size: 14px; white-space: pre-wrap; }',
+        paste_retain_style_properties: 'all',
+        paste_word_keep_styles: true,
+        paste_convert_word_fake_lists: false,
         plugins: [
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
           'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
@@ -1351,7 +1355,7 @@ async function openProductModal(container, product = null) {
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-short-description',
-        height: 400,
+        height: 500,
         toolbar:
           'undo redo | blocks fontsize | bold italic underline | forecolor backcolor | ' +
           'link | bullist numlist | blockquote | removeformat',
@@ -1362,7 +1366,7 @@ async function openProductModal(container, product = null) {
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-description',
-        height: 600,
+        height: 850,
       });
       rteInstances.push('rte-description');
     } catch (e) {

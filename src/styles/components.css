@@ -1037,8 +1037,15 @@ a.explore-mega-cat-btn.active {
 .quick-view-details .text-body,
 .quick-view-details .text-body p,
 .quick-view-details .text-body span,
+.quick-view-details .text-body div,
 .quick-view-details .text-body li,
-.quick-view-details .text-body td {
+.quick-view-details .text-body td,
+.quick-view-details .text-body th,
+.quick-view-details .text-body strong,
+.quick-view-details .text-body em,
+.quick-view-details .text-body b,
+.quick-view-details .text-body i,
+.quick-view-details .text-body a {
   white-space: pre-wrap;
 }
 .quick-view-details .text-body p,
