@@ -209,10 +209,6 @@ export async function renderCheckoutPage() {
           <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
         </div>
         <div class="checkout-form-group">
-          <h2>Customisation</h2>
-          <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
-        </div>
-        <div class="checkout-form-group">
           <h2>Additional Information</h2>
           <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
         </div>
@@ -252,7 +248,6 @@ export async function renderCheckoutPage() {
             ['PIN Code', checkoutData.pin],
             ['State', checkoutData.state],
             ['GST Number', checkoutData.gst],
-            ['Customisation', checkoutData.customisation],
             ['Additional Info', checkoutData.additionalInfo],
             ['Attachments', uploadedLogos.length ? uploadedLogos.map(l => l.name).join(', ') : ''],
           ].filter(([, v]) => v).map(([k, v]) => `
@@ -498,7 +493,7 @@ export async function renderCheckoutPage() {
         company: document.getElementById('chk-company')?.value.trim() || '',
         address, city, pin, state,
         gst: document.getElementById('chk-gst') ? document.getElementById('chk-gst').value.trim() : (existing.gst || ''),
-        customisation: document.getElementById('chk-customisation') ? document.getElementById('chk-customisation').value.trim() : (existing.customisation || ''),
+        customisation: '',
         additionalInfo: document.getElementById('chk-additional-info') ? document.getElementById('chk-additional-info').value.trim() : (existing.additionalInfo || ''),
       },
       empty,
