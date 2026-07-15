@@ -45,11 +45,11 @@ export async function renderHomePage() {
     const premiumDiary2026 = allProducts.filter(p => p.categorySlug === SECTION_CATS.premium || p.categorySlugs?.includes(SECTION_CATS.premium)).slice(0, 8);
 
     sliderLists = [
-      { key: 'leather_diary_2026',  title: 'Leather Diary 2026',       view_all_link: '/shop?cat=leather-diaries',     bg: '#FAF8F5', products: leatherDiary2026 },
+      { key: 'leather_diary_2026',  title: 'Leather Diary 2027',       view_all_link: '/shop?cat=leather-diaries',     bg: '#FAF8F5', products: leatherDiary2026 },
       { key: 'combo_gifts',         title: 'Latest Combo Gift Sets',   view_all_link: '/shop?cat=diary-with-pen-gift-set', bg: '#fff',    products: latestComboGiftSets },
       { key: 'trending',            title: 'Trending items',           view_all_link: '/shop',                        bg: '#FAF8F5', products: trendingItems },
-      { key: 'best_selling_2026',   title: 'Best Selling 2026 Diary',  view_all_link: '/shop',                        bg: '#fff',    products: bestSelling2026Diary },
-      { key: 'premium_diary_2026',  title: 'Premium diary 2026',       view_all_link: '/shop?cat=premium-diary',       bg: '#FAF8F5', products: premiumDiary2026 },
+      { key: 'best_selling_2026',   title: 'Best Selling 2027 Diary',  view_all_link: '/shop',                        bg: '#fff',    products: bestSelling2026Diary },
+      { key: 'premium_diary_2026',  title: 'Premium diary 2027',       view_all_link: '/shop?cat=premium-diary',       bg: '#FAF8F5', products: premiumDiary2026 },
     ];
   }
 

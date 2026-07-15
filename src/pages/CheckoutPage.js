@@ -103,10 +103,9 @@ export async function renderCheckoutPage() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
   const gstRate = 0.18;
-  const cgst = subtotal * (gstRate / 2);
-  const sgst = subtotal * (gstRate / 2);
+  const gstAmount = subtotal * gstRate;
   const shipping = subtotal >= 5000 ? 0 : 250;
-  const total = subtotal + (subtotal * gstRate);
+  const total = subtotal + gstAmount;
 
   // Stepper reflects the active step.
   const stepState = (n) => n < (currentStep === 'review' ? 2 : 1) ? 'completed'
@@ -152,8 +151,7 @@ export async function renderCheckoutPage() {
         }).join('')}
       </div>
       <div class="order-summary-row"><span>Subtotal</span><span id="checkout-subtotal">${formatPrice(subtotal)}</span></div>
-      <div class="order-summary-row gst-row"><span>CGST (9%)</span><span id="checkout-cgst">${formatPrice(cgst)}</span></div>
-      <div class="order-summary-row gst-row"><span>SGST (9%)</span><span id="checkout-sgst">${formatPrice(sgst)}</span></div>
+      <div class="order-summary-row gst-row"><span>GST (18%)</span><span id="checkout-gst">${formatPrice(gstAmount)}</span></div>
       <div class="order-summary-total"><span>Total (incl. GST)</span><span id="checkout-total">${formatPrice(total)}</span></div>
     </div>
   `;
@@ -243,7 +241,7 @@ export async function renderCheckoutPage() {
         <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
       </div>
       <div class="checkout-form-group">
-        <h2>Customisation <a href="/branding" target="_blank" rel="noopener" class="checkout-form-link">Our customisation options →</a></h2>
+        <h2>Customisation</h2>
         <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
       </div>
       <div class="checkout-form-group">
@@ -251,12 +249,12 @@ export async function renderCheckoutPage() {
         <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
       </div>
       <div class="checkout-form-group">
-        <h2>Your Logo to be Printed</h2>
-        <p class="checkout-logo-hint">Upload logo files you'd like printed on your products. Images will be converted to JPG.</p>
+        <h2>Attach your logo and text / pdf file here</h2>
+        <p class="checkout-logo-hint">Upload logo, text, or PDF files for printing on your products. Images are converted to JPG.</p>
         <div class="checkout-logo-upload-area" id="logo-upload-area">
           <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
-          <span class="checkout-logo-upload-text">Drag &amp; drop images here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
-          <input type="file" id="logo-file-input" accept="image/*" multiple hidden>
+          <span class="checkout-logo-upload-text">Drag &amp; drop files here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
+          <input type="file" id="logo-file-input" accept="image/*,.pdf,.txt,.doc,.docx,application/pdf,text/plain" multiple hidden>
         </div>
         <div id="logo-previews" class="checkout-logo-previews">${uploadedLogos.map((logo, i) => `
           <div class="checkout-logo-thumb" data-index="${i}">
@@ -332,13 +330,11 @@ export async function renderCheckoutPage() {
     });
 
     const newGst = newSub * gstRate;
-    const newCgst = newGst / 2;
-    const newSgst = newGst / 2;
     const newTotal = newSub + newGst;
 
     document.getElementById('checkout-subtotal').textContent = formatPrice(newSub);
-    document.getElementById('checkout-cgst').textContent = formatPrice(newCgst);
-    document.getElementById('checkout-sgst').textContent = formatPrice(newSgst);
+    const gstEl = document.getElementById('checkout-gst');
+    if (gstEl) gstEl.textContent = formatPrice(newGst);
     document.getElementById('checkout-total').textContent = formatPrice(newTotal);
   }
 
@@ -404,15 +400,20 @@ export async function renderCheckoutPage() {
   function renderLogoPreviews() {
     const container = document.getElementById('logo-previews');
     if (!container) return;
-    container.innerHTML = uploadedLogos.map((logo, i) => `
+    container.innerHTML = uploadedLogos.map((logo, i) => {
+      const isImg = logo.dataUrl && String(logo.dataUrl).startsWith('data:image/');
+      const preview = isImg
+        ? `<img src="${logo.dataUrl}" alt="${logo.name}">`
+        : `<span class="material-symbols-outlined" style="font-size:28px;color:var(--color-primary);">description</span>`;
+      return `
       <div class="checkout-logo-thumb" data-index="${i}">
-        <img src="${logo.dataUrl}" alt="${logo.name}">
+        ${preview}
         <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
           <span class="material-symbols-outlined" style="font-size:14px;">close</span>
         </button>
         <span class="checkout-logo-filename">${logo.name}</span>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     container.querySelectorAll('.checkout-logo-remove').forEach(btn => {
       btn.addEventListener('click', () => {
         uploadedLogos.splice(parseInt(btn.dataset.index), 1);
@@ -421,18 +422,33 @@ export async function renderCheckoutPage() {
     });
   }
 
+  function readFileAsDataURL(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function handleLogoFiles(files) {
-    const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    if (!validFiles.length) return;
-    const results = await Promise.all(
-      validFiles.map(async f => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
+    for (const f of list) {
+      if (f.type.startsWith('image/')) {
         const dataUrl = await convertToJpg(f);
-        if (!dataUrl) return null;
-        const name = f.name.replace(/\.[^.]+$/, '') + '.jpg';
-        return { name, dataUrl };
-      })
-    );
-    results.filter(Boolean).forEach(r => uploadedLogos.push(r));
+        if (dataUrl) uploadedLogos.push({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', dataUrl });
+      } else if (
+        f.type === 'application/pdf' ||
+        f.type.startsWith('text/') ||
+        f.type === 'application/msword' ||
+        f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        /\.(pdf|txt|doc|docx)$/i.test(f.name)
+      ) {
+        const dataUrl = await readFileAsDataURL(f);
+        if (dataUrl) uploadedLogos.push({ name: f.name, dataUrl });
+      }
+    }
     renderLogoPreviews();
   }
 
@@ -556,6 +572,7 @@ export async function renderCheckoutPage() {
 
     // Generate a human-readable order number
     const orderNumber = 'NYD' + Date.now().toString().slice(-8);
+    // Single GST 18% line (not CGST/SGST split — avoids confusion for interstate IGST buyers)
     const gstAmount = subtotal * gstRate;
     const finalTotal = shipping > 0 ? total + shipping : total;
 

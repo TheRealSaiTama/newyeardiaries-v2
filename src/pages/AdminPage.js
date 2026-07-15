@@ -3050,7 +3050,7 @@ function openSliderSectionModal(container, section) {
         <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
       </div>
       <form class="admin-form" id="slider-section-form">
-        <div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2026"></div>
+        <div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2027"></div>
         <div class="form-group"><label>View All Link</label><input name="view_all_link" value="${section?.view_all_link || ''}" placeholder="e.g. /shop?cat=leather-diaries"></div>
         <div class="form-group"><label>Background Color</label>
           <div style="display:flex;gap:var(--space-2);align-items:center">

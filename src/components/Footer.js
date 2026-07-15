@@ -73,7 +73,7 @@ export function renderFooter(content) {
 
         <div class="nyd-footer__bottom">
           <div class="nyd-footer__bottom-left">
-            <span class="nyd-footer__copyright">${f.copyright || '© 2026 New Year Diaries. All Rights Reserved.'}</span>
+            <span class="nyd-footer__copyright">${f.copyright || '© 2027 New Year Diaries. All Rights Reserved.'}</span>
           </div>
           <div class="nyd-footer__bottom-right">
             <div class="nyd-footer__social">

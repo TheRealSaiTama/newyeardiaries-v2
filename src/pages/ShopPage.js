@@ -51,7 +51,7 @@ export async function renderShopPage() {
 
   // Resolve title/breadcrumb synchronously so the skeleton renders with the
   // right heading from the very first paint.
-  let pageTitle = 'The 2026 Diary Collection';
+  let pageTitle = 'The 2027 Diary Collection';
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
   let breadcrumbLabel = 'All Diaries';
   if (searchQ) {

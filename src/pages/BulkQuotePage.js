@@ -81,7 +81,7 @@ export async function renderBulkQuotePage() {
                 <select name="product_type" class="input-field select-field" required>
                   <option value="">Select a category</option>
                   <option ${quoteItems.length > 0 ? 'selected' : ''}>Custom / Bespoke</option>
-                  <option>2026 Diaries</option>
+                  <option>2027 Diaries</option>
                   <option>Executive Planners</option>
                   <option>Corporate Gift Sets</option>
                 </select>
