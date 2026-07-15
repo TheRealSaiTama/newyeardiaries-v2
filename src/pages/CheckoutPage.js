@@ -156,6 +156,7 @@ export async function renderCheckoutPage() {
     </div>
   `;
 
+  // Step 1 — all form fields live here (contact, shipping, tax, branding, files)
   const formHtml = `
       <div class="checkout-form-section">
         <div class="checkout-form-group">
@@ -203,6 +204,28 @@ export async function renderCheckoutPage() {
             </select>
           </div>
         </div>
+        <div class="checkout-form-group">
+          <h2>Tax Information (Optional)</h2>
+          <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Customisation</h2>
+          <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Additional Information</h2>
+          <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Attach your logo and text / pdf file here</h2>
+          <p class="checkout-logo-hint">Upload logo, text, or PDF files for printing on your products. Images are converted to JPG.</p>
+          <div class="checkout-logo-upload-area" id="logo-upload-area">
+            <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
+            <span class="checkout-logo-upload-text">Drag &amp; drop files here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
+            <input type="file" id="logo-file-input" accept="image/*,.pdf,.txt,.doc,.docx,application/pdf,text/plain" multiple hidden>
+          </div>
+          <div id="logo-previews" class="checkout-logo-previews"></div>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
           <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
           <button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button>
@@ -210,13 +233,13 @@ export async function renderCheckoutPage() {
       </div>
     `;
 
-  // Step 2 — read-only review of the saved shipping/contact info, and interactive inputs for GST, Customisation, Additional Info, and Logo.
+  // Step 2 — review box only (read-only) + payment notices + place order
   const reviewHtml = `
     <div class="checkout-form-section">
       <div class="checkout-form-group">
         <h2>Review Your Information</h2>
         <p style="color:var(--color-text-secondary);font-size:var(--fs-sm);margin-bottom:var(--space-4);">
-          Please confirm your contact and shipping details below, and fill in any branding or customisation requests.
+          Please confirm your details below before placing the order.
         </p>
         <div class="checkout-review-card">
           ${[
@@ -228,6 +251,10 @@ export async function renderCheckoutPage() {
             ['City', checkoutData.city],
             ['PIN Code', checkoutData.pin],
             ['State', checkoutData.state],
+            ['GST Number', checkoutData.gst],
+            ['Customisation', checkoutData.customisation],
+            ['Additional Info', checkoutData.additionalInfo],
+            ['Attachments', uploadedLogos.length ? uploadedLogos.map(l => l.name).join(', ') : ''],
           ].filter(([, v]) => v).map(([k, v]) => `
             <div class="checkout-review-field">
               <span class="checkout-review-field__label">${k}</span>
@@ -235,36 +262,6 @@ export async function renderCheckoutPage() {
             </div>
           `).join('')}
         </div>
-      </div>
-      <div class="checkout-form-group">
-        <h2>Tax Information (Optional)</h2>
-        <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
-      </div>
-      <div class="checkout-form-group">
-        <h2>Customisation</h2>
-        <div class="input-group"><textarea id="chk-customisation" class="input-field textarea-field" rows="3" placeholder="E.g. emboss company name on front cover, add custom date range inside...">${checkoutData.customisation || ''}</textarea></div>
-      </div>
-      <div class="checkout-form-group">
-        <h2>Additional Information</h2>
-        <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
-      </div>
-      <div class="checkout-form-group">
-        <h2>Attach your logo and text / pdf file here</h2>
-        <p class="checkout-logo-hint">Upload logo, text, or PDF files for printing on your products. Images are converted to JPG.</p>
-        <div class="checkout-logo-upload-area" id="logo-upload-area">
-          <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
-          <span class="checkout-logo-upload-text">Drag &amp; drop files here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
-          <input type="file" id="logo-file-input" accept="image/*,.pdf,.txt,.doc,.docx,application/pdf,text/plain" multiple hidden>
-        </div>
-        <div id="logo-previews" class="checkout-logo-previews">${uploadedLogos.map((logo, i) => `
-          <div class="checkout-logo-thumb" data-index="${i}">
-            <img src="${logo.dataUrl}" alt="${logo.name}">
-            <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
-              <span class="material-symbols-outlined" style="font-size:14px;">close</span>
-            </button>
-            <span class="checkout-logo-filename">${logo.name}</span>
-          </div>
-        `).join('')}</div>
       </div>
       <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
         <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
@@ -522,38 +519,17 @@ export async function renderCheckoutPage() {
     window.scrollTo(0, 0);
   });
 
-  // Step 2 → Step 1: go back to edit (data already persisted, so the form
-  // stays populated — user doesn't rewrite anything).
+  // Step 2 → Step 1: edit (all fields already in sessionStorage)
   document.getElementById('btn-edit-info')?.addEventListener('click', () => {
-    const gstVal = document.getElementById('chk-gst')?.value.trim() || '';
-    const customisationVal = document.getElementById('chk-customisation')?.value.trim() || '';
-    const additionalInfoVal = document.getElementById('chk-additional-info')?.value.trim() || '';
-
-    const data = getCheckoutData();
-    data.gst = gstVal;
-    data.customisation = customisationVal;
-    data.additionalInfo = additionalInfoVal;
-    setCheckoutData(data);
-
     setCheckoutStep('shipping');
     renderCheckoutPage();
     window.scrollTo(0, 0);
   });
 
-  // Place Order (step 2) — reads the persisted data and submits.
+  // Place Order (step 2) — uses data saved on Save and Proceed
   document.getElementById('btn-place-order')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-place-order');
-
-    // On step 2 the form is interactive. Read the values directly from the DOM!
-    const gstVal = document.getElementById('chk-gst')?.value.trim() || '';
-    const customisationVal = document.getElementById('chk-customisation')?.value.trim() || '';
-    const additionalInfoVal = document.getElementById('chk-additional-info')?.value.trim() || '';
-
     const data = getCheckoutData();
-    data.gst = gstVal;
-    data.customisation = customisationVal;
-    data.additionalInfo = additionalInfoVal;
-    setCheckoutData(data);
 
     const requiredFields = {
       email: data.email, phone: data.phone, firstName: data.firstName,
@@ -576,19 +552,21 @@ export async function renderCheckoutPage() {
     const gstAmount = subtotal * gstRate;
     const finalTotal = shipping > 0 ? total + shipping : total;
 
-    // Build order items.
-    // ponytail: product_id column is INTEGER in schema but products use UUID —
-    // omit product_id so insert doesn't fail. Name/image/price are denormalized.
-    const items = cartItems.map(item => ({
-      product_name: item.product.title || item.product.name,
-      product_image: item.product.image || item.product.images?.[0] || null,
-      product_sku: item.product.sku || '',
-      material: item.product.material || null,
-      size: item.product.size || null,
-      quantity: item.qty,
-      unit_price: Number(item.product.price),
-      line_total: Number((item.product.price * item.qty).toFixed(2)),
-    }));
+    // Build order items (denormalized). Skip huge data: URLs in snapshot.
+    const items = cartItems.map(item => {
+      const rawImg = item.product.image || item.product.images?.[0] || null;
+      const product_image = rawImg && !String(rawImg).startsWith('data:') ? rawImg : null;
+      return {
+        product_name: item.product.title || item.product.name,
+        product_image,
+        product_sku: item.product.sku || '',
+        material: item.product.material || null,
+        size: item.product.size || null,
+        quantity: item.qty,
+        unit_price: Number(item.product.price),
+        line_total: Number((item.product.price * item.qty).toFixed(2)),
+      };
+    });
 
     // Disable button + show progress while we save + email
     if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
@@ -681,7 +659,7 @@ export async function renderCheckoutPage() {
     );
     if (itemsErr) console.error('Order items insert failed:', itemsErr);
 
-    // Snapshot for success page (don't depend on order_items SELECT succeeding)
+    // Snapshot for success page — strip base64 logos (sessionStorage quota)
     const orderSnapshot = {
       orderNumber,
       firstName: data.firstName,
@@ -709,11 +687,24 @@ export async function renderCheckoutPage() {
       specialInstructions: data.additionalInfo || data.customisation || '',
       customisation: data.customisation || '',
       additionalInfo: data.additionalInfo || '',
-      logos: uploadedLogos,
+      logos: uploadedLogos.map(l => ({ name: l.name, dataUrl: (l.dataUrl && String(l.dataUrl).length < 80000) ? l.dataUrl : null })),
       paymentMethod,
       tAndCAgreed: true,
     };
-    try { sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot)); } catch (_) {}
+    // Must set BEFORE navigate so success page always has items
+    sessionStorage.setItem('lastOrderNumber', orderNumber);
+    try {
+      sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot));
+    } catch (_) {
+      // quota: drop images entirely
+      try {
+        orderSnapshot.items = orderSnapshot.items.map(it => ({ ...it, image: null }));
+        orderSnapshot.logos = (orderSnapshot.logos || []).map(l => ({ name: l.name, dataUrl: null }));
+        sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot));
+      } catch (e2) {
+        console.error('Could not save order snapshot', e2);
+      }
+    }
 
     // 3. Send notification email (fire-and-forget; don't block success)
     sendOrderEmail(orderSnapshot).catch(e => console.error('Order email failed:', e));
@@ -724,7 +715,6 @@ export async function renderCheckoutPage() {
     lastCartJson = '';
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
-    sessionStorage.setItem('lastOrderNumber', orderNumber);
     uploadedLogos = [];
     navigateTo('/order-success');
   });

@@ -1,48 +1,119 @@
+import { supabase } from '../lib/supabase.js';
+
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const CARE_PHONE = '+91 9311135190';
+const CARE_TEL = '+919311135190';
+
+function itemsRows(items) {
+  return (items || []).map(it => `
+    <div class="order-overview-item">
+      <div class="order-overview-item__img">
+        ${it.image || it.product_image
+          ? `<img src="${it.image || it.product_image}" alt="${it.name || it.product_name || ''}">`
+          : '<span class="material-symbols-outlined" style="color:var(--color-text-tertiary);opacity:.4">menu_book</span>'}
+      </div>
+      <div class="order-overview-item__main">
+        <div class="order-overview-item__name">${it.name || it.product_name || 'Item'}</div>
+        <div class="order-overview-item__meta">${it.qty || it.quantity || 1} × ${fmt(it.unitPrice ?? it.unit_price)}</div>
+      </div>
+      <div class="order-overview-item__total">${fmt(it.lineTotal ?? it.line_total)}</div>
+    </div>`).join('');
+}
+
+function overviewCard({ orderNumber, items, subtotal, gstAmount, shipping, total, shipHtml }) {
+  const rows = itemsRows(items);
+  return `
+    <div class="order-overview__card">
+      <div class="order-overview__head">
+        <h2>Order Overview</h2>
+        <span class="order-overview__num">#${orderNumber || ''}</span>
+      </div>
+      <div class="order-overview__items">${rows || '<p style="color:var(--color-text-tertiary)">No items recorded.</p>'}</div>
+      <div class="order-overview__totals">
+        <div class="order-overview__row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+        ${Number(gstAmount) ? `<div class="order-overview__row"><span>GST (18%)</span><span>${fmt(gstAmount)}</span></div>` : ''}
+        <div class="order-overview__row"><span>Shipping</span><span>${Number(shipping) ? fmt(shipping) : 'Calculated later'}</span></div>
+        <div class="order-overview__row order-overview__row--total"><span>Total</span><span>${fmt(total)}</span></div>
+      </div>
+      ${shipHtml || ''}
+    </div>`;
+}
 
 export async function renderOrderSuccessPage() {
   const app = document.getElementById('app');
   const orderNumber = sessionStorage.getItem('lastOrderNumber') || '';
 
-  // ponytail: prefer checkout snapshot over re-fetching order_items
   let snap = null;
   try { snap = JSON.parse(sessionStorage.getItem('lastOrderSnapshot') || 'null'); } catch (_) {}
 
-  const items = snap?.items || [];
-  const rows = items.map(it => `
-    <div class="order-overview-item">
-      <div class="order-overview-item__img">
-        ${it.image
-          ? `<img src="${it.image}" alt="${it.name || ''}">`
-          : '<span class="material-symbols-outlined" style="color:var(--color-text-tertiary);opacity:.4">menu_book</span>'}
-      </div>
-      <div class="order-overview-item__main">
-        <div class="order-overview-item__name">${it.name || 'Item'}</div>
-        <div class="order-overview-item__meta">${it.qty || 1} × ${fmt(it.unitPrice)}</div>
-      </div>
-      <div class="order-overview-item__total">${fmt(it.lineTotal)}</div>
-    </div>`).join('');
+  // Prefer snapshot; if missing/empty items, re-fetch from DB
+  let items = snap?.items || [];
+  let subtotal = snap?.subtotal;
+  let gstAmount = snap?.gstAmount;
+  let shipping = snap?.shipping;
+  let total = snap?.total;
+  let shipHtml = '';
 
-  const overviewHtml = snap ? `
-    <div class="order-overview__card">
-      <div class="order-overview__head">
-        <h2>Order Overview</h2>
-        <span class="order-overview__num">#${orderNumber || snap.orderNumber || ''}</span>
-      </div>
-      <div class="order-overview__items">${rows || '<p style="color:var(--color-text-tertiary)">No items recorded.</p>'}</div>
-      <div class="order-overview__totals">
-        <div class="order-overview__row"><span>Subtotal</span><span>${fmt(snap.subtotal)}</span></div>
-        ${Number(snap.gstAmount) ? `<div class="order-overview__row"><span>GST</span><span>${fmt(snap.gstAmount)}</span></div>` : ''}
-        <div class="order-overview__row"><span>Shipping</span><span>${Number(snap.shipping) ? fmt(snap.shipping) : 'Calculated later'}</span></div>
-        <div class="order-overview__row order-overview__row--total"><span>Total</span><span>${fmt(snap.total)}</span></div>
-      </div>
+  if (snap) {
+    shipHtml = `
       <div class="order-overview__ship">
         <strong>Shipping to:</strong>
         ${snap.firstName || ''} ${snap.lastName || ''},
         ${snap.addressLine1 || ''}${snap.city ? ', ' + snap.city : ''}${snap.state ? ', ' + snap.state : ''} ${snap.postcode || ''}
         ${snap.phone ? ` &middot; ${snap.phone}` : ''}
-      </div>
-    </div>` : '';
+      </div>`;
+  }
+
+  if ((!items.length || !snap) && orderNumber) {
+    try {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, first_name, last_name, phone, address_line_1, city, state, postcode, subtotal, gst_amount, shipping, total')
+        .eq('order_number', orderNumber)
+        .maybeSingle();
+      if (order) {
+        const { data: dbItems } = await supabase
+          .from('order_items')
+          .select('product_name, product_image, quantity, unit_price, line_total')
+          .eq('order_id', order.id);
+        if (dbItems?.length) {
+          items = dbItems.map(it => ({
+            name: it.product_name,
+            image: it.product_image,
+            qty: it.quantity,
+            unitPrice: it.unit_price,
+            lineTotal: it.line_total,
+          }));
+        }
+        subtotal = order.subtotal;
+        gstAmount = order.gst_amount;
+        shipping = order.shipping;
+        total = order.total;
+        shipHtml = `
+          <div class="order-overview__ship">
+            <strong>Shipping to:</strong>
+            ${order.first_name || ''} ${order.last_name || ''},
+            ${order.address_line_1 || ''}${order.city ? ', ' + order.city : ''}${order.state ? ', ' + order.state : ''} ${order.postcode || ''}
+            ${order.phone ? ` &middot; ${order.phone}` : ''}
+          </div>`;
+      }
+    } catch (e) {
+      console.warn('[order-success] DB fallback failed', e);
+    }
+  }
+
+  const hasOverview = orderNumber && (items.length || subtotal != null || snap);
+  const overviewHtml = hasOverview
+    ? overviewCard({
+        orderNumber: orderNumber || snap?.orderNumber,
+        items,
+        subtotal: subtotal ?? snap?.subtotal,
+        gstAmount: gstAmount ?? snap?.gstAmount,
+        shipping: shipping ?? snap?.shipping,
+        total: total ?? snap?.total,
+        shipHtml,
+      })
+    : '';
 
   app.innerHTML = `
     <div class="page-content">
@@ -62,7 +133,6 @@ export async function renderOrderSuccessPage() {
         <p class="success-received">We have successfully received your order${orderNumber ? ` <strong>#${orderNumber}</strong>` : ''}.</p>
         <p class="success-status" style="margin-bottom: var(--space-6);">Order Confirmed.</p>
 
-        <!-- Calm info note — not red/warning/virus-alert styling -->
         <div class="order-payment-notice" style="
           background: #FDF9F3;
           border: 1px solid #E5D5C0;
@@ -93,7 +163,7 @@ export async function renderOrderSuccessPage() {
           </div>
           <p style="font-size:var(--fs-sm);color:var(--color-text-secondary);line-height:var(--lh-normal);margin-bottom:0;">
             Our sales executive will call you shortly with a detailed proforma invoice for payment.<br><br>
-            Questions? Call customer care at <a href="tel:+919899223130" style="color:var(--color-primary);font-weight:var(--fw-semibold);text-decoration:none;">+91 98992 23130</a>.<br><br>
+            Questions? Call customer care at <a href="tel:${CARE_TEL}" style="color:var(--color-primary);font-weight:var(--fw-semibold);text-decoration:none;">${CARE_PHONE}</a>.<br><br>
             <strong style="color:var(--color-text-primary);">Thanks…!!<br>New Year Diaries</strong>
           </p>
         </div>
