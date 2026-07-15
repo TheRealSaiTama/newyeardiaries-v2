@@ -258,29 +258,33 @@ export async function renderCheckoutPage() {
           `).join('')}
         </div>
       </div>
+      <!-- PDF: checkout page (1).pdf — shipping / payment / no-pay copy -->
       <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
         <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
         <div class="checkout-notice__body">
-          <div class="checkout-notice__title">Please Note:</div>
-          <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by selecting your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
-          <p>Cash on Delivery (COD) is <strong>not</strong> available on this order.</p>
+          <p>We are delivering goods PAN India by following options :</p>
+          <p class="checkout-notice__methods" style="color:#1a4a8a;">ROAD TRANSPORT / BUS CARGO / RAIL CARGO / AIR COURIER / PORTER IN DELHI NCR</p>
+          <p>You may mention any of them as per your choice.</p>
+          <div class="checkout-notice__title" style="margin-top:var(--space-4);">Please Note:</div>
+          <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by mentioning your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
+          <p class="checkout-notice__highlight">Cash on Delivery (COD) is not available on this order.</p>
         </div>
       </div>
       <div class="checkout-notice checkout-notice--info" style="margin-top:var(--space-4);">
         <span class="material-symbols-outlined checkout-notice__icon">payments</span>
         <div class="checkout-notice__body">
           <div class="checkout-notice__title">Payment Options:</div>
-          <p>You can use any payment option for this order:</p>
+          <p>You can use any following payment option to make advance or full payment for this order:</p>
           <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
-          <p class="checkout-notice__highlight">Your order will not be shipped until we receive your payment.</p>
+          <p class="checkout-notice__highlight">Please Note : Your order will not be shipped until we receive your payment.</p>
         </div>
       </div>
       <div class="checkout-notice checkout-notice--important" style="margin-top:var(--space-4); margin-bottom:var(--space-6);">
         <span class="material-symbols-outlined checkout-notice__icon">block</span>
         <div class="checkout-notice__body">
-          <div class="checkout-notice__title">No Payment Will Be Made Now</div>
-          <p class="checkout-notice__highlight">No payment will be collected at checkout.</p>
-          <p>Placing this order does <strong>not</strong> require any payment. Our team will contact you shortly with the final total (including shipping) and payment instructions.</p>
+          <div class="checkout-notice__title">No need to make payment at this step !</div>
+          <p>No payment will be collected at checkout. Placing this order does not require any payment for now.</p>
+          <p>Our team will contact you shortly with the final total estimate (including packing &amp; shipping) and payment instructions.</p>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
