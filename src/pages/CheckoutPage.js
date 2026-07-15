@@ -559,11 +559,13 @@ export async function renderCheckoutPage() {
     const gstAmount = subtotal * gstRate;
     const finalTotal = shipping > 0 ? total + shipping : total;
 
-    // Build order items
+    // Build order items.
+    // ponytail: product_id column is INTEGER in schema but products use UUID —
+    // omit product_id so insert doesn't fail. Name/image/price are denormalized.
     const items = cartItems.map(item => ({
-      product_id: item.productId,
       product_name: item.product.title || item.product.name,
       product_image: item.product.image || item.product.images?.[0] || null,
+      product_sku: item.product.sku || '',
       material: item.product.material || null,
       size: item.product.size || null,
       quantity: item.qty,
@@ -656,14 +658,14 @@ export async function renderCheckoutPage() {
       return;
     }
 
-    // 2. Insert order items (linked to the new order)
+    // 2. Insert order items (linked to the new order) — strip client-only fields
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      items.map(it => ({ ...it, order_id: orderRow.id }))
+      items.map(({ product_sku, ...it }) => ({ ...it, order_id: orderRow.id }))
     );
     if (itemsErr) console.error('Order items insert failed:', itemsErr);
 
-    // 3. Send notification email (fire-and-forget; don't block success)
-    sendOrderEmail({
+    // Snapshot for success page (don't depend on order_items SELECT succeeding)
+    const orderSnapshot = {
       orderNumber,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -673,27 +675,31 @@ export async function renderCheckoutPage() {
       city: data.city,
       state: data.state,
       postcode: data.pin,
-      country: 'India',
       phone: data.phone,
       email: data.email,
       items: items.map(it => ({
         name: it.product_name,
-        sku: it.product_id,
+        sku: it.product_sku,
         qty: it.quantity,
         unitPrice: it.unit_price,
         image: it.product_image,
         lineTotal: it.line_total,
       })),
-      paymentMethod,
-      tAndCAgreed: true,
       subtotal: Number(subtotal.toFixed(2)),
       gstAmount: Number(gstAmount.toFixed(2)),
       shipping: Number(shipping.toFixed(2)),
       total: Number(finalTotal.toFixed(2)),
+      specialInstructions: data.additionalInfo || data.customisation || '',
       customisation: data.customisation || '',
       additionalInfo: data.additionalInfo || '',
       logos: uploadedLogos,
-    }).catch(e => console.error('Order email failed:', e));
+      paymentMethod,
+      tAndCAgreed: true,
+    };
+    try { sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot)); } catch (_) {}
+
+    // 3. Send notification email (fire-and-forget; don't block success)
+    sendOrderEmail(orderSnapshot).catch(e => console.error('Order email failed:', e));
 
     // 4. Clear cart + redirect to success
     clearCart();

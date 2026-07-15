@@ -902,13 +902,20 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
-        const { error } = await supabase.from('products').delete().eq('id', id);
+        // Clear junction first (FK cascade should handle it, but be explicit)
+        await supabase.from('product_categories').delete().eq('product_id', id);
+        const { data: deleted, error } = await supabase.from('products').delete().eq('id', id).select('id');
         if (error) {
           showToast(`Failed to delete product: ${error.message}`, 'error');
           return;
         }
+        if (!deleted?.length) {
+          showToast('Product not found or already deleted.', 'error');
+          return;
+        }
         showToast('Product deleted!');
         acBust('prods:');
+        try { if (typeof window.__clearPageCache === 'function') window.__clearPageCache(); } catch (_) {}
         const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
         renderProducts(container, 1, document.getElementById('product-search')?.value || '', document.getElementById('filter-active')?.value || '', nav);
       });

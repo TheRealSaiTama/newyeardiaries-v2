@@ -49,9 +49,21 @@ export function bustProductsCache() {
   try {
     localStorage.removeItem(PRODUCTS_STORAGE_KEY);
   } catch (e) {}
+  // Also drop painted shop/home HTML so deleted products don't linger on-screen
+  try {
+    if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
+  } catch (e) {}
 }
 
-export async function getProducts() {
+export async function getProducts({ fresh = false } = {}) {
+  if (fresh) {
+    // Force network only — don't clear page HTML (that's admin-delete's job)
+    _cache = null;
+    _fetchedAt = null;
+    try { localStorage.removeItem(PRODUCTS_STORAGE_KEY); } catch (e) {}
+    return fetchProductsFresh();
+  }
+
   if (_cache && Date.now() - _fetchedAt < CACHE_TTL) return _cache;
 
   if (!_cache) {
@@ -59,8 +71,13 @@ export async function getProducts() {
       const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        _cache = parsed.data;
-        _fetchedAt = parsed.fetchedAt;
+        // Ignore localStorage older than TTL — prevents deleted products sticking around
+        if (parsed.fetchedAt && Date.now() - parsed.fetchedAt < CACHE_TTL) {
+          _cache = parsed.data;
+          _fetchedAt = parsed.fetchedAt;
+        } else {
+          localStorage.removeItem(PRODUCTS_STORAGE_KEY);
+        }
       }
     } catch (e) {
       console.warn('[products] failed to load localStorage cache:', e);
@@ -160,11 +177,44 @@ async function fetchProductsBackground() {
 }
 
 export async function getProductBySlug(slug) {
+  if (!slug) return null;
+  // ponytail: hit DB directly so deleted products never resolve from stale cache
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, category:categories!products_category_id_fkey(name, slug)')
+      .eq('slug', slug)
+      .eq('active', true)
+      .maybeSingle();
+    if (!error && data) {
+      const base = normalize(data);
+      base.categorySlugs = base.categorySlug ? [base.categorySlug] : [];
+      base.categorySortOrders = {};
+      return base;
+    }
+  } catch (e) {
+    console.warn('[products] getProductBySlug DB miss, falling back to cache', e);
+  }
   const products = await getProducts();
   return products.find(p => p.slug === slug || p.id === slug) || null;
 }
 
 export async function getProductById(id) {
+  if (!id) return null;
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, category:categories!products_category_id_fkey(name, slug)')
+      .eq('id', id)
+      .eq('active', true)
+      .maybeSingle();
+    if (!error && data) {
+      const base = normalize(data);
+      base.categorySlugs = base.categorySlug ? [base.categorySlug] : [];
+      base.categorySortOrders = {};
+      return base;
+    }
+  } catch (e) { /* fall through */ }
   const products = await getProducts();
   return products.find(p => p.id === id || p.id === String(id)) || null;
 }

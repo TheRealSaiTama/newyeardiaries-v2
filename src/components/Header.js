@@ -116,10 +116,6 @@ export function renderHeader(content) {
           <button class="header-action-btn" aria-label="Search" id="search-btn" title="Search">
             <span class="material-symbols-outlined">search</span>
           </button>
-          <a href="/quote-list" class="header-action-btn" aria-label="Quote List" title="Quote List">
-            <span class="material-symbols-outlined">request_quote</span>
-            <span class="badge-count" id="quote-count">0</span>
-          </a>
           <a href="/cart" class="header-action-btn" aria-label="Cart" title="Cart">
             <span class="material-symbols-outlined">shopping_bag</span>
             <span class="badge-count" id="cart-count">0</span>
@@ -249,15 +245,6 @@ export function updateHeaderCounts() {
   if (cartCount) {
     cartCount.textContent = totalProducts;
     cartCount.style.display = totalProducts > 0 ? 'flex' : 'none';
-  }
-
-  const quoteCount = document.getElementById('quote-count');
-  const quoteItems = JSON.parse(localStorage.getItem('quoteList') || '[]');
-  const totalQuoteProducts = quoteItems.length;
-
-  if (quoteCount) {
-    quoteCount.textContent = totalQuoteProducts;
-    quoteCount.style.display = totalQuoteProducts > 0 ? 'flex' : 'none';
   }
 }
 

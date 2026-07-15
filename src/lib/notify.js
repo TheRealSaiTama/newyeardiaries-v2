@@ -1,8 +1,10 @@
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+// Order receipts land here per business requirement
+const ORDER_TO_EMAIL = 'newyeardiaries@gmail.com';
 
-function sendEmail(templateParams) {
+function sendEmail(templateParams, { toEmail } = {}) {
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) return Promise.resolve();
   return fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
@@ -12,7 +14,7 @@ function sendEmail(templateParams) {
       template_id: TEMPLATE_ID,
       user_id: PUBLIC_KEY,
       template_params: {
-        to_email: 'iamravi11@gmail.com',
+        to_email: toEmail || 'iamravi11@gmail.com',
         ...templateParams,
       },
     }),
@@ -65,7 +67,7 @@ export function sendContactEmail(data) {
 
 function fmtINR(n) {
   const num = Number(n || 0);
-  return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  return num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
 function esc(str) {
@@ -74,13 +76,11 @@ function esc(str) {
   }[c]));
 }
 
-const PAYMENT_LABELS = {
-  cod: 'Cash on Delivery (COD)',
-  upi: 'UPI / QR Code',
-  bank: 'NEFT / RTGS / Bank Transfer',
-  card: 'Credit / Debit Card',
-};
-
+/**
+ * Order receipt — PDF layout.
+ * EmailJS templates typically use {{message}} which ESCAPES HTML → raw tags in inbox.
+ * So `message` is always plain text. Optional `html_message` for templates with {{{html_message}}}.
+ */
 export function sendOrderEmail(data) {
   const orderNo = data.orderNumber || 'ORD';
   const buyerName = (data.company && data.company.trim())
@@ -90,152 +90,114 @@ export function sendOrderEmail(data) {
     day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  // Subject + title line exactly per the order-page format
-  const subject = `[Order # ${orderNo}] FROM (${orderDate}) ${buyerName}`;
-  const titleLine = `New Order # ${orderNo} (${buyerName})`;
+  // PDF: "New Order # 12259 (Ramdurga International Pvt. Ltd.)"
+  const subject = `New Order # ${orderNo} (${buyerName})`;
+  const fromLine = `[Order # ${orderNo}] FROM ${buyerName} (${orderDate})`;
+  const specialNote = data.specialInstructions || data.customisation || data.additionalInfo || '';
 
-  const rowsHtml = data.items.map(item => {
-    const imgCell = item.image
-      ? `<img src="${esc(item.image)}" alt="" width="60" height="60" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #eee;">`
-      : `<div style="width:60px;height:60px;background:#f5f0e8;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#A0522D;font-size:11px;">No img</div>`;
-    const skuLine = item.sku ? `<div style="font-size:11px;color:#888;font-weight:normal;">SKU: ${esc(item.sku)}</div>` : '';
+  // ---- Plain text (what actually shows with current EmailJS {{message}} template) ----
+  const itemLines = (data.items || []).map((it, i) => {
+    const sku = it.sku ? `  SKU: ${it.sku}` : '';
+    return [
+      `${i + 1}. ${it.name || 'Item'}`,
+      sku,
+      `  Qty: ${it.qty}  ×  ₹${fmtINR(it.unitPrice ?? it.price)}  =  ₹${fmtINR(it.lineTotal)}`,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  const plainMessage = [
+    `New Order: #${orderNo}`,
+    fromLine,
+    ``,
+    `========== ITEMS ==========`,
+    itemLines || '(no items)',
+    ``,
+    `Subtotal :  ₹${fmtINR(data.subtotal)}`,
+    `GST      :  ₹${fmtINR(data.gstAmount)}`,
+    `Total    :  ₹${fmtINR(data.total)}`,
+    ``,
+    `Payment Methods: NEFT / RTGS / UPI / QR Code / Net Banking / Debit Card`,
+    ``,
+    `========== BILLING ADDRESS ==========`,
+    data.company ? data.company : null,
+    [data.addressLine1, data.addressLine2].filter(Boolean).join(', '),
+    [data.city, data.state, data.postcode].filter(Boolean).join(', '),
+    `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+    data.phone ? `Ph. ${data.phone}` : null,
+    data.email || null,
+    data.gst || null,
+    ``,
+    `T & C : I have read & agreed to your privacy statement. I am agree with all Terms and Conditions. : Yes`,
+    ``,
+    `Special Instructions or Comments about your order:`,
+    specialNote || '—',
+    data.logos?.length ? `\nUploaded logos: ${data.logos.map(l => l.name).join(', ')}` : null,
+  ].filter(line => line !== null).join('\n');
+
+  // ---- HTML (only used if template has {{{html_message}}} unescaped) ----
+  // Skip base64 data-URL images — they bloat/break EmailJS.
+  const rowsHtml = (data.items || []).map(item => {
+    const img = item.image && !String(item.image).startsWith('data:')
+      ? `<img src="${esc(item.image)}" alt="" width="56" height="56" style="width:56px;height:56px;object-fit:cover;border-radius:4px;display:block;margin:0 auto;">`
+      : `<div style="width:56px;height:56px;background:#e8eef5;border-radius:4px;margin:0 auto;"></div>`;
     return `
       <tr>
-        <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;vertical-align:middle;">${imgCell}</td>
-        <td style="padding:10px;border-bottom:1px solid #eee;font-weight:600;color:#3a2a1a;vertical-align:middle;">
-          ${esc(item.name)}${skuLine}
-        </td>
-        <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;vertical-align:middle;">${esc(item.qty)}</td>
-        <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;vertical-align:middle;">${fmtINR(item.unitPrice ?? item.price)}</td>
-        <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;font-weight:600;vertical-align:middle;">${fmtINR(item.lineTotal)}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;text-align:center;">${img}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;text-align:center;font-size:13px;">${esc(item.sku || '—')}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;font-size:13px;">${esc(item.name)}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;text-align:center;font-size:13px;">${esc(item.qty)}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;text-align:right;font-size:13px;">${fmtINR(item.unitPrice ?? item.price)}</td>
+        <td style="padding:12px 8px;border-bottom:1px solid #d0d7e2;text-align:right;font-size:13px;font-weight:600;">${fmtINR(item.lineTotal)}</td>
       </tr>`;
   }).join('');
 
-  const paymentLabel = PAYMENT_LABELS[data.paymentMethod] || esc(data.paymentMethod || 'Not specified');
-
   const htmlMessage = `
-<div style="font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:0 auto;color:#3a2a1a;font-size:14px;line-height:1.5;border:1px solid #e5e0d6;border-radius:8px;overflow:hidden;">
-
-  <!-- Header bar -->
-  <div style="background:#003366;color:#ffffff;padding:16px 24px;text-align:center;font-size:20px;font-weight:bold;letter-spacing:0.5px;">
-    New Order: #${esc(orderNo)}
-  </div>
-
-  <!-- Title line -->
-  <div style="padding:14px 24px;background:#f5f7fb;border-bottom:1px solid #e5e0d6;font-size:15px;font-weight:bold;color:#1a2744;">
-    ${esc(titleLine)}
-  </div>
-
-  <div style="padding:24px;">
-
-    <!-- Billing Address -->
-    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:20px;">
-      <tr>
-        <td style="width:50%;vertical-align:top;padding-right:16px;">
-          <div style="font-size:13px;font-weight:bold;color:#003366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Billing Address</div>
-          <div style="font-weight:bold;">${esc(buyerName)}</div>
-          <div>${esc(data.addressLine1)}${data.addressLine2 ? ', ' + esc(data.addressLine2) : ''}</div>
-          <div>${esc(data.city)}${data.state ? ', ' + esc(data.state) : ''} — ${esc(data.postcode)}</div>
-          <div>${esc(data.country || 'India')}</div>
-          <div style="margin-top:6px;">${esc(data.firstName)} ${esc(data.lastName)}</div>
-          <div>Ph. ${esc(data.phone)}</div>
-          <div style="color:#0066cc;">${esc(data.email)}</div>
-          ${data.gst ? `<div style="margin-top:4px;font-size:12px;color:#666;">GST: ${esc(data.gst)}</div>` : ''}
-        </td>
-        <td style="width:50%;vertical-align:top;padding-left:16px;border-left:1px solid #eee;">
-          <div style="font-size:13px;font-weight:bold;color:#003366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Payment Methods</div>
-          <div style="font-size:13px;color:#444;">
-            ${esc(paymentLabel)}<br>
-            <span style="color:#888;">(To be confirmed)</span>
-          </div>
-          ${data.tAndCAgreed ? `<div style="margin-top:10px;font-size:12px;color:#666;">T &amp; C: Yes</div>` : ''}
-        </td>
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;margin:0 auto;color:#1a2744;font-size:14px;line-height:1.5;">
+  <div style="background:#003366;color:#fff;padding:14px 20px;font-size:20px;font-weight:bold;">New Order: #${esc(orderNo)}</div>
+  <div style="padding:14px 4px 18px;font-size:14px;color:#1a4a8a;">${esc(fromLine)}</div>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="background:#003366;color:#fff;">
+        <th style="padding:10px 8px;">Image</th>
+        <th style="padding:10px 8px;">SKU</th>
+        <th style="padding:10px 8px;text-align:left;">Product</th>
+        <th style="padding:10px 8px;">Quantity</th>
+        <th style="padding:10px 8px;text-align:right;">Price</th>
+        <th style="padding:10px 8px;text-align:right;">Total</th>
       </tr>
-    </table>
-
-    <!-- Product table -->
-    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:13px;">
-      <thead>
-        <tr style="background:#003366;color:#fff;">
-          <th style="padding:10px;text-align:center;width:72px;">Image</th>
-          <th style="padding:10px;text-align:left;">Product</th>
-          <th style="padding:10px;text-align:center;">Quantity</th>
-          <th style="padding:10px;text-align:right;">Price</th>
-          <th style="padding:10px;text-align:right;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rowsHtml}
-      </tbody>
-    </table>
-
-    <!-- Totals -->
-    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;font-size:13px;">
-      <tr>
-        <td style="padding:6px 0;text-align:right;color:#555;">Subtotal :</td>
-        <td style="padding:6px 0 6px 12px;text-align:right;width:130px;font-weight:600;">${fmtINR(data.subtotal)}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;text-align:right;color:#555;">GST (18%) :</td>
-        <td style="padding:6px 0 6px 12px;text-align:right;width:130px;font-weight:600;">${fmtINR(data.gstAmount)}</td>
-      </tr>
-      ${Number(data.shipping) > 0 ? `
-      <tr>
-        <td style="padding:6px 0;text-align:right;color:#555;">Shipping :</td>
-        <td style="padding:6px 0 6px 12px;text-align:right;width:130px;font-weight:600;">${fmtINR(data.shipping)}</td>
-      </tr>` : ''}
-      <tr>
-        <td style="padding:10px 0;text-align:right;border-top:2px solid #003366;font-size:15px;font-weight:bold;color:#003366;">Total :</td>
-        <td style="padding:10px 0 10px 12px;text-align:right;border-top:2px solid #003366;width:130px;font-size:15px;font-weight:bold;color:#003366;">${fmtINR(data.total)}</td>
-      </tr>
-    </table>
-
-    <!-- Special Instructions -->
-    <div style="margin-top:24px;padding:14px 16px;background:#fdf9f3;border:1px solid #e5e0d6;border-radius:6px;">
-      <div style="font-size:12px;font-weight:bold;color:#A0522D;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Special Instructions or Comments about your order</div>
-      <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.specialInstructions) || '— None —'}</div>
+    </thead>
+    <tbody>${rowsHtml || '<tr><td colspan="6" style="padding:16px;text-align:center;">No items</td></tr>'}</tbody>
+  </table>
+  <table cellpadding="0" cellspacing="0" style="width:100%;margin:12px 0 20px;font-size:13px;">
+    <tr><td style="padding:6px 0;text-align:right;padding-right:24px;">Subtotal :</td><td style="text-align:right;width:120px;font-weight:600;">${fmtINR(data.subtotal)}</td></tr>
+    <tr><td style="padding:6px 0;text-align:right;padding-right:24px;">GST :</td><td style="text-align:right;font-weight:600;">${fmtINR(data.gstAmount)}</td></tr>
+    <tr><td style="padding:8px 0;text-align:right;padding-right:24px;font-weight:bold;color:#003366;">Total :</td><td style="text-align:right;font-weight:bold;color:#003366;">${fmtINR(data.total)}</td></tr>
+    <tr><td style="padding:10px 0 0;text-align:right;padding-right:24px;vertical-align:top;">Payment Methods:</td><td style="text-align:right;font-size:12px;">NEFT / RTGS / UPI /<br>QR Code / Net Banking /<br>Debit Card</td></tr>
+  </table>
+  <div style="margin:24px 0 16px;">
+    <div style="font-size:16px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Billing Address :</div>
+    <div style="padding-left:8px;line-height:1.55;">
+      ${data.company ? `<div>${esc(data.company)}</div>` : ''}
+      <div>${esc(data.addressLine1)}${data.addressLine2 ? ', ' + esc(data.addressLine2) : ''}</div>
+      <div>${esc(data.city)}${data.state ? ', ' + esc(data.state) : ''}${data.postcode ? ', ' + esc(data.postcode) : ''}</div>
+      <div style="margin-top:10px;">${esc(data.firstName)} ${esc(data.lastName)}</div>
+      <div>Ph. ${esc(data.phone)}</div>
+      <div>${esc(data.email)}</div>
+      ${data.gst ? `<div style="margin-top:8px;">${esc(data.gst)}</div>` : ''}
     </div>
-
-    ${data.customisation ? `
-    <!-- Customisation -->
-    <div style="margin-top:16px;padding:14px 16px;background:#f0f7ff;border:1px solid #d0e3f7;border-radius:6px;">
-      <div style="font-size:12px;font-weight:bold;color:#003366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Customisation Request</div>
-      <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.customisation)}</div>
-    </div>` : ''}
-
-    ${data.additionalInfo ? `
-    <!-- Additional Information -->
-    <div style="margin-top:16px;padding:14px 16px;background:#fdf9f3;border:1px solid #e5e0d6;border-radius:6px;">
-      <div style="font-size:12px;font-weight:bold;color:#A0522D;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Additional Information</div>
-      <div style="font-size:13px;color:#3a2a1a;white-space:pre-wrap;">${esc(data.additionalInfo)}</div>
-    </div>` : ''}
-
-    ${data.logos && data.logos.length ? `
-    <!-- Uploaded Logos -->
-    <div style="margin-top:16px;padding:14px 16px;background:#f5f0e8;border:1px solid #e5e0d6;border-radius:6px;">
-      <div style="font-size:12px;font-weight:bold;color:#A0522D;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Uploaded Logos (${data.logos.length} file${data.logos.length > 1 ? 's' : ''})</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">
-        ${data.logos.map(logo => `
-          <div style="text-align:center;">
-            <div style="width:120px;height:120px;border:1px solid #e5e0d6;border-radius:8px;overflow:hidden;background:#fff;">
-              <img src="${esc(logo.dataUrl)}" alt="${esc(logo.name)}" style="width:100%;height:100%;object-fit:contain;">
-            </div>
-            <div style="font-size:10px;color:#666;margin-top:4px;word-break:break-all;max-width:120px;">${esc(logo.name)}</div>
-          </div>
-        `).join('')}
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:#888;">Right-click on any logo image above and select "Save image as…" to download the JPG file.</div>
-    </div>` : ''}
-
   </div>
+  <div style="margin:16px 0;font-size:13px;color:#555;">T &amp; C : I have read &amp; agreed to your privacy statement. I am agree with all Terms and Conditions. : <span style="color:#1a4a8a;">Yes</span></div>
+  <div style="background:#003366;color:#fff;padding:14px 20px;text-align:center;font-size:13px;margin-top:20px;">${esc(specialNote || 'Special Instructions or Comments about your order')}</div>
 </div>`;
 
   return sendEmail({
     title: subject,
     subject,
-    name: `${data.firstName} ${data.lastName}`,
+    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || buyerName,
     email: data.email,
-    message: htmlMessage,
+    // plain text → readable with current {{message}} template
+    message: plainMessage,
+    // for templates that use {{{html_message}}}
     html_message: htmlMessage,
-  });
+  }, { toEmail: ORDER_TO_EMAIL });
 }
