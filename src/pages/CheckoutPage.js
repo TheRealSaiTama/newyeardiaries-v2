@@ -258,34 +258,25 @@ export async function renderCheckoutPage() {
           `).join('')}
         </div>
       </div>
-      <!-- PDF: checkout page (1).pdf — shipping / payment / no-pay copy -->
-      <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
-        <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
-        <div class="checkout-notice__body">
-          <p>We are delivering goods PAN India by following options :</p>
-          <p class="checkout-notice__methods" style="color:#1a4a8a;">ROAD TRANSPORT / BUS CARGO / RAIL CARGO / AIR COURIER / PORTER IN DELHI NCR</p>
-          <p>You may mention any of them as per your choice.</p>
-          <div class="checkout-notice__title" style="margin-top:var(--space-4);">Please Note:</div>
-          <p><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by mentioning your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
-          <p class="checkout-notice__highlight">Cash on Delivery (COD) is not available on this order.</p>
-        </div>
-      </div>
-      <div class="checkout-notice checkout-notice--info" style="margin-top:var(--space-4);">
-        <span class="material-symbols-outlined checkout-notice__icon">payments</span>
-        <div class="checkout-notice__body">
-          <div class="checkout-notice__title">Payment Options:</div>
-          <p>You can use any following payment option to make advance or full payment for this order:</p>
-          <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
-          <p class="checkout-notice__highlight">Please Note : Your order will not be shipped until we receive your payment.</p>
-        </div>
-      </div>
-      <div class="checkout-notice checkout-notice--important" style="margin-top:var(--space-4); margin-bottom:var(--space-6);">
-        <span class="material-symbols-outlined checkout-notice__icon">block</span>
-        <div class="checkout-notice__body">
-          <div class="checkout-notice__title">No need to make payment at this step !</div>
-          <p>No payment will be collected at checkout. Placing this order does not require any payment for now.</p>
-          <p>Our team will contact you shortly with the final total estimate (including packing &amp; shipping) and payment instructions.</p>
-        </div>
+      <!-- Exact copy from checkout page (1).pdf — plain format (no restyled cards) -->
+      <div class="checkout-pdf-copy">
+        <p>We are delivering goods PAN India by following options :</p>
+        <p class="checkout-pdf-copy__blue">ROAD TRANSPORT / BUS CARGO / RAIL CARGO / AIR COURIER / PORTER IN DELHI NCR</p>
+        <p>You may mention any of them as per your choice.</p>
+
+        <p class="checkout-pdf-copy__heading">Please Note:</p>
+        <p>SHIPPING IS NOT FREE. Please continue with your order by mentioning your preferred shipping choice,<br>
+        we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
+        <p class="checkout-pdf-copy__red">Cash on Delivery (COD) is not available on this order.</p>
+
+        <p class="checkout-pdf-copy__heading" style="margin-top:1.75rem;">Payment Options:</p>
+        <p>You can use any following payment option to make advance or full payment for this order:</p>
+        <p><strong>Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</strong></p>
+        <p class="checkout-pdf-copy__red">Please Note : Your order will not be shipped until we receive your payment.</p>
+
+        <p class="checkout-pdf-copy__red checkout-pdf-copy__heading" style="margin-top:1.75rem;">No need to make payment at this step !</p>
+        <p>No payment will be collected at checkout. Placing this order does not require any payment for now.<br>
+        Our team will contact you shortly with the final total estimate (including packing &amp; shipping) and payment instructions.</p>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
         <button class="btn btn--ghost btn--lg" id="btn-edit-info"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Edit Info</button>

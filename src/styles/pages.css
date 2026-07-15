@@ -905,6 +905,35 @@ body.is-admin-route #faq-chatbot {
   font-weight: var(--fw-semibold);
   color: #b91c1c;
 }
+
+/* Plain text block matching checkout page (1).pdf — no colored cards */
+.checkout-pdf-copy {
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-6);
+  font-size: 15px;
+  line-height: 1.65;
+  color: #1a1a1a;
+}
+.checkout-pdf-copy p {
+  margin: 0 0 0.65rem;
+  max-width: none;
+}
+.checkout-pdf-copy__heading {
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+.checkout-pdf-copy__blue {
+  color: #1a56db;
+  font-weight: 600;
+}
+.checkout-pdf-copy__red {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 @media (max-width: 1024px) {
   .checkout-layout { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
