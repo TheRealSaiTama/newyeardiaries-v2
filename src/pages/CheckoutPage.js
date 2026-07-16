@@ -665,8 +665,8 @@ export async function renderCheckoutPage() {
     );
     if (itemsErr) console.error('Order items insert failed:', itemsErr);
 
-    // Snapshot for success page — strip base64 logos (sessionStorage quota)
-    const orderSnapshot = {
+    // Full payload for email (keep real file data so attachments work)
+    const emailPayload = {
       orderNumber,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -683,7 +683,6 @@ export async function renderCheckoutPage() {
         sku: it.product_sku,
         qty: it.quantity,
         unitPrice: it.unit_price,
-        // keep full image for email (data: or path); snapshot may drop if quota hits
         image: it.product_image,
         lineTotal: it.line_total,
       })),
@@ -694,35 +693,40 @@ export async function renderCheckoutPage() {
       specialInstructions: data.additionalInfo || data.customisation || '',
       customisation: data.customisation || '',
       additionalInfo: data.additionalInfo || '',
-      logos: uploadedLogos.map(l => ({ name: l.name, dataUrl: (l.dataUrl && String(l.dataUrl).length < 80000) ? l.dataUrl : null })),
+      logos: uploadedLogos.map(l => ({ name: l.name, dataUrl: l.dataUrl })),
       paymentMethod,
       tAndCAgreed: true,
     };
-    // Must set BEFORE navigate so success page always has items
+
+    // 3. Send email FIRST with full logos/images (don't wait for sessionStorage)
+    const emailPromise = sendOrderEmail(emailPayload).catch(e => console.error('Order email failed:', e));
+
+    // Snapshot for success page — lighter (sessionStorage quota)
+    const orderSnapshot = {
+      ...emailPayload,
+      logos: uploadedLogos.map(l => ({ name: l.name, dataUrl: null })),
+    };
     sessionStorage.setItem('lastOrderNumber', orderNumber);
     try {
       sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot));
     } catch (_) {
-      // quota: drop images entirely
       try {
         orderSnapshot.items = orderSnapshot.items.map(it => ({ ...it, image: null }));
-        orderSnapshot.logos = (orderSnapshot.logos || []).map(l => ({ name: l.name, dataUrl: null }));
         sessionStorage.setItem('lastOrderSnapshot', JSON.stringify(orderSnapshot));
       } catch (e2) {
         console.error('Could not save order snapshot', e2);
       }
     }
 
-    // 3. Send notification email (fire-and-forget; don't block success)
-    sendOrderEmail(orderSnapshot).catch(e => console.error('Order email failed:', e));
-
-    // 4. Clear cart + redirect to success
+    // 4. Clear cart + redirect (email continues in background)
     clearCart();
     cachedCartItems = null;
     lastCartJson = '';
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
     uploadedLogos = [];
+    // don't block UI; emailPromise already fired
+    void emailPromise;
     navigateTo('/order-success');
   });
 }
