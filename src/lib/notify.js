@@ -75,6 +75,24 @@ function esc(str) {
   }[c]));
 }
 
+/** Email clients need absolute https:// URLs; relative /images/… never load. */
+function emailImageSrc(src) {
+  if (!src) return null;
+  const s = String(src).trim();
+  if (!s) return null;
+  // data: works in some clients; Gmail often strips — still send if small enough
+  if (s.startsWith('data:image/')) {
+    return s.length <= 180_000 ? s : null;
+  }
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith('//')) return `https:${s}`;
+  const origin = (typeof window !== 'undefined' && window.location?.origin)
+    || import.meta.env.VITE_SITE_URL
+    || 'https://newyeardiaries-v2.vercel.app';
+  const path = s.startsWith('/') ? s : `/${s}`;
+  return `${String(origin).replace(/\/$/, '')}${path}`;
+}
+
 /**
  * Clean table email (reference PDF / Image #2):
  * navy header only; white body cells; light borders; blue labels.
@@ -93,9 +111,10 @@ function buildOrderHtml(data) {
   const labelTd = `padding:12px 10px;border:${border};vertical-align:middle;background:#ffffff;color:#1a4a8a;font-size:13px;font-weight:600;text-align:right;`;
 
   const rowsHtml = (data.items || []).map(item => {
-    const imgOk = item.image && !String(item.image).startsWith('data:');
-    const img = imgOk
-      ? `<img src="${esc(item.image)}" width="64" height="64" alt="" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:cover;border:1px solid #e2e8f0;border-radius:4px;">`
+    const src = emailImageSrc(item.image || item.product_image);
+    // Don't HTML-escape data: URLs (would break the image). http(s) paths still safe after esc of quotes only via attribute.
+    const img = src
+      ? `<img src="${src.replace(/"/g, '&quot;')}" width="64" height="64" alt="" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:cover;border:1px solid #e2e8f0;border-radius:4px;">`
       : `<div style="width:64px;height:64px;margin:0 auto;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;"></div>`;
     return `
       <tr>

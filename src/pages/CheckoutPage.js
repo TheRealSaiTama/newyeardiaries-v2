@@ -551,13 +551,13 @@ export async function renderCheckoutPage() {
     const gstAmount = subtotal * gstRate;
     const finalTotal = shipping > 0 ? total + shipping : total;
 
-    // Build order items (denormalized). Skip huge data: URLs in snapshot.
+    // Build order items (denormalized). Keep image for email thumbnails.
+    // data: images OK for email (capped later); relative paths absolutized in notify.js
     const items = cartItems.map(item => {
       const rawImg = item.product.image || item.product.images?.[0] || null;
-      const product_image = rawImg && !String(rawImg).startsWith('data:') ? rawImg : null;
       return {
         product_name: item.product.title || item.product.name,
-        product_image,
+        product_image: rawImg || null,
         product_sku: item.product.sku || '',
         material: item.product.material || null,
         size: item.product.size || null,
@@ -652,9 +652,16 @@ export async function renderCheckoutPage() {
       return;
     }
 
-    // 2. Insert order items (linked to the new order) — strip client-only fields
+    // 2. Insert order items — omit huge base64 images from DB (keep name/price)
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      items.map(({ product_sku, ...it }) => ({ ...it, order_id: orderRow.id }))
+      items.map(({ product_sku, product_image, ...it }) => ({
+        ...it,
+        order_id: orderRow.id,
+        // store path/https only; base64 bloated rows and often fails insert
+        product_image: product_image && !String(product_image).startsWith('data:')
+          ? product_image
+          : null,
+      }))
     );
     if (itemsErr) console.error('Order items insert failed:', itemsErr);
 
@@ -676,6 +683,7 @@ export async function renderCheckoutPage() {
         sku: it.product_sku,
         qty: it.quantity,
         unitPrice: it.unit_price,
+        // keep full image for email (data: or path); snapshot may drop if quota hits
         image: it.product_image,
         lineTotal: it.line_total,
       })),
