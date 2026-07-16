@@ -1,6 +1,8 @@
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const ORDER_ADMIN_EMAIL = 'newyeardiaries@gmail.com';
 // Public site origin for product images in email (must be reachable by Gmail’s servers)
 const SITE_ORIGIN = (import.meta.env.VITE_SITE_URL || 'https://newyeardiaries-v2.vercel.app').replace(/\/$/, '');
@@ -344,7 +346,11 @@ async function buildOrderHtml(data) {
 </table>`;
 }
 
-/** Admin + customer emails (needs EmailJS To = {{to_email}}, body = {{{message}}}) */
+/**
+ * Prefer free long-term path: Supabase Edge Function + Gmail SMTP
+ * (real PDF/JPG attachments, full HTML). Falls back to EmailJS if
+ * the function is not deployed or SMTP secrets are missing.
+ */
 export async function sendOrderEmail(data) {
   const orderNo = data.orderNumber || 'ORD';
   const buyerName = (data.company && data.company.trim())
@@ -354,18 +360,53 @@ export async function sendOrderEmail(data) {
   const subjectAdmin = `New Order # ${orderNo} (${buyerName})`;
   const subjectCustomer = `Order Confirmed # ${orderNo} — New Year Diaries`;
 
-  // Prepare file attachments + HTML (async: product thumbs + file packing)
   const [html, attachments] = await Promise.all([
     buildOrderHtml(data),
     prepareAttachments(data.logos),
   ]);
 
+  // 1) Edge Function (Gmail SMTP) — primary
+  if (SUPABASE_URL && SUPABASE_ANON) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          apikey: SUPABASE_ANON,
+        },
+        body: JSON.stringify({
+          orderNumber: orderNo,
+          adminEmail: ORDER_ADMIN_EMAIL,
+          customerEmail: data.email,
+          subjectAdmin,
+          subjectCustomer,
+          html,
+          attachments: attachments.map(a => ({
+            name: a.name,
+            type: a.type,
+            contentBase64: a.base64,
+            dataUrl: a.data,
+          })),
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload.ok) {
+        console.log('[order-email] sent via Gmail SMTP edge function', payload.sent);
+        return { ok: true, via: 'smtp', ...payload };
+      }
+      console.warn('[order-email] edge function failed, falling back to EmailJS', res.status, payload);
+    } catch (e) {
+      console.warn('[order-email] edge function error, falling back to EmailJS', e);
+    }
+  }
+
+  // 2) EmailJS fallback (no real PDF paperclips on free plan)
   const base = {
     name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || buyerName,
     email: data.email,
   };
 
-  // Prefer full files on admin mail; customer gets HTML previews (lighter)
   const pAdmin = sendEmail({
     ...base,
     title: subjectAdmin,
@@ -385,5 +426,6 @@ export async function sendOrderEmail(data) {
       }, { toEmail: data.email.trim(), attachments })
     : Promise.resolve({ skipped: true });
 
-  return Promise.all([pAdmin, pCustomer]);
+  await Promise.all([pAdmin, pCustomer]);
+  return { ok: true, via: 'emailjs' };
 }
