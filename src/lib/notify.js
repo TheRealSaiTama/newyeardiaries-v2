@@ -76,99 +76,87 @@ function esc(str) {
 }
 
 /**
- * PDF "New Order page" sequence:
- * 1. Blue header New Order: #…
- * 2. [Order # …] (date)
- * 3. Table Image | SKU | Product | Quantity | Price | Total
- * 4. Subtotal / GST / Total
- * 5. Payment Methods
- * 6. Billing Address
- * 7. T & C : Yes
- * 8. Special instructions blue bar
+ * Clean table email (reference PDF / Image #2):
+ * navy header only; white body cells; light borders; blue labels.
  */
 function buildOrderHtml(data) {
   const orderNo = data.orderNumber || 'ORD';
-  const buyerName = (data.company && data.company.trim())
-    ? data.company.trim()
-    : `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Customer';
   const orderDate = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric'
   });
-  // PDF uses: [Order # 12259] (5 June, 2026)
   const subLine = `[Order # ${orderNo}] (${orderDate})`;
-  const specialNote = data.specialInstructions || data.customisation || data.additionalInfo
-    || 'Special Instructions or Comments about your order';
+  const noteBody = data.specialInstructions || data.customisation || data.additionalInfo || '';
+  const border = '1px solid #c8d0dc';
+  const td = `padding:12px 10px;border:${border};vertical-align:middle;background:#ffffff;color:#1a2744;font-size:13px;`;
+  const tdR = `${td}text-align:right;`;
+  const tdC = `${td}text-align:center;`;
+  const labelTd = `padding:12px 10px;border:${border};vertical-align:middle;background:#ffffff;color:#1a4a8a;font-size:13px;font-weight:600;text-align:right;`;
 
   const rowsHtml = (data.items || []).map(item => {
     const imgOk = item.image && !String(item.image).startsWith('data:');
     const img = imgOk
-      ? `<img src="${esc(item.image)}" width="56" height="56" alt="" style="display:block;margin:0 auto;width:56px;height:56px;object-fit:cover;border:1px solid #c5d0e0;">`
-      : `<div style="width:56px;height:56px;margin:0 auto;background:#0a3d6b;"></div>`;
+      ? `<img src="${esc(item.image)}" width="64" height="64" alt="" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:cover;border:1px solid #e2e8f0;border-radius:4px;">`
+      : `<div style="width:64px;height:64px;margin:0 auto;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;"></div>`;
     return `
-      <tr style="background:#0a3d6b;color:#ffffff;">
-        <td style="padding:12px 8px;border:1px solid #062a4a;text-align:center;vertical-align:middle;width:72px;">${img}</td>
-        <td style="padding:12px 8px;border:1px solid #062a4a;text-align:center;vertical-align:middle;font-size:13px;">${esc(item.sku || '—')}</td>
-        <td style="padding:12px 8px;border:1px solid #062a4a;vertical-align:middle;font-size:13px;">${esc(item.name || 'Item')}</td>
-        <td style="padding:12px 8px;border:1px solid #062a4a;text-align:center;vertical-align:middle;font-size:13px;">${esc(item.qty)}</td>
-        <td style="padding:12px 8px;border:1px solid #062a4a;text-align:right;vertical-align:middle;font-size:13px;">${fmtINR(item.unitPrice ?? item.price)}</td>
-        <td style="padding:12px 8px;border:1px solid #062a4a;text-align:right;vertical-align:middle;font-size:13px;font-weight:700;">${fmtINR(item.lineTotal)}</td>
+      <tr>
+        <td style="${tdC}width:80px;">${img}</td>
+        <td style="${tdC}">${esc(item.sku || '—')}</td>
+        <td style="${td}">${esc(item.name || 'Item')}</td>
+        <td style="${tdC}">${esc(item.qty)}</td>
+        <td style="${tdR}">${fmtINR(item.unitPrice ?? item.price)}</td>
+        <td style="${tdR}">${fmtINR(item.lineTotal)}</td>
       </tr>`;
   }).join('');
 
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;">
 
-  <!-- 1. Header bar -->
   <tr>
     <td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">
       New Order: #${esc(orderNo)}
     </td>
   </tr>
 
-  <!-- 2. Subtitle -->
   <tr>
-    <td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;">
+    <td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">
       ${esc(subLine)}
     </td>
   </tr>
 
-  <!-- 3. Product table -->
   <tr>
-    <td style="padding:0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;">
+    <td style="padding:0;background:#ffffff;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;">
         <thead>
           <tr style="background:#003366;color:#ffffff;">
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:center;font-weight:600;">Image</th>
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:center;font-weight:600;">SKU</th>
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:left;font-weight:600;">Product</th>
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:center;font-weight:600;">Quantity</th>
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:right;font-weight:600;">Price</th>
-            <th style="padding:10px 8px;border:1px solid #002244;text-align:right;font-weight:600;">Total</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Image</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">SKU</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:left;font-weight:600;color:#ffffff;">Product</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Quantity</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Price</th>
+            <th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Total</th>
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr style="background:#0a3d6b;color:#fff;"><td colspan="6" style="padding:16px;text-align:center;border:1px solid #062a4a;">No items</td></tr>`}
-          <!-- 4. Totals (aligned right like PDF) -->
-          <tr style="background:#0a3d6b;color:#ffffff;">
-            <td colspan="4" style="padding:10px 8px;border:1px solid #062a4a;"></td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;">Subtotal :</td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;font-weight:600;">${fmtINR(data.subtotal)}</td>
+          ${rowsHtml || `<tr><td colspan="6" style="${tdC}">No items</td></tr>`}
+          <tr>
+            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td style="${labelTd}">Subtotal :</td>
+            <td style="${tdR}">${fmtINR(data.subtotal)}</td>
           </tr>
-          <tr style="background:#0a3d6b;color:#ffffff;">
-            <td colspan="4" style="padding:10px 8px;border:1px solid #062a4a;"></td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;">GST :</td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;font-weight:600;">${fmtINR(data.gstAmount)}</td>
+          <tr>
+            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td style="${labelTd}">GST :</td>
+            <td style="${tdR}">${fmtINR(data.gstAmount)}</td>
           </tr>
-          <tr style="background:#0a3d6b;color:#ffffff;">
-            <td colspan="4" style="padding:10px 8px;border:1px solid #062a4a;"></td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;font-weight:bold;">Total :</td>
-            <td style="padding:10px 8px;border:1px solid #062a4a;text-align:right;font-weight:bold;">${fmtINR(data.total)}</td>
+          <tr>
+            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td style="${labelTd}">Total :</td>
+            <td style="${tdR}font-weight:700;">${fmtINR(data.total)}</td>
           </tr>
-          <!-- 5. Payment methods -->
-          <tr style="background:#0a3d6b;color:#ffffff;">
-            <td colspan="4" style="padding:12px 8px;border:1px solid #062a4a;"></td>
-            <td style="padding:12px 8px;border:1px solid #062a4a;text-align:right;vertical-align:top;">Payment Methods:</td>
-            <td style="padding:12px 8px;border:1px solid #062a4a;text-align:right;font-size:12px;line-height:1.45;">
+          <tr>
+            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td style="${labelTd}vertical-align:top;">Payment Methods:</td>
+            <td style="${tdR}font-size:12px;line-height:1.45;">
               NEFT / RTGS / UPI /<br>QR Code / Net Banking /<br>Debit Card
             </td>
           </tr>
@@ -177,9 +165,8 @@ function buildOrderHtml(data) {
     </td>
   </tr>
 
-  <!-- 6. Billing Address -->
   <tr>
-    <td style="padding:28px 8px 8px;">
+    <td style="padding:28px 8px 8px;background:#ffffff;">
       <div style="font-size:16px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Billing Address :</div>
       <div style="padding-left:12px;line-height:1.55;color:#1a2744;">
         ${data.company ? `<div>${esc(data.company)}</div>` : ''}
@@ -187,29 +174,29 @@ function buildOrderHtml(data) {
         <div>${esc(data.city)}${data.state ? ', ' + esc(data.state) : ''}${data.postcode ? ', ' + esc(data.postcode) : ''}</div>
         <div style="margin-top:12px;">${esc(data.firstName)} ${esc(data.lastName)}</div>
         <div>Ph. ${esc(data.phone)}</div>
-        <div>${esc(data.email)}</div>
+        <div style="color:#1a56db;">${esc(data.email)}</div>
         ${data.gst ? `<div style="margin-top:8px;">${esc(data.gst)}</div>` : ''}
       </div>
     </td>
   </tr>
 
-  <!-- 7. T & C -->
   <tr>
-    <td style="padding:16px 8px;font-size:12px;color:#555;">
-      T &amp; C : I have read &amp; agreed to your privacy statement. I am agree with all Terms and Conditions. : <span style="color:#1a4a8a;">Yes</span>
+    <td style="padding:16px 8px;font-size:12px;color:#555;background:#ffffff;">
+      T &amp; C : I have read &amp; agreed to your privacy statement. I am agree with all Terms and Conditions. : <span style="color:#1a4a8a;font-weight:600;">Yes</span>
     </td>
   </tr>
 
-  <!-- 8. Special instructions bar -->
   <tr>
-    <td style="background:#003366;color:#ffffff;padding:14px 20px;text-align:center;font-size:13px;">
-      ${esc(specialNote)}
+    <td style="padding:8px;background:#ffffff;">
+      <div style="border:1px solid #c8d0dc;padding:12px 14px;font-size:13px;color:#1a4a8a;line-height:1.5;">
+        <strong>Special Instructions or Comments about your order:</strong> ${esc(noteBody || '—')}
+      </div>
     </td>
   </tr>
 
   ${data.logos?.some(l => l.name) ? `
   <tr>
-    <td style="padding:14px 8px;font-size:12px;color:#555;">
+    <td style="padding:14px 8px;font-size:12px;color:#555;background:#ffffff;">
       <strong>Attachments:</strong> ${data.logos.map(l => esc(l.name)).filter(Boolean).join(', ')}
     </td>
   </tr>` : ''}
