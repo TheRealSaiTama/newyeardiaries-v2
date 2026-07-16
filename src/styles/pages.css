@@ -906,6 +906,22 @@ body.is-admin-route #faq-chatbot {
   color: #b91c1c;
 }
 
+/* Homepage — under hero slider */
+.home-wholesale-banner {
+  text-align: center;
+  padding: var(--space-5) var(--space-4) var(--space-2);
+  background: var(--color-bg, #FDF9F3);
+}
+.home-wholesale-banner__text {
+  display: inline-block;
+  font-family: var(--font-family-heading, inherit);
+  font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #c0392b;
+  text-transform: uppercase;
+}
+
 /* Plain text block matching checkout page (1).pdf — no colored cards */
 .checkout-pdf-copy {
   margin-top: var(--space-8);

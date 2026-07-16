@@ -85,6 +85,10 @@ export async function renderHomePage() {
 
       ${renderAnnouncementMarquee(content.announcements || [])}
 
+      <div class="home-wholesale-banner" aria-label="Wholesale only">
+        <span class="home-wholesale-banner__text">WHOLESALE ONLY</span>
+      </div>
+
       <section class="section--sm">
         <div class="container">
           ${renderTrustBadges(getTrustBadges(content))}
