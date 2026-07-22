@@ -1034,24 +1034,18 @@ a.explore-mega-cat-btn.active {
   gap: var(--space-4);
   overflow-y: auto;
 }
-.quick-view-details .text-body,
-.quick-view-details .text-body p,
-.quick-view-details .text-body span,
-.quick-view-details .text-body div,
-.quick-view-details .text-body li,
-.quick-view-details .text-body td,
-.quick-view-details .text-body th,
-.quick-view-details .text-body strong,
-.quick-view-details .text-body em,
-.quick-view-details .text-body b,
-.quick-view-details .text-body i,
-.quick-view-details .text-body a {
-  white-space: pre-wrap;
+/* ponytail: remove pre-wrap on HTML text-body to prevent extra newline gaps */
+.quick-view-details .text-body p {
+  margin-top: 0;
+  margin-bottom: var(--space-2);
 }
-.quick-view-details .text-body p,
+.quick-view-details .text-body p:last-child {
+  margin-bottom: 0;
+}
 .quick-view-details .text-body ul,
 .quick-view-details .text-body ol {
-  margin-bottom: var(--space-3);
+  margin-top: 0;
+  margin-bottom: var(--space-2);
 }
 .quick-view-details .text-body ul {
   list-style: disc;

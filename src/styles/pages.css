@@ -591,39 +591,22 @@ body.is-admin-route #faq-chatbot {
   line-height: var(--lh-relaxed);
   color: var(--color-text-primary);
 }
-.pdp-description,
+/* ponytail: remove pre-wrap on HTML descriptions so raw newlines between tags don't cause 3-line gaps */
 .pdp-description p,
-.pdp-description span,
-.pdp-description div,
-.pdp-description li,
-.pdp-description td,
-.pdp-description th,
-.pdp-description strong,
-.pdp-description em,
-.pdp-description b,
-.pdp-description i,
-.pdp-description a,
-.pdp-long-desc,
-.pdp-long-desc p,
-.pdp-long-desc span,
-.pdp-long-desc div,
-.pdp-long-desc li,
-.pdp-long-desc td,
-.pdp-long-desc th,
-.pdp-long-desc strong,
-.pdp-long-desc em,
-.pdp-long-desc b,
-.pdp-long-desc i,
-.pdp-long-desc a {
-  white-space: pre-wrap;
+.pdp-long-desc p {
+  margin-top: 0;
+  margin-bottom: var(--space-2);
 }
-.pdp-description p,
+.pdp-description p:last-child,
+.pdp-long-desc p:last-child {
+  margin-bottom: 0;
+}
 .pdp-description ul,
 .pdp-description ol,
-.pdp-long-desc p,
 .pdp-long-desc ul,
 .pdp-long-desc ol {
-  margin-bottom: var(--space-3);
+  margin-top: 0;
+  margin-bottom: var(--space-2);
 }
 .pdp-description ul,
 .pdp-long-desc ul {
