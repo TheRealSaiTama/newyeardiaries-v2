@@ -2,7 +2,7 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
 import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
-import { addToCart, getCart, addToQuoteList, getQuoteList } from '../data/store.js';
+import { addToCart, getCart } from '../data/store.js';
 import { supabase } from '../lib/supabase.js';
 
 function renderProductMedia(src, alt) {
@@ -200,16 +200,10 @@ export async function renderProductDetailPage(params) {
                     <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
                   </div>
                   <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;width:100%;">
-                    <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''} style="flex:1;">
+                    <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''} style="width:100%;">
                       ${isInCart ? 'Added to Cart' : `
                         <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
                         Add to Cart
-                      `}
-                    </button>
-                    <button class="btn btn--secondary btn--lg${isInQuoteList ? ' btn--added' : ''}" id="pdp-add-quote"${isInQuoteList ? ' disabled' : ''} style="flex:1;">
-                      ${isInQuoteList ? 'Added to Quote List' : `
-                        <span class="material-symbols-outlined" style="font-size:18px;">request_quote</span>
-                        Add to Quote List
                       `}
                     </button>
                   </div>
@@ -284,22 +278,6 @@ export async function renderProductDetailPage(params) {
       }
     } catch (err) {
       console.error('Failed to add to cart:', err);
-    }
-  });
-
-  document.getElementById('pdp-add-quote')?.addEventListener('click', () => {
-    try {
-      const qty = parseInt(qtyInput.value) || pdpMOQ;
-      addToQuoteList(product.id, qty);
-      
-      const btn = document.getElementById('pdp-add-quote');
-      if (btn) {
-        btn.classList.add('btn--added');
-        btn.disabled = true;
-        btn.innerHTML = 'Added to Quote List';
-      }
-    } catch (err) {
-      console.error('Failed to add to quote list:', err);
     }
   });
 

@@ -1,5 +1,5 @@
 import { formatPrice, getProductById } from '../data/products.js';
-import { addToCart, getCart, addToQuoteList, getQuoteList } from '../data/store.js';
+import { addToCart, getCart } from '../data/store.js';
 
 export function renderQuickViewModal() {
   return `
@@ -19,8 +19,6 @@ export async function openQuickView(productId) {
 
   const cart = getCart();
   const isInCart = cart.some(item => String(item.productId) === String(product.id));
-  const quoteList = getQuoteList();
-  const isInQuoteList = quoteList.some(item => String(item.productId) === String(product.id));
 
   const content = document.getElementById('quick-view-content');
   const modal = document.getElementById('quick-view-modal');
@@ -52,11 +50,8 @@ export async function openQuickView(productId) {
           <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${moq} units</div>
         </div>
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:auto;width:100%;">
-          <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" style="flex:1;" id="qv-add-cart"${isInCart ? ' disabled' : ''}>
+          <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" style="width:100%;" id="qv-add-cart"${isInCart ? ' disabled' : ''}>
             ${isInCart ? 'Added to Cart' : 'Add to Cart'}
-          </button>
-          <button class="btn btn--secondary btn--lg${isInQuoteList ? ' btn--added' : ''}" style="flex:1;" id="qv-add-quote"${isInQuoteList ? ' disabled' : ''}>
-            ${isInQuoteList ? 'Added to Quote List' : 'Add to Quote List'}
           </button>
         </div>
         <a href="/product/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
@@ -89,22 +84,6 @@ export async function openQuickView(productId) {
       }
     } catch (err) {
       console.error('Quick view add to cart failed:', err);
-    }
-  });
-
-  document.getElementById('qv-add-quote')?.addEventListener('click', () => {
-    try {
-      const qty = parseInt(qvQty?.value) || moq;
-      addToQuoteList(product.id, qty);
-
-      const btn = document.getElementById('qv-add-quote');
-      if (btn) {
-        btn.classList.add('btn--added');
-        btn.disabled = true;
-        btn.innerHTML = 'Added to Quote List';
-      }
-    } catch (err) {
-      console.error('Quick view add to quote failed:', err);
     }
   });
 }
