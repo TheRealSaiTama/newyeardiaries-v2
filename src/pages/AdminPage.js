@@ -1091,9 +1091,26 @@ async function duplicateProduct(source, container) {
     newSlug = `${baseSlug}-${i}`;
   }
 
+  // ponytail: auto-generate unique SKU if present to prevent products_sku_key constraint error
+  let newSku = null;
+  if (fullSrc.sku) {
+    const baseSku = `${fullSrc.sku}-COPY`;
+    const { data: skuRows } = await supabase
+      .from('products')
+      .select('sku')
+      .ilike('sku', `${baseSku.replace(/[%_]/g, '\\$&')}%`);
+    const takenSkus = new Set((skuRows || []).map(r => r.sku));
+    newSku = baseSku;
+    if (takenSkus.has(newSku)) {
+      let i = 1;
+      while (takenSkus.has(`${baseSku}-${i}`)) i++;
+      newSku = `${baseSku}-${i}`;
+    }
+  }
+
   // Strip the immutable / PK columns, keep everything else.
   const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = fullSrc;
-  const payload = { ...rest, name: newName, slug: newSlug };
+  const payload = { ...rest, name: newName, slug: newSlug, sku: newSku };
 
   const { data: inserted, error } = await supabase
     .from('products')
