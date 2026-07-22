@@ -67,65 +67,146 @@ export function renderBrandingPage() {
 
       <section class="b-methods">
         <div class="container">
-          <header class="b-head b-reveal">
-            <span class="b-head__eyebrow">What we do</span>
-            <h2>Branding Methods We Offer</h2>
-          </header>
+          <div class="b-methods__header b-reveal">
+            <div>
+              <span class="b-head__eyebrow">WHAT WE OFFER</span>
+              <h2 class="b-methods__title">Discover Our Main Branding Services</h2>
+            </div>
+            <a href="/contact" class="b-methods__btn">
+              Consult Expert <span class="material-symbols-outlined" style="font-size:18px">arrow_outward</span>
+            </a>
+          </div>
 
           <div class="b-note b-reveal">
             <span class="material-symbols-outlined">info</span>
             <p><strong>Please note:</strong> All trademarks, logos and brand names are the property of their respective owners. All company, product and service names used on this website are for identification purposes only. Use of these names, trademarks and brands does not imply endorsement.</p>
           </div>
 
-          <div class="b-tiles">
-            ${BRANDING_METHODS.map((m, i) => `
-              <article class="b-tile b-reveal" style="--tile:${m.color};--ri:${i}" data-delay="${i * 120}">
-                <div class="b-tile__media">
-                  ${m.image
-                    ? `<img class="b-tile__img" src="${m.image}" alt="${m.title}" loading="lazy">`
-                    : `<span class="material-symbols-outlined b-tile__watermark">${m.icon}</span>`}
-                </div>
-                <div class="b-tile__bar">
-                  <span class="b-tile__ic"><span class="material-symbols-outlined">${m.icon}</span></span>
-                  <div class="b-tile__title">
-                    <h3>${m.title}</h3>
-                    <span class="b-tile__hint">${m.blurb}</span>
-                  </div>
-                </div>
-                <div class="b-tile__reveal">
-                  <div class="b-tile__reveal-inner">
-                    <span class="b-tile__ic b-tile__ic--lg"><span class="material-symbols-outlined">${m.icon}</span></span>
-                    <h3>${m.title}</h3>
-                    <p>${m.desc}</p>
-                    ${m.best ? `
-                    <div class="b-tile__best">
-                      <span class="material-symbols-outlined">check_circle</span>
-                      <span><strong>Best for:</strong> ${m.best}</span>
-                    </div>` : ''}
-                  </div>
-                </div>
-              </article>
-            `).join('')}
+          <div class="b-bento-grid">
+            <!-- Card 1: Featured / Large Bento Card -->
+            <div class="b-bento-card b-bento-card--featured b-reveal">
+              <img class="b-bento-card__img" src="/images/branding/thermal-debossing.jpg" alt="Thermal Logo Debossing">
+              <div class="b-bento-card__overlay"></div>
+              <div class="b-bento-card__top">
+                <span class="b-bento-card__pill">Blind Debossing</span>
+                <span class="b-bento-card__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+              </div>
+              <div class="b-bento-card__content">
+                <h3>Thermal Logo Debossing</h3>
+                <p>The undisputed favourite among logo debossings. Charming, unobtrusive, high quality and pleasant to the touch. High-quality brass stamps created for precision.</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Colour Debossing -->
+            <div class="b-bento-card b-reveal" data-delay="100">
+              <img class="b-bento-card__img" src="/images/branding/colour-debossing.jpg" alt="Colour Debossing">
+              <div class="b-bento-card__overlay"></div>
+              <div class="b-bento-card__top">
+                <span class="b-bento-card__pill">Colour Foil</span>
+                <span class="b-bento-card__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+              </div>
+              <div class="b-bento-card__content">
+                <h3>Colour Debossing</h3>
+                <p>Transfers coloured foil into debossed contours for a vibrant, rich accent.</p>
+              </div>
+            </div>
+
+            <!-- Card 3: Metallic Debossing -->
+            <div class="b-bento-card b-reveal" data-delay="150">
+              <img class="b-bento-card__img" src="/images/branding/metallic-debossing.jpg" alt="Metallic Debossing">
+              <div class="b-bento-card__overlay"></div>
+              <div class="b-bento-card__top">
+                <span class="b-bento-card__pill">Gold & Silver Hot Foil</span>
+                <span class="b-bento-card__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+              </div>
+              <div class="b-bento-card__content">
+                <h3>Metallic Debossing</h3>
+                <p>Hot foil embossing forming a luxury touch with perfect metallic shine.</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Laser Cut / Punching -->
+            <div class="b-bento-card b-reveal" data-delay="200">
+              <img class="b-bento-card__img" src="/images/branding/laser-cut.jpg" alt="Laser Cut / Punching">
+              <div class="b-bento-card__overlay"></div>
+              <div class="b-bento-card__top">
+                <span class="b-bento-card__pill">Precision Cut</span>
+                <span class="b-bento-card__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+              </div>
+              <div class="b-bento-card__content">
+                <h3>Laser Cut / Punching</h3>
+                <p>Digitally controlled precision cutting for delicate motifs and stencil lettering.</p>
+              </div>
+            </div>
+
+            <!-- Card 5: Magnetic Flap -->
+            <div class="b-bento-card b-reveal" data-delay="250">
+              <img class="b-bento-card__img" src="/images/branding/magnetic-flap.jpg" alt="Magnetic Flap">
+              <div class="b-bento-card__overlay"></div>
+              <div class="b-bento-card__top">
+                <span class="b-bento-card__pill">Metal Clasps</span>
+                <span class="b-bento-card__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+              </div>
+              <div class="b-bento-card__content">
+                <h3>Magnetic Flap & Clasps</h3>
+                <p>Metal clasps in various shapes, sizes, and colours to showcase your company logo.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="b-how" id="b-how">
+      <section class="b-process-section" id="b-how">
         <div class="container">
-          <header class="b-head b-reveal">
-            <span class="b-head__eyebrow">The process</span>
-            <h2>How It Works</h2>
-            <p>Four simple steps from artwork to delivery. Scroll to follow the journey.</p>
-          </header>
+          <div class="b-process-card b-reveal">
+            <div class="b-process-header">
+              <div class="b-process-header__left">
+                <span class="b-head__eyebrow">THE PROCESS</span>
+                <h2>How Our Ordering Process Works</h2>
+                <p>Transform digital designs into premium products through our professional four-step system.</p>
+              </div>
+              <a href="/contact" class="b-process-header__btn">
+                Learn More <span class="material-symbols-outlined" style="font-size:18px">arrow_outward</span>
+              </a>
+            </div>
 
-          <div class="b-how__track">
-            ${HOW_STEPS.map((s, i) => `
-              <article class="b-how__tile b-reveal" data-step="${s.num}" data-delay="${i * 150}">
-                <div class="b-how__num">${s.num}</div>
-                <h4>${s.title}</h4>
-                <p>${s.desc}</p>
-              </article>
-            `).join('')}
+            <div class="b-process-grid">
+              <div class="b-process-step b-process-step--active">
+                <div class="b-process-step__top">
+                  <span class="b-process-step__num">01</span>
+                  <span class="b-process-step__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+                </div>
+                <h3>Share Your Artwork</h3>
+                <p>Upload your high-resolution files and select premium materials through our interface.</p>
+              </div>
+
+              <div class="b-process-step">
+                <div class="b-process-step__top">
+                  <span class="b-process-step__num">02</span>
+                  <span class="b-process-step__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+                </div>
+                <h3>We Recommend Method</h3>
+                <p>Our team selects the best branding technique based on your product, design complexity, and quantity.</p>
+              </div>
+
+              <div class="b-process-step">
+                <div class="b-process-step__top">
+                  <span class="b-process-step__num">03</span>
+                  <span class="b-process-step__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+                </div>
+                <h3>Sample Approval</h3>
+                <p>We produce a sample for your review and approval before proceeding with full production run.</p>
+              </div>
+
+              <div class="b-process-step">
+                <div class="b-process-step__top">
+                  <span class="b-process-step__num">04</span>
+                  <span class="b-process-step__arrow"><span class="material-symbols-outlined">arrow_outward</span></span>
+                </div>
+                <h3>Secure Delivery</h3>
+                <p>Every order is rigorously inspected and securely packaged for a safe arrival across India.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
