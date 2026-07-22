@@ -1834,14 +1834,28 @@ async function renderCategories(container) {
       const id = btn.dataset.renameGroup;
       const oldName = btn.dataset.groupName;
       const newName = prompt('Rename group:', oldName);
-      if (!newName || newName.trim() === oldName) return;
-      const { error } = await supabase.from('category_groups').update({ name: newName.trim() }).eq('id', id);
+      if (!newName || !newName.trim() || newName.trim() === oldName) return;
+
+      const trimmedName = newName.trim();
+      const { error } = await supabase.from('category_groups').update({ name: trimmedName }).eq('id', id);
       if (error) { showToast(`Rename failed: ${error.message}`, 'error'); return; }
+
+      // ponytail: sync group_id on all member categories so DB & fallback mapping update
+      const groupCats = grouped[oldName] || [];
+      if (groupCats.length) {
+        const catIds = groupCats.map(c => c.id).filter(Boolean);
+        if (catIds.length) {
+          await supabase.from('categories').update({ group_id: id }).in('id', catIds);
+        }
+      }
+
       bustCategoriesCache();
       showToast('Group renamed.');
       await renderCategories(container);
     };
   });
+
+
 
   // Delete group (moves its categories to Uncategorized, then deletes the group)
   document.querySelectorAll('[data-delete-group]').forEach(btn => {
