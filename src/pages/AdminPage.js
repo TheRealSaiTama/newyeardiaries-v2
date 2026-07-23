@@ -1681,9 +1681,9 @@ function renderCategoryTable(cats, group, opts = {}) {
             <span class="material-symbols-outlined" style="font-size:18px;">add</span>
             <span>Add</span>
           </button>
-          ${groupId ? `<button class="admin-btn admin-btn-ghost admin-btn-sm" data-rename-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Rename group">
+          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-rename-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Edit group & SEO">
             <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
-          </button>` : ''}
+          </button>
           <button class="admin-btn admin-btn-ghost admin-btn-sm" data-delete-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Delete group (subcategories move to Uncategorized)" style="color:var(--color-error, #c0392b);">
             <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
           </button>
