@@ -93,7 +93,7 @@ async function fetchCategoriesFresh() {
     try {
       const { data: g, error: gErr } = await supabase
         .from('category_groups')
-        .select('id, name, sort_order')
+        .select('*')
         .order('sort_order');
       if (!gErr && g) groups = g;
     } catch (_) { /* table may not exist yet */ }
@@ -179,7 +179,7 @@ export async function fetchCategoryGroups() {
   try {
     const { data, error } = await supabase
       .from('category_groups')
-      .select('id, name, sort_order')
+      .select('*')
       .order('sort_order');
     if (!error && data) return data;
   } catch (_) { /* table may not exist yet */ }

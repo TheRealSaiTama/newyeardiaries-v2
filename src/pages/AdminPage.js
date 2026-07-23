@@ -1827,33 +1827,14 @@ async function renderCategories(container) {
   document.querySelectorAll('[data-add-to-group]').forEach(btn => {
     btn.onclick = () => openCategoryModal(container, null, btn.dataset.addToGroup);
   });
-
-  // Rename group
   document.querySelectorAll('[data-rename-group]').forEach(btn => {
-    btn.onclick = async () => {
+    btn.onclick = () => {
       const id = btn.dataset.renameGroup;
-      const oldName = btn.dataset.groupName;
-      const newName = prompt('Rename group:', oldName);
-      if (!newName || !newName.trim() || newName.trim() === oldName) return;
-
-      const trimmedName = newName.trim();
-      const { error } = await supabase.from('category_groups').update({ name: trimmedName }).eq('id', id);
-      if (error) { showToast(`Rename failed: ${error.message}`, 'error'); return; }
-
-      // ponytail: sync group_id on all member categories so DB & fallback mapping update
-      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === id) || []);
-      const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
-      if (catIds.length) {
-        await supabase.from('categories').update({ group_id: id }).in('id', catIds);
-      }
-
-      bustCategoriesCache();
-      showToast('Group renamed.');
-      await renderCategories(container);
+      const groupName = btn.dataset.groupName;
+      const grp = groups.find(g => g.id === id || g.name === groupName) || { id, name: groupName };
+      openCategoryGroupModal(container, grp, categories, grouped);
     };
   });
-
-
 
   // Delete group (moves its categories to Uncategorized, then deletes the group)
   document.querySelectorAll('[data-delete-group]').forEach(btn => {
@@ -1877,19 +1858,7 @@ async function renderCategories(container) {
   });
 
   // New group
-  const onAddGroup = async () => {
-    const name = prompt('New group name:');
-    if (!name || !name.trim()) return;
-    // Compute next sort_order
-    const nextOrder = (groups[groups.length - 1]?.sort_order || 0) + 1;
-    const { error } = await supabase.from('category_groups').insert({ name: name.trim(), sort_order: nextOrder });
-    if (error) { showToast(`Create failed: ${error.message}`, 'error'); return; }
-    bustCategoriesCache();
-    showToast('Group created.');
-    // Expand the new group so the user can immediately add subcategories
-    sessionStorage.setItem('admin_cat_expand_once', name.trim());
-    await renderCategories(container);
-  };
+  const onAddGroup = () => openCategoryGroupModal(container, null, categories, grouped);
   document.getElementById('add-group-btn')?.addEventListener('click', onAddGroup);
   document.getElementById('add-group-btn-empty')?.addEventListener('click', onAddGroup);
 
@@ -1926,6 +1895,148 @@ async function renderCategories(container) {
   });
 }
 
+async function openCategoryGroupModal(container, group = null, categories = [], grouped = {}) {
+  const isEdit = !!(group && group.id);
+  const oldName = group?.name || '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay';
+  overlay.id = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="admin-modal" style="max-width: 680px;">
+      <div class="admin-modal-header">
+        <h2>${isEdit ? 'Edit Category Group' : 'Add Category Group'}</h2>
+        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <form class="admin-form" id="cat-group-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Group Name *</label>
+            <input name="name" value="${group?.name || ''}" required id="group-name">
+          </div>
+          <div class="form-group">
+            <label>Slug *</label>
+            <input name="slug" value="${group?.slug || (group?.name ? generateSlug(group.name) : '')}" required id="group-slug">
+            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sort Order</label>
+            <input name="sort_order" type="number" value="${group?.sort_order || 0}">
+          </div>
+          <div class="form-group">
+            <label>Banner / OG Image URL</label>
+            <input name="og_image_url" value="${group?.og_image_url || ''}" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Category Overview / Description</label>
+          <textarea name="description" placeholder="Description for category page overview & SEO...">${group?.description || ''}</textarea>
+        </div>
+
+        <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
+          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)">
+            <span class="material-symbols-outlined">search</span>
+            <strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong>
+          </div>
+
+          <div class="form-group">
+            <label>Meta Title</label>
+            <input name="meta_title" value="${group?.meta_title || ''}" placeholder="e.g. Note Books & Pads | Corporate Gifts & Stationery">
+            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browser title tag (50-60 characters)</small>
+          </div>
+
+          <div class="form-group">
+            <label>Meta Description</label>
+            <textarea name="meta_description" placeholder="e.g. Discover our premium range of custom notebooks, eco pads, and leather planners...">${group?.meta_description || ''}</textarea>
+            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Search result snippet (150-160 characters)</small>
+          </div>
+
+          <div class="form-group">
+            <label>Meta Keywords</label>
+            <input name="meta_keywords" value="${group?.meta_keywords || ''}" placeholder="e.g. notebooks, memo pads, personalized notebooks, corporate gifts delhi">
+          </div>
+        </div>
+
+        <div class="admin-modal-actions" style="margin-top:var(--space-6);">
+          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Create Group'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+  overlay.querySelector('.modal-cancel')?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  });
+
+  const groupNameInput = document.getElementById('group-name');
+  const groupSlugInput = document.getElementById('group-slug');
+  groupNameInput?.addEventListener('input', () => {
+    if (!isEdit && !groupSlugInput.dataset.manual) {
+      groupSlugInput.value = generateSlug(groupNameInput.value);
+    }
+  });
+  groupSlugInput?.addEventListener('input', () => {
+    if (groupSlugInput.value) groupSlugInput.dataset.manual = '1';
+  });
+
+  document.getElementById('cat-group-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const name = fd.get('name');
+    const rawSlug = fd.get('slug');
+    const slug = rawSlug ? rawSlug.trim() : generateSlug(name);
+    if (!name || !name.trim()) { showToast('Group name is required.', 'error'); return; }
+
+    const payload = {
+      name: name.trim(),
+      slug,
+      sort_order: Number(fd.get('sort_order')) || 0,
+      description: fd.get('description') || null,
+      meta_title: fd.get('meta_title') || null,
+      meta_description: fd.get('meta_description') || null,
+      meta_keywords: fd.get('meta_keywords') || null,
+      og_image_url: fd.get('og_image_url') || null,
+    };
+
+    const { error } = isEdit
+      ? await supabase.from('category_groups').update(payload).eq('id', group.id)
+      : await supabase.from('category_groups').insert(payload);
+
+    if (error) {
+      console.error('Group save failed:', error);
+      showToast(`Save failed: ${error.message}`, 'error');
+      return;
+    }
+
+    if (isEdit && group.id) {
+      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === group.id) || []);
+      const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
+      if (catIds.length) {
+        await supabase.from('categories').update({ group_id: group.id }).in('id', catIds);
+      }
+    }
+
+    bustCategoriesCache();
+    closeModal();
+    showToast(isEdit ? 'Category Group updated!' : 'Category Group created!');
+    if (!isEdit) sessionStorage.setItem('admin_cat_expand_once', name.trim());
+    await renderCategories(container);
+  };
+}
+
 async function openCategoryModal(container, category = null, presetGroupName = null) {
   const isEdit = !!category;
   // Always read groups fresh so the dropdown reflects the current DB state
@@ -1938,29 +2049,59 @@ async function openCategoryModal(container, category = null, presetGroupName = n
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
-      <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Category</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
+    <div class="admin-modal" style="max-width: 680px;">
+      <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Subcategory</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
       <form class="admin-form" id="cat-form">
         <div class="form-row">
           <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div>
           <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
         </div>
         <div class="form-group">
-          <label>Group</label>
+          <label>Parent Group</label>
           <select name="group_id" id="cat-group-select">
             <option value="">— Uncategorized —</option>
             ${groups.map(g => `<option value="${g.id}" ${g.name === currentGroup ? 'selected' : ''}>${g.name}</option>`).join('')}
           </select>
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which menu group this category appears under on the live site.</small>
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which main group menu this subcategory appears under.</small>
         </div>
-        <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
+          <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
+        </div>
         <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
-        <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="active" type="checkbox" id="cat_active" ${category?.active !== false ? 'checked' : ''}><label for="cat_active">Active</label></div>
           <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${category?.sort_order || 0}"></div>
         </div>
-        <div class="admin-modal-actions">
+
+        <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
+          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)">
+            <span class="material-symbols-outlined">search</span>
+            <strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong>
+          </div>
+
+          <div class="form-group">
+            <label>Meta Title</label>
+            <input name="meta_title" value="${category?.meta_title || ''}" placeholder="e.g. Custom Printed Notebooks | Premium Stationery">
+          </div>
+
+          <div class="form-group">
+            <label>Meta Description</label>
+            <textarea name="meta_description" placeholder="e.g. Order custom notebooks with logo embossing...">${category?.meta_description || ''}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Meta Keywords</label>
+            <input name="meta_keywords" value="${category?.meta_keywords || ''}" placeholder="e.g. notebook with pen, custom notebook, diary printing">
+          </div>
+
+          <div class="form-group">
+            <label>OG Image URL</label>
+            <input name="og_image_url" value="${category?.og_image_url || ''}" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="admin-modal-actions" style="margin-top:var(--space-6);">
           <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
           <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button>
         </div>
@@ -1990,10 +2131,6 @@ async function openCategoryModal(container, category = null, presetGroupName = n
     if (!name || !name.trim()) { showToast('Category name is required.', 'error'); return; }
     if (!slug) { showToast('Slug is required.', 'error'); return; }
 
-    // Resolve group_id from the selected option. If the user picks an
-    // existing group, we use its id; if they pick a different group than the
-    // current one, the slug may no longer match the old mapping — we don't
-    // auto-migrate, we just save the new mapping.
     const groupIdRaw = fd.get('group_id');
     const groupId = groupIdRaw && groupIdRaw !== '' ? groupIdRaw : null;
 
@@ -2006,6 +2143,10 @@ async function openCategoryModal(container, category = null, presetGroupName = n
       image_url: fd.get('image_url') || null,
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
+      meta_title: fd.get('meta_title') || null,
+      meta_description: fd.get('meta_description') || null,
+      meta_keywords: fd.get('meta_keywords') || null,
+      og_image_url: fd.get('og_image_url') || null,
     };
 
     const { error: catError } = isEdit
