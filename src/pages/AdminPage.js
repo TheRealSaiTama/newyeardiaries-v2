@@ -1921,15 +1921,9 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Sort Order</label>
-            <input name="sort_order" type="number" value="${group?.sort_order || 0}">
-          </div>
-          <div class="form-group">
-            <label>Banner / OG Image URL</label>
-            <input name="og_image_url" value="${group?.og_image_url || ''}" placeholder="https://...">
-          </div>
+        <div class="form-group">
+          <label>Sort Order</label>
+          <input name="sort_order" type="number" value="${group?.sort_order || 0}">
         </div>
 
         <div class="form-group">
