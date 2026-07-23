@@ -1841,12 +1841,10 @@ async function renderCategories(container) {
       if (error) { showToast(`Rename failed: ${error.message}`, 'error'); return; }
 
       // ponytail: sync group_id on all member categories so DB & fallback mapping update
-      const groupCats = grouped[oldName] || [];
-      if (groupCats.length) {
-        const catIds = groupCats.map(c => c.id).filter(Boolean);
-        if (catIds.length) {
-          await supabase.from('categories').update({ group_id: id }).in('id', catIds);
-        }
+      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === id) || []);
+      const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
+      if (catIds.length) {
+        await supabase.from('categories').update({ group_id: id }).in('id', catIds);
       }
 
       bustCategoriesCache();

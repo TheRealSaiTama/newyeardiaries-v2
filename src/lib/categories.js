@@ -100,16 +100,25 @@ async function fetchCategoriesFresh() {
 
     const groupById = new Map();
     const groupByName = new Map();
+    const groupByOrder = new Map();
     if (groups) {
       for (const g of groups) {
         groupById.set(g.id, g);
         groupByName.set(g.name, g);
+        if (g.sort_order != null) groupByOrder.set(g.sort_order, g);
       }
     }
 
-    const fallbackNameForSlug = (slug) => {
+    const fallbackGroupForSlug = (slug) => {
+      let idx = 0;
       for (const [name, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
-        if (slugs.includes(slug)) return name;
+        idx++;
+        if (slugs.includes(slug)) {
+          if (groupByName.has(name)) return groupByName.get(name);
+          if (groupByOrder.has(idx)) return groupByOrder.get(idx);
+          if (groups && groups[idx - 1]) return groups[idx - 1];
+          return { id: null, name, sort_order: idx };
+        }
       }
       return null;
     };
@@ -120,16 +129,10 @@ async function fetchCategoriesFresh() {
       let grp = null;
       if (c.group_id && groupById.has(c.group_id)) {
         grp = groupById.get(c.group_id);
-      } else if (!c.group_id) {
-        // No explicit group — try the fallback map (pre-migration data).
-        const fbName = fallbackNameForSlug(c.slug);
-        if (fbName && groupByName.has(fbName)) {
-          grp = groupByName.get(fbName);
-        } else if (fbName) {
-          grp = { id: null, name: fbName, sort_order: 0 };
-        }
+      } else {
+        grp = fallbackGroupForSlug(c.slug);
       }
-      return { ...c, group: grp, group_name: grp?.name || null };
+      return { ...c, group_id: c.group_id || grp?.id || null, group: grp, group_name: grp?.name || null };
     });
 
     _catCache = decorated;
