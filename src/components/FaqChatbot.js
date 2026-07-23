@@ -6,7 +6,7 @@ const SYSTEM_PROMPT = `You are a helpful assistant for New Year Diaries (newyear
 Key facts:
 - Products: corporate diaries, mugs, calendars, leather planners, trophies, laptop bags, pen stands, key chains, t-shirts, umbrellas, mouse pads, certificate folders, wallets, bottles, notebooks, and 1100+ more items
 - Address: 174 D, Bawana Industrial Area, Delhi 110039, India
-- Phone: +91 9899223130 (Mon-Sat, 9am-6pm IST)
+- Phone: +91 93111 35190 (Mon-Sat, 9am-6pm IST)
 - Email: newyeardiaries@gmail.com
 - Customization: We offer logo printing, engraving, embossing, gold/silver foiling, custom designs
 - Payment: For customized items 50% advance, balance before dispatch. Non-customized: full payment upfront
@@ -19,7 +19,7 @@ Keep answers short, friendly, and helpful. If asked about pricing, direct them t
 const FAQS = [
   { q: 'What is New Year Diaries?', a: 'We are manufacturers, traders and suppliers of corporate promotional, advertising gifts and printing needs. Our product range includes 1100+ business promotion products like corporate diaries, mugs, calendars, leather planners, trophies, laptop bags, and more.' },
   { q: 'Where is your office?', a: '174 D, Bawana Industrial Area, Delhi, India 110039.' },
-  { q: 'How do I contact you?', a: 'Email: newyeardiaries@gmail.com | Call: +91 9899223130 (Mon-Sat, 9am-6pm IST).' },
+  { q: 'How do I contact you?', a: 'Email: newyeardiaries@gmail.com | Call: +91 93111 35190 (Mon-Sat, 9am-6pm IST).' },
   { q: 'How can I personalize a product?', a: 'Choose your product and customize it with your name, text, art, or design. Send your design via email after placing the order.' },
   { q: 'Do I need to pay in full upfront?', a: 'For customized items: 50% advance, balance before dispatch. For non-customized items: full payment upfront.' },
   { q: 'Can you print my logo?', a: 'Yes! Select and order your product, then send your design/logo via email to newyeardiaries@gmail.com with your order details.' },
@@ -32,7 +32,7 @@ let isOpen = false;
 let chatHistory = [];
 
 async function askLLM(question) {
-  if (!CEREBRAS_KEY) return 'Sorry, the AI assistant is not configured. Please contact us directly at newyeardiaries@gmail.com or +91 9899223130.';
+  if (!CEREBRAS_KEY) return 'Sorry, the AI assistant is not configured. Please contact us directly at newyeardiaries@gmail.com or +91 93111 35190.';
 
   chatHistory.push({ role: 'user', content: question });
 
@@ -60,7 +60,7 @@ async function askLLM(question) {
     chatHistory.push({ role: 'assistant', content: reply });
     return reply;
   } catch {
-    return 'Sorry, something went wrong. Please contact us at newyeardiaries@gmail.com or +91 9899223130.';
+    return 'Sorry, something went wrong. Please contact us at newyeardiaries@gmail.com or +91 93111 35190.';
   }
 }
 

@@ -5,7 +5,7 @@ import { generateEnquiryCode } from '../lib/enquiry-code.js';
 
 export function renderContactPage(params, appContent) {
   const get = (key, fallback = '') => appContent?.siteSettings?.[key] || appContent?.siteContent?.[`footer.${key}`] || fallback;
-  const phone = get('contact_phone', '+91 9899223130');
+  const phone = get('contact_phone', '+91 93111 35190');
   const phone2 = get('contact_phone2');
   const email = get('contact_email', 'newyeardiaries@gmail.com');
   const rawAddress = get('contact_address', '174 D, Bawana Industrial Area, Delhi, India 110039');
@@ -48,7 +48,7 @@ export function renderContactPage(params, appContent) {
               <div class="input-group"><label>Address *</label><input name="address" type="text" class="input-field" required placeholder="Street, City, PIN"></div>
               <div class="form-row">
                 <div class="input-group"><label>State *</label><input name="state" type="text" class="input-field" required placeholder="e.g. Delhi"></div>
-                <div class="input-group"><label>Mobile Number *</label><input name="mobile" type="tel" class="input-field" required pattern="[0-9+\-\s()]{7,15}" placeholder="+91 9899223130"></div>
+                <div class="input-group"><label>Mobile Number *</label><input name="mobile" type="tel" class="input-field" required pattern="[0-9+\-\s()]{7,15}" placeholder="+91 93111 35190"></div>
               </div>
               <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
               <div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div>

@@ -70,8 +70,6 @@ export async function renderProductDetailPage(params) {
 
   const cart = getCart();
   const isInCart = cart.some(item => String(item.productId) === String(product.id));
-  const quoteList = getQuoteList();
-  const isInQuoteList = quoteList.some(item => String(item.productId) === String(product.id));
 
   let productCategoryList = [];
   if (product.id) {

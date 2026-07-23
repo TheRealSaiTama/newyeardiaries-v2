@@ -12,7 +12,7 @@ const SECTION_CATS = {
   combo: 'diary-with-pen-gift-set',
   premium: 'premium-diary',
 };
-const WHATSAPP_NUMBER = '919899223130';
+const WHATSAPP_NUMBER = '919311135190';
 const WHATSAPP_MESSAGE = encodeURIComponent('Hi New Year Diaries, I want to enquire about diaries and corporate gifting.');
 
 export async function renderHomePage() {
