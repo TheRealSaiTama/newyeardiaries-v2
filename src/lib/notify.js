@@ -343,6 +343,15 @@ async function buildOrderHtml(data) {
 
   ${attachHtml}
 
+  <tr>
+    <td style="padding:24px 20px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;">
+      <img src="${SITE_ORIGIN}/logo-big.jpg" alt="New Year Diaries" width="160" style="width:160px;height:auto;margin:0 auto 10px;display:block;border-radius:4px;">
+      <div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries — Premium Diaries, Planners &amp; Corporate Gifts</div>
+      <div style="font-size:11px;color:#666666;">174 D, Bawana Industrial Area, Delhi 110039, India</div>
+      <div style="font-size:11px;color:#666666;margin-top:2px;">Phone: +91 93111 35190 | Email: support@newyeardiaries.in | www.newyeardiaries.in</div>
+    </td>
+  </tr>
+
 </table>`;
 }
 
