@@ -109,31 +109,45 @@ async function fetchCategoriesFresh() {
       }
     }
 
+    const initialGroupOrderMap = new Map(
+      Object.keys(CATEGORY_GROUPS_FALLBACK).map((name, i) => [name, i + 1])
+    );
+
     const fallbackGroupForSlug = (slug) => {
-      let idx = 0;
       for (const [name, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
-        idx++;
         if (slugs.includes(slug)) {
           if (groupByName.has(name)) return groupByName.get(name);
-          if (groupByOrder.has(idx)) return groupByOrder.get(idx);
-          if (groups && groups[idx - 1]) return groups[idx - 1];
-          return { id: null, name, sort_order: idx };
+          const order = initialGroupOrderMap.get(name);
+          if (order && groupByOrder.has(order)) return groupByOrder.get(order);
+          const idx = (order || 1) - 1;
+          if (groups && groups[idx]) return groups[idx];
+          return { id: null, name, sort_order: order || 0 };
         }
       }
       return null;
     };
 
-    // Decorate each category with its group object (id, name) for the admin UI
-    // and downstream consumers.
+    const missingGroupIdUpdates = [];
     const decorated = (cats || []).map(c => {
       let grp = null;
       if (c.group_id && groupById.has(c.group_id)) {
         grp = groupById.get(c.group_id);
       } else {
         grp = fallbackGroupForSlug(c.slug);
+        if (grp?.id && c.id && !c.group_id) {
+          missingGroupIdUpdates.push({ id: c.id, group_id: grp.id });
+        }
       }
       return { ...c, group_id: c.group_id || grp?.id || null, group: grp, group_name: grp?.name || null };
     });
+
+    if (missingGroupIdUpdates.length > 0) {
+      Promise.all(
+        missingGroupIdUpdates.map(u =>
+          supabase.from('categories').update({ group_id: u.group_id }).eq('id', u.id)
+        )
+      ).catch(() => {});
+    }
 
     _catCache = decorated;
     _catCacheAt = Date.now();

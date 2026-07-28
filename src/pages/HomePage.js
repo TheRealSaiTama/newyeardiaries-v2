@@ -13,7 +13,7 @@ const SECTION_CATS = {
   premium: 'premium-diary',
 };
 const WHATSAPP_NUMBER = '919311135190';
-const WHATSAPP_MESSAGE = encodeURIComponent('Hi New Year Diaries, I want to enquire about diaries and corporate gifting.');
+const WHATSAPP_MESSAGE = encodeURIComponent('Hi Team NYD,\n\nContacting through your website "www.NewYearDiaries.in" regarding order. Please get back asap.\n\nThank you.');
 
 export async function renderHomePage() {
   const [content, allCategories, allProducts] = await Promise.all([

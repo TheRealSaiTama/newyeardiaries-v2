@@ -2005,21 +2005,29 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
       og_image_url: fd.get('og_image_url') || null,
     };
 
-    const { error } = isEdit
-      ? await supabase.from('category_groups').update(payload).eq('id', group.id)
-      : await supabase.from('category_groups').insert(payload);
+    let savedGroupId = group?.id || null;
+    let saveError = null;
 
-    if (error) {
-      console.error('Group save failed:', error);
-      showToast(`Save failed: ${error.message}`, 'error');
+    if (savedGroupId) {
+      const { error } = await supabase.from('category_groups').update(payload).eq('id', savedGroupId);
+      saveError = error;
+    } else {
+      const { data: inserted, error } = await supabase.from('category_groups').upsert(payload, { onConflict: 'name' }).select().maybeSingle();
+      saveError = error;
+      savedGroupId = inserted?.id || null;
+    }
+
+    if (saveError) {
+      console.error('Group save failed:', saveError);
+      showToast(`Save failed: ${saveError.message}`, 'error');
       return;
     }
 
-    if (isEdit && group.id) {
-      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === group.id) || []);
+    if (savedGroupId) {
+      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === savedGroupId || c.group_name === oldName || c.group?.name === oldName) || []);
       const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
       if (catIds.length) {
-        await supabase.from('categories').update({ group_id: group.id }).in('id', catIds);
+        await supabase.from('categories').update({ group_id: savedGroupId }).in('id', catIds);
       }
     }
 
