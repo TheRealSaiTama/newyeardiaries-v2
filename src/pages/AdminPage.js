@@ -2017,6 +2017,11 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
       savedGroupId = inserted?.id || null;
     }
 
+    if (!savedGroupId) {
+      const { data: found } = await supabase.from('category_groups').select('id').eq('name', name.trim()).maybeSingle();
+      savedGroupId = found?.id || null;
+    }
+
     if (saveError) {
       console.error('Group save failed:', saveError);
       showToast(`Save failed: ${saveError.message}`, 'error');
