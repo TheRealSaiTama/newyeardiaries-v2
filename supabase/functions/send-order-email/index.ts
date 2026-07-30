@@ -23,6 +23,8 @@ type AttachmentIn = {
   type?: string;
   contentBase64?: string; // raw base64, no data: prefix
   dataUrl?: string;       // optional full data URL
+  cid?: string;           // optional Content-ID for inline preview (e.g. "logo0@nyd")
+  isImage?: boolean;      // hint: render as inline vs paperclip
 };
 
 type Body = {
@@ -35,6 +37,14 @@ type Body = {
   attachments?: AttachmentIn[];
 };
 
+type ParsedAttachment = {
+  filename: string;
+  content: Uint8Array;
+  contentType: string;
+  cid: string | null;
+  disposition: 'inline' | 'attachment';
+};
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -42,7 +52,7 @@ function json(status: number, body: unknown) {
   });
 }
 
-function parseBase64(att: AttachmentIn): { filename: string; content: Uint8Array; contentType: string } | null {
+function parseBase64(att: AttachmentIn): ParsedAttachment | null {
   const filename = (att.name || 'attachment').replace(/[^\w.\- ()[\]]+/g, '_').slice(0, 120);
   let b64 = att.contentBase64 || '';
   let contentType = att.type || 'application/octet-stream';
@@ -61,7 +71,16 @@ function parseBase64(att: AttachmentIn): { filename: string; content: Uint8Array
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     // Cap ~4.5MB per file to stay under typical SMTP limits
     if (bytes.length > 4_500_000) return null;
-    return { filename, content: bytes, contentType };
+    // Inline (CID-attached) for images that came with a cid; paperclip for everything else.
+    const isImage = att.isImage ?? contentType.startsWith('image/');
+    const cid = att.cid && isImage ? att.cid : null;
+    return {
+      filename,
+      content: bytes,
+      contentType,
+      cid,
+      disposition: cid ? 'inline' : 'attachment',
+    };
   } catch {
     return null;
   }
@@ -73,7 +92,7 @@ async function sendOne(
   to: string,
   subject: string,
   html: string,
-  attachments: { filename: string; content: Uint8Array; contentType: string }[],
+  attachments: ParsedAttachment[],
 ) {
   await client.send({
     from,
@@ -81,11 +100,18 @@ async function sendOne(
     subject,
     html,
     content: 'auto',
-    attachments: attachments.map((a) => ({
-      filename: a.filename,
-      content: a.content,
-      contentType: a.contentType,
-    })),
+    attachments: attachments.map((a) => {
+      const out: Record<string, unknown> = {
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      };
+      if (a.cid) {
+        out.cid = a.cid;
+        out.disposition = a.disposition;
+      }
+      return out;
+    }),
   });
 }
 

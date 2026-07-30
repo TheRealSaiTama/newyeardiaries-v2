@@ -165,13 +165,14 @@ function parseDataUrl(dataUrl) {
 
 async function prepareAttachments(logos = []) {
   const out = [];
+  let imgIdx = 0;
   for (const logo of logos || []) {
     if (!logo) continue;
     const name = logo.name || 'attachment';
     let dataUrl = logo.dataUrl || logo.data || null;
     if (!dataUrl) continue;
 
-    // Shrink large images so EmailJS accepts them
+    // Shrink large images so the email payload stays reasonable
     if (dataUrl.startsWith('data:image/') && dataUrl.length > 250_000) {
       dataUrl = (await shrinkDataUrl(dataUrl, 1000)) || dataUrl;
     }
@@ -179,18 +180,25 @@ async function prepareAttachments(logos = []) {
     const parsed = parseDataUrl(dataUrl);
     if (!parsed) continue;
 
-    // EmailJS Variable Attachment accepts full data URL or raw base64
+    const isImage = parsed.type.startsWith('image/');
+    // Deterministic CID per image so the Edge Function can attach with
+    // Content-ID: <logoN@nyd> and the HTML can reference <img src="cid:logoN@nyd">.
+    // Non-image files stay as plain paperclips.
+    const cid = isImage ? `logo${imgIdx++}@nyd` : null;
+
     out.push({
       name,
       type: parsed.type,
       data: dataUrl,
       base64: parsed.base64,
+      isImage,
+      cid,
     });
   }
   return out;
 }
 
-async function buildOrderHtml(data) {
+async function buildOrderHtml(data, attachments = []) {
   const orderNo = data.orderNumber || 'ORD';
   const orderDate = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric'
@@ -224,14 +232,29 @@ async function buildOrderHtml(data) {
       </tr>`;
   }).join('');
 
-  // Inline previews for image uploads + list of all attachment names
+  // Inline previews for image uploads + list of all attachment names.
+  // Images use <img src="cid:logoN@nyd"> and are attached as inline
+  // Content-ID parts by the Edge Function — this is the only reliable
+  // way to render high-res image previews in Gmail/Outlook without
+  // hitting data-URL size limits.
   const logos = data.logos || [];
   let attachHtml = '';
   if (logos.length) {
-    const previews = logos.map(l => {
+    // Pair logos with their prepared attachments so each image preview
+    // can reference the matching CID.
+    const previews = logos.map((l, i) => {
       const du = l.dataUrl || l.data || '';
+      const att = attachments[i];
       const isImg = du.startsWith('data:image/');
+      if (isImg && att && att.cid) {
+        return `
+          <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
+            <img src="cid:${att.cid}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">
+            <div style="font-size:11px;color:#555;margin-top:4px;max-width:100px;word-break:break-all;">${esc(l.name)}</div>
+          </div>`;
+      }
       if (isImg) {
+        // Fallback: data URL (may be stripped by Gmail for large images)
         return `
           <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
             <img src="${du.replace(/"/g, '&quot;')}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">
@@ -241,7 +264,6 @@ async function buildOrderHtml(data) {
       return `
         <div style="display:inline-block;margin:6px 10px 6px 0;padding:12px;border:1px solid #c8d0dc;border-radius:6px;font-size:12px;color:#1a2744;background:#f8fafc;">
           📎 ${esc(l.name)}
-          ${du ? `<div style="margin-top:6px;"><a href="${du.replace(/"/g, '&quot;')}" download="${esc(l.name)}" style="color:#1a56db;font-size:11px;">Open / Download</a></div>` : ''}
         </div>`;
     }).join('');
 
@@ -371,10 +393,11 @@ export async function sendOrderEmail(data) {
   const subjectAdmin = `New Order # ${orderNo} (${buyerName})`;
   const subjectCustomer = `Order Confirmed # ${orderNo} — New Year Diaries`;
 
-  const [html, attachments] = await Promise.all([
-    buildOrderHtml(data),
-    prepareAttachments(data.logos),
-  ]);
+  // Build attachments first so each image gets a deterministic CID,
+  // then build HTML that references those CIDs via <img src="cid:...">
+  // (proper MIME inline part — survives Gmail's data-URL stripping).
+  const attachments = await prepareAttachments(data.logos);
+  const html = await buildOrderHtml(data, attachments);
 
   if (!SUPABASE_URL || !SUPABASE_ANON) {
     return { ok: false, skipped: true, reason: 'Supabase env not configured' };
@@ -399,6 +422,8 @@ export async function sendOrderEmail(data) {
         type: a.type,
         contentBase64: a.base64,
         dataUrl: a.data,
+        cid: a.cid,
+        isImage: a.isImage,
       })),
     }),
   });
