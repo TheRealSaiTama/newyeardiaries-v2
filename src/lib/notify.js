@@ -356,9 +356,11 @@ async function buildOrderHtml(data) {
 }
 
 /**
- * Prefer free long-term path: Supabase Edge Function + Gmail SMTP
- * (real PDF/JPG attachments, full HTML). Falls back to EmailJS if
- * the function is not deployed or SMTP secrets are missing.
+ * Production order mail via Supabase Edge Function + Gmail SMTP.
+ * Real PDF/JPG attachments, full HTML, dual delivery (admin + customer).
+ * Requires the `send-order-email` Edge Function deployed and the
+ * SMTP_USER / SMTP_PASS / SMTP_FROM / ORDER_ADMIN_EMAIL secrets set
+ * in the Supabase project.
  */
 export async function sendOrderEmail(data) {
   const orderNo = data.orderNumber || 'ORD';
@@ -374,67 +376,38 @@ export async function sendOrderEmail(data) {
     prepareAttachments(data.logos),
   ]);
 
-  // 1) Edge Function (Gmail SMTP) — primary
-  if (SUPABASE_URL && SUPABASE_ANON) {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SUPABASE_ANON}`,
-          apikey: SUPABASE_ANON,
-        },
-        body: JSON.stringify({
-          orderNumber: orderNo,
-          adminEmail: ORDER_ADMIN_EMAIL,
-          customerEmail: data.email,
-          subjectAdmin,
-          subjectCustomer,
-          html,
-          attachments: attachments.map(a => ({
-            name: a.name,
-            type: a.type,
-            contentBase64: a.base64,
-            dataUrl: a.data,
-          })),
-        }),
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (res.ok && payload.ok) {
-        console.log('[order-email] sent via Gmail SMTP edge function', payload.sent);
-        return { ok: true, via: 'smtp', ...payload };
-      }
-      console.warn('[order-email] edge function failed, falling back to EmailJS', res.status, payload);
-    } catch (e) {
-      console.warn('[order-email] edge function error, falling back to EmailJS', e);
-    }
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    return { ok: false, skipped: true, reason: 'Supabase env not configured' };
   }
 
-  // 2) EmailJS fallback (no real PDF paperclips on free plan)
-  const base = {
-    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || buyerName,
-    email: data.email,
-  };
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_ANON}`,
+      apikey: SUPABASE_ANON,
+    },
+    body: JSON.stringify({
+      orderNumber: orderNo,
+      adminEmail: ORDER_ADMIN_EMAIL,
+      customerEmail: data.email,
+      subjectAdmin,
+      subjectCustomer,
+      html,
+      attachments: attachments.map(a => ({
+        name: a.name,
+        type: a.type,
+        contentBase64: a.base64,
+        dataUrl: a.data,
+      })),
+    }),
+  });
 
-  const pAdmin = sendEmail({
-    ...base,
-    title: subjectAdmin,
-    subject: subjectAdmin,
-    message: html,
-    html_message: html,
-  }, { toEmail: ORDER_ADMIN_EMAIL, attachments });
-
-  const customerTo = (data.email || '').trim().toLowerCase();
-  const pCustomer = customerTo && customerTo !== ORDER_ADMIN_EMAIL.toLowerCase()
-    ? sendEmail({
-        ...base,
-        title: subjectCustomer,
-        subject: subjectCustomer,
-        message: html,
-        html_message: html,
-      }, { toEmail: data.email.trim(), attachments })
-    : Promise.resolve({ skipped: true });
-
-  await Promise.all([pAdmin, pCustomer]);
-  return { ok: true, via: 'emailjs' };
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || !payload.ok) {
+    const err = new Error(payload.error || `Edge function ${res.status}`);
+    err.payload = payload;
+    throw err;
+  }
+  return { ok: true, via: 'smtp', ...payload };
 }
