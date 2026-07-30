@@ -250,7 +250,7 @@ async function buildOrderHtml(data) {
     <td style="padding:16px 8px;background:#ffffff;">
       <div style="font-size:14px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Attachments (${logos.length})</div>
       <div>${previews}</div>
-      <div style="font-size:11px;color:#888;margin-top:8px;">Image files are shown above. PDF/docs are also sent as email attachments when EmailJS Variable Attachments (file1…file5) are configured.</div>
+      <div style="font-size:11px;color:#888;margin-top:8px;">All files (images, PDFs, docs) are sent as real email paperclip attachments. Click the file name in your email client to open or download.</div>
     </td>
   </tr>`;
   }
