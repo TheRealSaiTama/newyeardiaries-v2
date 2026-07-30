@@ -211,19 +211,14 @@ async function buildOrderHtml(data, attachments = []) {
   const tdC = `${td}text-align:center;`;
   const labelTd = `padding:12px 10px;border:${border};vertical-align:middle;background:#ffffff;color:#1a4a8a;font-size:13px;font-weight:600;text-align:right;`;
 
-  // Resolve thumbs in parallel (webp → jpeg proxy, data → shrink)
-  const thumbs = await Promise.all(
-    (data.items || []).map(it => toEmailThumb(it.image || it.product_image))
-  );
+  // Note: product image column was removed to keep the email lightweight
+  // and avoid triggering Gmail's image-rich mail spam heuristics. The
+  // admin sees product images in the admin panel — the mail just lists
+  // SKU / Product / Qty / Price / Total.
 
-  const rowsHtml = (data.items || []).map((item, idx) => {
-    const src = thumbs[idx];
-    const img = src
-      ? `<img src="${src.replace(/"/g, '&quot;')}" width="64" height="64" alt="" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:cover;border:1px solid #e2e8f0;border-radius:4px;">`
-      : `<div style="width:64px;height:64px;margin:0 auto;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;"></div>`;
+  const rowsHtml = (data.items || []).map((item) => {
     return `
       <tr>
-        <td style="${tdC}width:80px;">${img}</td>
         <td style="${tdC}">${esc(item.sku || '—')}</td>
         <td style="${td}">${esc(item.name || 'Item')}</td>
         <td style="${tdC}">${esc(item.qty)}</td>
@@ -297,7 +292,6 @@ async function buildOrderHtml(data, attachments = []) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;">
         <thead>
           <tr style="background:#003366;color:#ffffff;">
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Image</th>
             <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">SKU</th>
             <th style="padding:12px 10px;border:1px solid #002244;text-align:left;font-weight:600;color:#ffffff;">Product</th>
             <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Quantity</th>
@@ -306,24 +300,24 @@ async function buildOrderHtml(data, attachments = []) {
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr><td colspan="6" style="${tdC}">No items</td></tr>`}
+          ${rowsHtml || `<tr><td colspan="5" style="${tdC}">No items</td></tr>`}
           <tr>
-            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
             <td style="${labelTd}">Subtotal :</td>
             <td style="${tdR}">${fmtINR(data.subtotal)}</td>
           </tr>
           <tr>
-            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
             <td style="${labelTd}">GST :</td>
             <td style="${tdR}">${fmtINR(data.gstAmount)}</td>
           </tr>
           <tr>
-            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
             <td style="${labelTd}">Total :</td>
             <td style="${tdR}font-weight:700;">${fmtINR(data.total)}</td>
           </tr>
           <tr>
-            <td colspan="4" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
+            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
             <td style="${labelTd}vertical-align:top;">Payment Methods:</td>
             <td style="${tdR}font-size:12px;line-height:1.45;">
               NEFT / RTGS / UPI /<br>QR Code / Net Banking /<br>Debit Card
@@ -367,7 +361,6 @@ async function buildOrderHtml(data, attachments = []) {
 
   <tr>
     <td style="padding:24px 20px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;">
-      <img src="${SITE_ORIGIN}/logo-big.jpg" alt="New Year Diaries" width="160" style="width:160px;height:auto;margin:0 auto 10px;display:block;border-radius:4px;">
       <div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries — Premium Diaries, Planners &amp; Corporate Gifts</div>
       <div style="font-size:11px;color:#666666;">174 D, Bawana Industrial Area, Delhi 110039, India</div>
       <div style="font-size:11px;color:#666666;margin-top:2px;">Phone: +91 93111 35190 | Email: support@newyeardiaries.in | www.newyeardiaries.in</div>
