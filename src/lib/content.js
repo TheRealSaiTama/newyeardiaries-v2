@@ -169,6 +169,7 @@ export function getHomepageSliders(content) {
       title: sec.title,
       view_all_link: sec.view_all_link,
       bg: sec.bg_color || '#FAF8F5',
+      categorySlug: sec.category_slug || null,
       productIds: secItems.map(it => it.product_id),
     };
   });

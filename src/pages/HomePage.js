@@ -30,10 +30,33 @@ export async function renderHomePage() {
 
   let sliderLists;
   if (sliderConfigs.length > 0) {
-    // Resolve each section's product IDs to full product objects from the in-memory allProducts list
+    // Resolve each section's products. Two source modes:
+    //   1. categorySlug set  → pull all products in that category, top 10
+    //   2. categorySlug null  → use the manually-picked productIds list
+    // The category-based mode auto-follows the admin product list, so changing
+    // a product's category makes the slider update without re-picking.
     const productMap = new Map(allProducts.map(p => [p.id, p]));
     sliderLists = sliderConfigs.map(sec => {
-      const products = sec.productIds.map(id => productMap.get(id)).filter(Boolean).slice(0, 10);
+      let products;
+      if (sec.categorySlug) {
+        const slug = sec.categorySlug;
+        // Honor the per-category sort_order on the junction if present, else
+        // fall back to created_at desc (the order allProducts already uses).
+        const inCat = allProducts.filter(p =>
+          p.categorySlug === slug || (Array.isArray(p.categorySlugs) && p.categorySlugs.includes(slug))
+        );
+        inCat.sort((a, b) => {
+          const oa = a.categorySortOrders?.[slug];
+          const ob = b.categorySortOrders?.[slug];
+          if (oa != null && ob != null) return oa - ob;
+          if (oa != null) return -1;
+          if (ob != null) return 1;
+          return 0;
+        });
+        products = inCat.slice(0, 10);
+      } else {
+        products = sec.productIds.map(id => productMap.get(id)).filter(Boolean).slice(0, 10);
+      }
       return { ...sec, products };
     });
   } else {

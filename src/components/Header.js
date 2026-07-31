@@ -369,7 +369,7 @@ export function initSearchModal() {
         <div class="search-result-header">${matched.length} result${matched.length > 1 ? 's' : ''}</div>
         <div class="search-result-list">
           ${matched.map(p => `
-            <a href="/product/${p.slug}" class="search-result-item" data-slug="${p.slug}">
+            <a href="/${p.slug}" class="search-result-item" data-slug="${p.slug}">
               <div class="search-result-img">
                 ${p.image ? `<img src="${p.image}" alt="${p.name}">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
               </div>
@@ -396,7 +396,7 @@ export function initSearchModal() {
         item.addEventListener('click', (e) => {
           e.preventDefault();
           closeSearch();
-          navigateTo(item.dataset.slug ? `/product/${item.dataset.slug}` : '/shop');
+          navigateTo(item.dataset.slug ? `/${item.dataset.slug}` : '/shop');
         });
       });
     }, 250);

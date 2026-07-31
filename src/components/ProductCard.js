@@ -21,7 +21,7 @@ export function renderProductCard(product) {
   const outOfStock = !product.inStock;
 
   return `
-    <a href="/product/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''}>
+    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''}>
       <div class="ap-product-image-wrapper">
         ${badge}
         ${img}

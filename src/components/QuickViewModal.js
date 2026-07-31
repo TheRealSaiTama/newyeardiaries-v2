@@ -54,7 +54,7 @@ export async function openQuickView(productId) {
             ${isInCart ? 'Added to Cart' : 'Add to Cart'}
           </button>
         </div>
-        <a href="/product/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
+        <a href="/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
       </div>
     `;
   }

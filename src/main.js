@@ -37,11 +37,45 @@ import { renderAdminPage, initAdminPage } from './pages/AdminPage.js';
 
 let appContent = null;
 
+// Helpers to upsert <meta> tags in document.head. Upsert by name/property so
+// re-calls (e.g. after a settings change) replace the old value rather than
+// stacking duplicates. Defaults in index.html are kept as the SSR-ish fallback
+// for crawlers that don't execute JS — these values override them on load.
+function setMeta(selector, attr, value) {
+  if (!value) return;
+  let el = document.head.querySelector(selector);
+  if (!el) {
+    el = document.createElement('meta');
+    // selector like 'meta[name="description"]' — pull the attr out
+    const m = selector.match(/\[(name|property)="([^"]+)"\]/);
+    if (m) el.setAttribute(m[1], m[2]);
+    document.head.appendChild(el);
+  }
+  el.setAttribute(attr, value);
+}
+
+function applyMetaTags(s) {
+  if (!s) return;
+  if (s.site_title)        document.title = s.site_title;
+  if (s.meta_description)  setMeta('meta[name="description"]',  'content',    s.meta_description);
+  if (s.meta_keywords)     setMeta('meta[name="keywords"]',     'content',    s.meta_keywords);
+  if (s.og_title)          setMeta('meta[property="og:title"]',       'content', s.og_title);
+  if (s.og_description)    setMeta('meta[property="og:description"]', 'content', s.og_description);
+  if (s.og_image)          setMeta('meta[property="og:image"]',       'content', s.og_image);
+  if (s.og_url)            setMeta('meta[property="og:url"]',         'content', s.og_url);
+  if (s.og_type)           setMeta('meta[property="og:type"]',        'content', s.og_type);
+  if (s.twitter_card)      setMeta('meta[name="twitter:card"]',       'content', s.twitter_card);
+  if (s.twitter_title)     setMeta('meta[name="twitter:title"]',      'content', s.twitter_title);
+  if (s.twitter_description) setMeta('meta[name="twitter:description"]', 'content', s.twitter_description);
+  if (s.twitter_image)     setMeta('meta[name="twitter:image"]',      'content', s.twitter_image);
+}
+
 async function loadContent() {
   try {
     appContent = await getContent();
     const siteTitle = appContent?.siteSettings?.site_title || 'New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct';
     document.title = siteTitle;
+    applyMetaTags(appContent?.siteSettings);
   } catch (e) {
     console.warn('Failed to load content, using defaults', e);
   }
@@ -271,7 +305,8 @@ function wrapPage(renderFn) {
 addRoute('/', wrapPage(renderHomePage));
 addRoute('/shop', wrapPage(renderShopPage));
 addRoute('/shop/corporate', wrapPage(renderCorporatePage));
-addRoute('/product/:slug', wrapPage(renderProductDetailPage));
+// Backward-compat: /product/:slug still works (redirects to /:slug)
+addRoute('/product/:slug', (params) => { navigateTo('/' + params.slug); return; });
 addRoute('/cart', wrapPage(renderCartPage));
 addRoute('/checkout', wrapPage(renderCheckoutPage));
 addRoute('/bulk-quote', wrapPage(renderBulkQuotePage));
@@ -293,6 +328,18 @@ addRoute('/admin', (params) => {
   syncShellExtras();
   document.getElementById('app').innerHTML = renderAdminPage();
   initAdminPage();
+});
+
+// Catch-all short URL: /<slug> renders the product directly. Must be added
+// LAST so specific routes (/cart, /about, /admin, etc.) win.
+addRoute('/:slug', async (params) => {
+  try {
+    const { getProductBySlug } = await import('./data/products.js');
+    const product = await getProductBySlug(params.slug);
+    if (product) return wrapPage(renderProductDetailPage)({ slug: params.slug });
+  } catch (e) { /* fall through to home */ }
+  // Unknown slug → home (better UX than 404)
+  navigateTo('/');
 });
 
 // Boot strategy
@@ -333,7 +380,15 @@ function raceWithTimeout(promise, ms, label) {
 // Listen for background cache updates and refresh the UI when they occur
 window.addEventListener('nyd-content-updated', (e) => {
   appContent = e.detail;
+  // Re-apply meta tags immediately so admin edits show up without a reload
+  try { applyMetaTags(appContent?.siteSettings); } catch (err) {
+    console.warn('[main] applyMetaTags after content update failed:', err);
+  }
   try {
+    // Page HTML cache is now stale — clear it so the next render is fresh.
+    // Without this, wrapPage() serves the cached HTML and admin edits are
+    // invisible until a full reload. Reported 2026-07-31.
+    clearPageCache();
     resolveRoute();
   } catch (err) {
     console.warn('[main] resolveRoute after content update failed:', err);
@@ -342,6 +397,7 @@ window.addEventListener('nyd-content-updated', (e) => {
 
 window.addEventListener('nyd-products-updated', () => {
   try {
+    clearPageCache();
     resolveRoute();
   } catch (err) {
     console.warn('[main] resolveRoute after products update failed:', err);
@@ -350,6 +406,7 @@ window.addEventListener('nyd-products-updated', () => {
 
 window.addEventListener('nyd-categories-updated', () => {
   try {
+    clearPageCache();
     resolveRoute();
   } catch (err) {
     console.warn('[main] resolveRoute after categories update failed:', err);

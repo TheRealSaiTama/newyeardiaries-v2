@@ -34,29 +34,64 @@ export function renderAdminPage() {
   if (!isAuthed) {
     return `
       <div class="admin-login-wrap">
+        <div class="admin-login-brand">
+          <img src="/logo-big-transparent.png" alt="New Year Diaries" class="admin-login-brand-logo" />
+          <h1 class="admin-login-brand-name">New Year Diaries</h1>
+          <p class="admin-login-brand-tag">Admin Dashboard</p>
+          <div class="admin-login-brand-features">
+            <div class="admin-login-feature"><span class="material-symbols-outlined">edit_note</span> Manage products &amp; sliders</div>
+            <div class="admin-login-feature"><span class="material-symbols-outlined">category</span> Organize categories &amp; groups</div>
+            <div class="admin-login-feature"><span class="material-symbols-outlined">inbox</span> Read customer enquiries</div>
+            <div class="admin-login-feature"><span class="material-symbols-outlined">search</span> Edit SEO &amp; meta tags</div>
+          </div>
+        </div>
         <div class="admin-login-card">
-          <div class="admin-login-logo">
-            <span class="material-symbols-outlined">lock</span>
-            <h1>Admin Access</h1>
+          <div class="admin-login-card-header">
+            <span class="material-symbols-outlined admin-login-icon">lock_open</span>
+            <h2>Welcome back</h2>
+            <p>Sign in to manage the storefront.</p>
           </div>
           <form class="admin-login-form" id="admin-login-form">
             <div class="form-group">
-              <label>Password</label>
-              <input type="password" id="admin-pass" placeholder="Enter admin password" required autofocus>
+              <label for="admin-pass">Admin Password</label>
+              <input type="password" id="admin-pass" placeholder="Enter the shared password" required autofocus autocomplete="current-password">
             </div>
-            <button type="submit" class="admin-btn admin-btn-primary" style="width:100%">Enter Dashboard</button>
+            <button type="submit" class="admin-btn admin-btn-primary admin-login-submit">
+              <span class="material-symbols-outlined">login</span>
+              <span>Sign In</span>
+            </button>
           </form>
-          <p class="admin-login-hint">Contact uncle ji if you don't have the password</p>
+          <p class="admin-login-hint">Forgot the password? Ask the family group admin.</p>
         </div>
       </div>
       <style>
-      .admin-login-wrap { min-height: calc(100vh - var(--header-height)); display: flex; align-items: center; justify-content: center; background: var(--color-surface-alt); }
-      .admin-login-card { background: var(--color-surface); padding: var(--space-10); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); width: 100%; max-width: 400px; }
-      .admin-login-logo { text-align: center; margin-bottom: var(--space-8); }
-      .admin-login-logo .material-symbols-outlined { font-size: 48px; color: var(--color-primary); margin-bottom: var(--space-4); }
-      .admin-login-logo h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); color: var(--color-text-primary); }
-      .admin-login-form { display: flex; flex-direction: column; gap: var(--space-4); }
-      .admin-login-hint { text-align: center; font-size: var(--fs-xs); color: var(--color-text-tertiary); margin-top: var(--space-4); }
+      .admin-login-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; background: var(--color-surface-alt); }
+      .admin-login-wrap::before { content: ''; display: none; }
+      .admin-login-brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); padding: var(--space-12) var(--space-8); background: linear-gradient(135deg, #7b2f2a 0%, #b9653d 55%, #c8915f 100%); color: #fffaf2; text-align: center; position: relative; overflow: hidden; min-height: 100%; }
+      .admin-login-brand::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 5px), repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 6px); pointer-events: none; opacity: 0.4; }
+      .admin-login-brand > * { position: relative; }
+      .admin-login-brand-logo { width: min(60vw, 220px); height: auto; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0,0,0,0.25)) brightness(0) invert(1); margin-bottom: var(--space-3); }
+      .admin-login-brand-name { font-family: 'Poppins', sans-serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; letter-spacing: 0.5px; margin: 0; }
+      .admin-login-brand-tag { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.85; margin: 0; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; }
+      .admin-login-brand-features { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-6); text-align: left; max-width: 320px; width: 100%; }
+      .admin-login-feature { display: flex; align-items: center; gap: var(--space-3); font-size: var(--fs-sm); color: #fffaf2; }
+      .admin-login-feature .material-symbols-outlined { font-size: 20px; opacity: 0.95; }
+      .admin-login-card { display: flex; flex-direction: column; justify-content: center; padding: var(--space-12) var(--space-8); max-width: 520px; width: 100%; margin: 0 auto; min-height: 100%; }
+      .admin-login-card-header { text-align: center; margin-bottom: var(--space-8); }
+      .admin-login-icon { font-size: 44px; color: var(--color-primary); background: rgba(160, 82, 45, 0.1); padding: var(--space-3); border-radius: 999px; margin-bottom: var(--space-3); display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; }
+      .admin-login-card-header h2 { font-family: 'Poppins', sans-serif; font-size: var(--fs-2xl); font-weight: 600; color: var(--color-text-primary); margin: 0 0 var(--space-2); }
+      .admin-login-card-header p { font-size: var(--fs-sm); color: var(--color-text-tertiary); margin: 0; }
+      .admin-login-form { display: flex; flex-direction: column; gap: var(--space-5); }
+      .admin-login-form .form-group label { color: var(--color-text-primary); font-size: var(--fs-sm); font-weight: 600; }
+      .admin-login-form input { padding: var(--space-3) var(--space-4); font-size: var(--fs-base); }
+      .admin-login-submit { width: 100%; padding: var(--space-3) var(--space-4); justify-content: center; font-size: var(--fs-base); }
+      .admin-login-hint { text-align: center; font-size: var(--fs-xs); color: var(--color-text-tertiary); margin-top: var(--space-6); }
+      @media (max-width: 760px) {
+        .admin-login-wrap { grid-template-columns: 1fr; }
+        .admin-login-brand { padding: var(--space-8) var(--space-5); }
+        .admin-login-brand-features { display: none; }
+        .admin-login-card { padding: var(--space-8) var(--space-5); }
+      }
       </style>
     `;
   }
@@ -92,7 +127,7 @@ export function renderAdminPage() {
             Banners
           </button>
           <button class="admin-nav-item ${currentTab === 'footer' ? 'active' : ''}" data-tab="footer">
-            <span class="material-symbols-outlined">footer</span>
+            <span class="material-symbols-outlined">web_asset</span>
             Footer
           </button>
           <button class="admin-nav-item ${currentTab === 'settings' ? 'active' : ''}" data-tab="settings">
@@ -113,16 +148,16 @@ export function renderAdminPage() {
       </main>
     </div>
     <style>
-    .admin-shell { display: flex; min-height: calc(100vh - var(--header-height)); }
-    .admin-sidebar { width: 240px; background: var(--color-footer-bg); color: var(--color-footer-text); flex-shrink: 0; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
-    .admin-back { display: flex; align-items: center; gap: var(--space-2); color: var(--color-footer-link); text-decoration: none; font-size: var(--fs-sm); padding: var(--space-2); border-radius: var(--radius-md); transition: var(--transition-fast); }
-    .admin-back:hover { color: var(--color-footer-link-hover); background: rgba(255,255,255,0.05); }
+    .admin-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - var(--header-height)); }
+    .admin-sidebar { background: linear-gradient(180deg, #fffaf2 0%, #f7e9d8 100%); color: var(--color-text-primary); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); border-right: 1px solid var(--color-border-light); }
+    .admin-back { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); text-decoration: none; font-size: var(--fs-sm); padding: var(--space-2); border-radius: var(--radius-md); transition: var(--transition-fast); }
+    .admin-back:hover { color: var(--color-primary); background: rgba(160, 82, 45, 0.06); }
     .admin-nav { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-4); }
-    .admin-nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: none; background: transparent; color: var(--color-footer-link); border-radius: var(--radius-md); cursor: pointer; font-size: var(--fs-base); font-family: inherit; text-align: left; transition: var(--transition-fast); width: 100%; }
-    .admin-nav-item:hover { background: rgba(255,255,255,0.08); color: var(--color-footer-link-hover); }
-    .admin-nav-item.active { background: var(--color-primary); color: #fff; }
+    .admin-nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: none; background: transparent; color: var(--color-text-secondary); border-radius: var(--radius-md); cursor: pointer; font-size: var(--fs-base); font-family: inherit; text-align: left; transition: var(--transition-fast); width: 100%; }
+    .admin-nav-item:hover { background: rgba(160, 82, 45, 0.08); color: var(--color-primary); }
+    .admin-nav-item.active { background: var(--color-primary); color: #fff; box-shadow: var(--shadow-sm); }
     .admin-nav-item .material-symbols-outlined { font-size: 20px; }
-    .admin-main { flex: 1; padding: var(--space-8); overflow-y: auto; background: var(--color-surface-alt); transition: opacity 0.15s; }
+    .admin-main { flex: 1; min-width: 0; padding: var(--space-8); overflow-y: auto; overflow-x: hidden; background: var(--color-surface-alt); transition: opacity 0.15s; }
     .admin-loading { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text-secondary); padding: var(--space-8); }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -538,10 +573,11 @@ function renderFsBreadcrumb(nav) {
 // Folder grid view (root shows Groups, group-level shows Categories)
 async function renderFolderGrid(container, header, breadcrumb, opts) {
   // Fetch all categories, junction rows, and products to compute distinct uncategorized counts
-  const [{ data: categories }, { data: pcRows }, { data: products }] = await Promise.all([
-    supabase.from('categories').select('id, name, slug, active').order('name'),
+  const [{ data: categories }, { data: pcRows }, { data: products }, dbGroups] = await Promise.all([
+    supabase.from('categories').select('id, name, slug, active, group_id, sort_order').order('sort_order'),
     supabase.from('product_categories').select('product_id, category_id'),
     supabase.from('products').select('id, category_id'),
+    fetchCategoryGroups(),
   ]);
 
   const countByCat = new Map();
@@ -554,15 +590,45 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
 
   const activeCats = (categories || []).filter(c => c.active !== false);
   const catBySlug = new Map(activeCats.map(c => [c.slug, c]));
+  const catByGroupId = new Map(); // group_id -> [cat], sorted by sort_order
+  for (const c of activeCats) {
+    if (c.group_id) {
+      if (!catByGroupId.has(c.group_id)) catByGroupId.set(c.group_id, []);
+      catByGroupId.get(c.group_id).push(c);
+    }
+  }
+  for (const arr of catByGroupId.values()) {
+    arr.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
+  }
+  // Build ordered group list: real DB groups (by sort_order) + the hardcoded
+  // fallback for any group that exists in the fallback but not in the DB
+  // (preserves compatibility if category_groups table is empty).
+  const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const dbGroupNames = new Set(groupsByOrder.map(g => g.name));
+  const fallbackNames = Object.keys(CATEGORY_GROUPS).filter(n => !dbGroupNames.has(n));
+  // Plus any DB group whose name isn't in the fallback (newly created groups)
+  const allGroupNames = [...groupsByOrder.map(g => g.name), ...fallbackNames];
+  // Add any DB group that has no name match in the fallback (truly new groups)
+  for (const g of groupsByOrder) {
+    if (!allGroupNames.includes(g.name)) allGroupNames.push(g.name);
+  }
 
   let folders = [];
   let totalProducts = 0;
 
   if (opts.type === 'groups') {
     // One folder per Category Group, plus an Uncategorized system folder
-    folders = Object.keys(CATEGORY_GROUPS).map(groupName => {
-      const slugs = CATEGORY_GROUPS[groupName];
-      const cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+    folders = allGroupNames.map(groupName => {
+      // Find categories belonging to this group by name (DB-backed or fallback)
+      const dbGroup = groupsByOrder.find(g => g.name === groupName);
+      let cats;
+      if (dbGroup && catByGroupId.has(dbGroup.id)) {
+        cats = catByGroupId.get(dbGroup.id);
+      } else {
+        // Fallback: look up slugs in the hardcoded map
+        const slugs = CATEGORY_GROUPS[groupName] || [];
+        cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+      }
       const productCount = cats.reduce((sum, c) => sum + (countByCat.get(c.id) || 0), 0);
       totalProducts += productCount;
       return {
@@ -576,12 +642,18 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
       };
     });
     // Uncategorized = products not in any of the grouped categories (distinct count)
-    const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
-    const groupedCatIds = new Set(activeCats.filter(c => allGroupedSlugs.has(c.slug)).map(c => c.id));
-    
+    const allGroupedCatIds = new Set();
+    for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
+    // Also include cats matched via fallback slugs
+    for (const slugs of Object.values(CATEGORY_GROUPS)) {
+      for (const s of slugs) {
+        const c = catBySlug.get(s);
+        if (c) allGroupedCatIds.add(c.id);
+      }
+    }
     const groupedProductIds = new Set();
     (pcRows || []).forEach(r => {
-      if (groupedCatIds.has(r.category_id)) groupedProductIds.add(r.product_id);
+      if (allGroupedCatIds.has(r.category_id)) groupedProductIds.add(r.product_id);
     });
 
     const uncategorizedProductIds = new Set();
@@ -605,8 +677,17 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
     const groupName = opts.group;
     if (groupName === '__uncategorized') {
       // Show categories not in any group
-      const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
-      const cats = activeCats.filter(c => !allGroupedSlugs.has(c.slug));
+      const allGroupedCatIds = new Set();
+      for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
+      for (const slugs of Object.values(CATEGORY_GROUPS)) {
+        for (const s of slugs) {
+          const c = catBySlug.get(s);
+          if (c) allGroupedCatIds.add(c.id);
+        }
+      }
+      const cats = activeCats
+        .filter(c => !allGroupedCatIds.has(c.id))
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
       folders = cats.map(c => ({
         key: c.id,
         name: c.name,
@@ -635,8 +716,16 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         });
       }
     } else {
-      const slugs = CATEGORY_GROUPS[groupName] || [];
-      folders = slugs.map(s => catBySlug.get(s)).filter(Boolean).map(c => ({
+      // Find the group in DB or fallback
+      const dbGroup = groupsByOrder.find(g => g.name === groupName);
+      let cats;
+      if (dbGroup && catByGroupId.has(dbGroup.id)) {
+        cats = catByGroupId.get(dbGroup.id);
+      } else {
+        const slugs = CATEGORY_GROUPS[groupName] || [];
+        cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+      }
+      folders = cats.map(c => ({
         key: c.id,
         name: c.name,
         count: countByCat.get(c.id) || 0,
@@ -2409,6 +2498,10 @@ async function renderSettings(container) {
 
   const getSetting = (key, fallback = '') => settings?.find(s => s.key === key)?.value || fallback;
 
+  // Word/char counters for meta description + title
+  const descCount = (getSetting('meta_description') || '').length;
+  const ogDescCount = (getSetting('og_description') || '').length;
+
   container.innerHTML = `
     <div class="admin-header">
       <h1>Site Settings</h1>
@@ -2418,20 +2511,71 @@ async function renderSettings(container) {
         <div class="settings-section">
           <h3>General</h3>
           <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group"><label>Site Name</label><input name="site_name" value="${getSetting('site_name')}"></div>
-            <div class="form-group"><label>Tagline</label><input name="tagline" value="${getSetting('tagline')}"></div>
-            <div class="form-group"><label>Site Title (browser tab)</label><input name="site_title" value="${getSetting('site_title')}" placeholder="New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct"></div>
+            <div class="form-group"><label>Site Name</label><input name="site_name" value="${escHtml(getSetting('site_name'))}"></div>
+            <div class="form-group"><label>Tagline</label><input name="tagline" value="${escHtml(getSetting('tagline'))}"></div>
+            <div class="form-group"><label>Site Title (browser tab)</label><input name="site_title" value="${escHtml(getSetting('site_title'))}" placeholder="New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct"></div>
           </div>
         </div>
         <div class="settings-section">
           <h3>Contact Information</h3>
           <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group"><label>Contact Email</label><input name="contact_email" type="email" value="${getSetting('contact_email')}"></div>
-            <div class="form-group"><label>Contact Phone</label><input name="contact_phone" value="${getSetting('contact_phone')}"></div>
-            <div class="form-group"><label>Contact Address</label><textarea name="contact_address" rows="3">${getSetting('contact_address')}</textarea></div>
+            <div class="form-group"><label>Contact Email</label><input name="contact_email" type="email" value="${escHtml(getSetting('contact_email'))}"></div>
+            <div class="form-group"><label>Contact Phone</label><input name="contact_phone" value="${escHtml(getSetting('contact_phone'))}"></div>
+            <div class="form-group"><label>Contact Address</label><textarea name="contact_address" rows="3">${escHtml(getSetting('contact_address'))}</textarea></div>
           </div>
         </div>
       </div>
+
+      <div class="settings-section" style="margin-top:var(--space-6)">
+        <h3>🔍 SEO &amp; Meta Tags <small style="font-weight:400;color:var(--color-text-tertiary);font-size:var(--fs-sm)">— shown in Google results and when sharing on WhatsApp / Facebook / Twitter</small></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
+          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+            <div class="form-group">
+              <label>Meta Title <small style="color:var(--color-text-tertiary)">(60 chars max — Google cuts off around 580px)</small></label>
+              <input name="meta_title" maxlength="80" value="${escHtml(getSetting('meta_title'))}" placeholder="Auto-falls-back to Site Title if empty">
+            </div>
+            <div class="form-group">
+              <label>Meta Description <small style="color:var(--color-text-tertiary)">(150–160 chars ideal)</small></label>
+              <textarea name="meta_description" rows="3" maxlength="320" oninput="document.getElementById('meta-desc-count').textContent=this.value.length">${escHtml(getSetting('meta_description'))}</textarea>
+              <small id="meta-desc-count" style="color:var(--color-text-tertiary)">${descCount} chars</small>
+            </div>
+            <div class="form-group">
+              <label>Meta Keywords <small style="color:var(--color-text-tertiary)">(comma separated, optional)</small></label>
+              <input name="meta_keywords" value="${escHtml(getSetting('meta_keywords'))}" placeholder="e.g. corporate diaries, custom planners, delhi manufacturer">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+            <div class="form-group">
+              <label>OG Title <small style="color:var(--color-text-tertiary)">(Facebook / WhatsApp / LinkedIn share title)</small></label>
+              <input name="og_title" value="${escHtml(getSetting('og_title'))}" placeholder="Auto-falls-back to Meta Title">
+            </div>
+            <div class="form-group">
+              <label>OG Description <small style="color:var(--color-text-tertiary)">(social share description)</small></label>
+              <textarea name="og_description" rows="3" maxlength="320" oninput="document.getElementById('og-desc-count').textContent=this.value.length">${escHtml(getSetting('og_description'))}</textarea>
+              <small id="og-desc-count" style="color:var(--color-text-tertiary)">${ogDescCount} chars</small>
+            </div>
+            <div class="form-group">
+              <label>OG Image URL <small style="color:var(--color-text-tertiary)">(1200×630 px recommended for social cards)</small></label>
+              <input name="og_image" value="${escHtml(getSetting('og_image'))}" placeholder="https://... or paste a Supabase storage URL">
+            </div>
+            <div class="form-group">
+              <label>OG URL <small style="color:var(--color-text-tertiary)">(canonical share URL)</small></label>
+              <input name="og_url" value="${escHtml(getSetting('og_url'))}" placeholder="https://newyeardiaries.in">
+            </div>
+            <div class="form-group">
+              <label>Twitter Card <small style="color:var(--color-text-tertiary)">(summary | summary_large_image)</small></label>
+              <select name="twitter_card">
+                <option value="summary_large_image" ${getSetting('twitter_card') === 'summary_large_image' ? 'selected' : ''}>summary_large_image (recommended)</option>
+                <option value="summary" ${getSetting('twitter_card') === 'summary' ? 'selected' : ''}>summary</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);font-size:var(--fs-xs);color:var(--color-text-tertiary)">
+          💡 Tip: After saving, refresh your homepage in a new tab to verify. Test social previews at <a href="https://www.opengraph.xyz/" target="_blank" rel="noopener">opengraph.xyz</a>.
+        </div>
+      </div>
+
       <div style="margin-top:var(--space-6);display:flex;justify-content:flex-end">
         <button type="submit" class="admin-btn admin-btn-primary"><span class="material-symbols-outlined">save</span> Save Settings</button>
       </div>
@@ -2448,6 +2592,14 @@ async function renderSettings(container) {
       { key: 'contact_email', value: fd.get('contact_email') },
       { key: 'contact_phone', value: fd.get('contact_phone') },
       { key: 'contact_address', value: fd.get('contact_address') },
+      { key: 'meta_title', value: fd.get('meta_title') },
+      { key: 'meta_description', value: fd.get('meta_description') },
+      { key: 'meta_keywords', value: fd.get('meta_keywords') },
+      { key: 'og_title', value: fd.get('og_title') },
+      { key: 'og_description', value: fd.get('og_description') },
+      { key: 'og_image', value: fd.get('og_image') },
+      { key: 'og_url', value: fd.get('og_url') },
+      { key: 'twitter_card', value: fd.get('twitter_card') },
     ];
     const { error } = await supabase.from('site_settings').upsert(fields, { onConflict: 'key' });
     if (error) {
@@ -2455,8 +2607,9 @@ async function renderSettings(container) {
       return;
     }
     bustContentCache();
-    showToast('Settings saved!');
-    await renderSettings(container);
+    showToast('Settings + meta tags saved! Refreshing…');
+    // Reload so all the meta tag overrides re-apply (some crawlers cache)
+    setTimeout(() => window.location.reload(), 800);
   };
 }
 
@@ -3218,6 +3371,13 @@ function openTrustBadgeModal(container, badge, allBadges) {
 
 function openSliderSectionModal(container, section) {
   const isEdit = !!section;
+  // Build category <option>s from the same primaryCats list the page already
+  // fetched. Sorted by name for stable order.
+  const catOptions = (primaryCats || [])
+    .slice()
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    .map(c => `<option value="${escHtml(c.slug)}" ${section?.category_slug === c.slug ? 'selected' : ''}>${escHtml(c.name)}</option>`)
+    .join('');
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.innerHTML = `
@@ -3229,6 +3389,14 @@ function openSliderSectionModal(container, section) {
       <form class="admin-form" id="slider-section-form">
         <div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2027"></div>
         <div class="form-group"><label>View All Link</label><input name="view_all_link" value="${section?.view_all_link || ''}" placeholder="e.g. /shop?cat=leather-diaries"></div>
+        <div class="form-group">
+          <label>Auto-fill from Category <small style="color:var(--color-text-tertiary)">(recommended)</small></label>
+          <select name="category_slug">
+            <option value="">— Manual: use product picker below —</option>
+            ${catOptions}
+          </select>
+          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">When set, the slider automatically shows up to 10 products in this category. When you change a product's category in the admin, the slider updates with it. Leave empty to use the manually-picked products instead.</small>
+        </div>
         <div class="form-group"><label>Background Color</label>
           <div style="display:flex;gap:var(--space-2);align-items:center">
             <input type="color" name="bg_color_picker" value="${section?.bg_color || '#FAF8F5'}" style="width:50px;height:36px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer">
@@ -3277,9 +3445,11 @@ function openSliderSectionModal(container, section) {
     const fd = new FormData(e.target);
     const title = (fd.get('title') || '').toString().trim();
     if (!title) { showToast('Title is required.', 'error'); return; }
+    const categorySlug = (fd.get('category_slug') || '').toString().trim() || null;
     const payload = {
       title,
       view_all_link: (fd.get('view_all_link') || '').toString().trim() || null,
+      category_slug: categorySlug,
       bg_color: (fd.get('bg_color') || '').toString().trim() || '#FAF8F5',
       active: fd.get('active') === 'on',
     };
@@ -3287,7 +3457,9 @@ function openSliderSectionModal(container, section) {
     if (error) { showToast('Failed: ' + error.message, 'error'); return; }
     bustContentCache();
     closeModal();
-    showToast('Slider section updated!');
+    showToast(categorySlug
+      ? `Slider will auto-fill from "${categorySlug}". Refresh the homepage to see it.`
+      : 'Slider section updated! Using manual product picker.');
     renderHomepageSection(container);
   };
 }
@@ -3534,19 +3706,39 @@ function renderSliderPickerBreadcrumb() {
 }
 
 async function renderSliderPickerFolders() {
-  // Build group folders, filtered by the search box
+  // Build group folders, filtered by the search box.
+  // Uses DB-backed groups (sorted by sort_order) so newly created groups
+  // show up here. Falls back to the hardcoded map only if the DB is empty.
   const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
-  const matchedGroups = Object.keys(CATEGORY_GROUPS).filter(n => !q || n.toLowerCase().includes(q));
+  const dbGroups = await fetchCategoryGroups();
+  const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const dbNames = new Set(groupsByOrder.map(g => g.name));
+  // Merge in any hardcoded groups not present in DB (legacy compatibility)
+  const fallbackOnly = Object.keys(CATEGORY_GROUPS).filter(n => !dbNames.has(n));
+  const allNames = [...groupsByOrder.map(g => g.name), ...fallbackOnly];
+  const matchedGroups = allNames.filter(n => !q || n.toLowerCase().includes(q));
   if (matchedGroups.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No groups match your search.</p></div>';
-  const groupsHtml = matchedGroups.map(groupName => `
-    <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
-      <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
-      <div>
-        <strong>${escHtml(groupName)}</strong>
-        <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${(CATEGORY_GROUPS[groupName] || []).length} categories</div>
-      </div>
-    </button>
-  `).join('');
+  // Count categories per group using DB
+  const { data: allCats } = await supabase.from('categories').select('id, group_id, slug').order('sort_order');
+  const catsByGroupId = new Map();
+  for (const c of allCats || []) {
+    if (!c.group_id) continue;
+    if (!catsByGroupId.has(c.group_id)) catsByGroupId.set(c.group_id, []);
+    catsByGroupId.get(c.group_id).push(c);
+  }
+  const groupsHtml = matchedGroups.map(groupName => {
+    const dbGroup = groupsByOrder.find(g => g.name === groupName);
+    const catCount = (dbGroup && catsByGroupId.get(dbGroup.id)?.length) ?? (CATEGORY_GROUPS[groupName] || []).length;
+    return `
+      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
+        <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
+        <div>
+          <strong>${escHtml(groupName)}</strong>
+          <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${catCount} categor${catCount === 1 ? 'y' : 'ies'}</div>
+        </div>
+      </button>
+    `;
+  }).join('');
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${groupsHtml}</div>`;
 }
 
@@ -3555,14 +3747,30 @@ async function renderSliderPickerCategories() {
   const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
   let cats = [];
   if (group === '__uncategorized') {
-    const { data: allCats } = await supabase.from('categories').select('id, name, slug').order('name');
-    const allGroupedSlugs = new Set(Object.values(CATEGORY_GROUPS).flat());
-    cats = (allCats || []).filter(c => !allGroupedSlugs.has(c.slug));
+    const { data: allCats } = await supabase.from('categories').select('id, name, slug, group_id, sort_order').order('sort_order');
+    cats = (allCats || []).filter(c => !c.group_id);
   } else {
-    const slugs = CATEGORY_GROUPS[group] || [];
-    if (slugs.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
-    const { data: allCats } = await supabase.from('categories').select('id, name, slug').in('slug', slugs).order('name');
-    cats = (allCats || []).filter(c => slugs.includes(c.slug));
+    // Find the group in DB by name
+    const dbGroups = await fetchCategoryGroups();
+    const dbGroup = (dbGroups || []).find(g => g.name === group);
+    if (dbGroup) {
+      const { data: allCats } = await supabase
+        .from('categories')
+        .select('id, name, slug, group_id, sort_order')
+        .eq('group_id', dbGroup.id)
+        .order('sort_order');
+      cats = allCats || [];
+    } else {
+      // Fallback: hardcoded slugs
+      const slugs = CATEGORY_GROUPS[group] || [];
+      if (slugs.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
+      const { data: allCats } = await supabase
+        .from('categories')
+        .select('id, name, slug, group_id, sort_order')
+        .in('slug', slugs)
+        .order('sort_order');
+      cats = (allCats || []).filter(c => slugs.includes(c.slug));
+    }
   }
   if (cats.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
   if (q) cats = cats.filter(c => (c.name || '').toLowerCase().includes(q));
