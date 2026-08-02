@@ -196,6 +196,11 @@ export async function renderBulkQuotePage() {
       product_type: data.product_type,
       quantity: data.quantity,
       custom_requirements: data.custom_requirements,
+      // M18+M19 fix: persist the generated enquiry code AND the list of
+      // products the customer picked from the Quote List, so admin can
+      // see them in the panel without opening the email.
+      enquiry_code: data.enquiry_code,
+      product_names: data.product_names,
     }]);
 
     if (error) {

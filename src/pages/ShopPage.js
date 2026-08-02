@@ -120,8 +120,10 @@ export async function renderShopPage() {
   // Expose for downstream consumers (mega menu in Header re-uses the same).
   window.__cachedCategories = allCategories;
 
-  // Always fetch from network for shop listing so deleted products don't linger
-  const allProducts = await getProducts({ fresh: true });
+  // H3.5 fix: use the 30s product cache instead of bypassing it on every
+  // render. The cache is invalidated on `nyd-products-updated` after admin
+  // edits, so deleted products still drop out within a few seconds.
+  const allProducts = await getProducts();
 
   // A product matches a category slug if it's the primary category OR it appears
   // in the product_categories junction for that slug. The junction lets us
@@ -261,7 +263,7 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
   const grid = document.getElementById('product-grid');
   if (!grid) return; // shop page hasn't mounted yet
   try {
-    const allProducts = await getProducts({ fresh: true });
+    const allProducts = await getProducts();
     const params = new URLSearchParams(window.location.search);
     const catSlug = params.get('cat');
     const groupName = params.get('group');

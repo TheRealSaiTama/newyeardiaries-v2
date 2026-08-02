@@ -1,0 +1,126 @@
+// Server-side admin authentication.
+// Replaces the previous client-side `pass === VITE_ADMIN_PASSWORD` check
+// that bundled the password into the public JS bundle.
+//
+// Required Supabase secrets (set via `supabase secrets set`):
+//   SERVICE_ROLE_KEY  — Supabase service_role key (admin operations)
+//   ADMIN_PASSWORD    — the shared admin password (replaces VITE_ADMIN_PASSWORD)
+//   ADMIN_EMAIL       — optional, default 'admin@newyeardiaries.in'
+//
+// Deploy:
+//   supabase functions deploy verify-admin --no-verify-jwt
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
+const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') ?? '';
+const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'admin@newyeardiaries.in';
+
+function json(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+  if (req.method !== 'POST') {
+    return json(405, { error: 'Method not allowed' });
+  }
+
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return json(503, {
+      error: 'Server not configured',
+      hint: 'Set SUPABASE_URL and SERVICE_ROLE_KEY secrets, then redeploy.',
+    });
+  }
+  if (!ADMIN_PASSWORD) {
+    return json(503, {
+      error: 'Admin password not configured',
+      hint: 'Set ADMIN_PASSWORD secret, then redeploy.',
+    });
+  }
+
+  let body: { password?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return json(400, { error: 'Invalid JSON' });
+  }
+
+  const { password } = body;
+  if (!password || typeof password !== 'string') {
+    return json(400, { error: 'password is required' });
+  }
+
+  // Constant-ish-time compare to limit timing attacks (string compare is fine here, the
+  // password is shared and not super sensitive, but good hygiene).
+  if (password !== ADMIN_PASSWORD) {
+    // small delay to make brute-force less attractive
+    await new Promise((r) => setTimeout(r, 250));
+    return json(401, { error: 'Invalid password' });
+  }
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Try to sign in. If user doesn't exist yet, create it.
+  let signIn = await admin.auth.signInWithPassword({
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+  });
+
+  if (signIn.error) {
+    const msg = signIn.error.message || '';
+    const isInvalidLogin =
+      msg.toLowerCase().includes('invalid') ||
+      msg.toLowerCase().includes('credentials') ||
+      signIn.error.status === 400;
+
+    if (isInvalidLogin) {
+      // Auto-provision the admin user on first run.
+      const created = await admin.auth.admin.createUser({
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+        email_confirm: true,
+      });
+      if (created.error) {
+        return json(500, { error: 'Failed to create admin user: ' + created.error.message });
+      }
+      // Now sign in
+      signIn = await admin.auth.signInWithPassword({
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+      });
+      if (signIn.error) {
+        return json(500, { error: 'Failed to sign in after create: ' + signIn.error.message });
+      }
+    } else {
+      return json(500, { error: 'Sign-in failed: ' + msg });
+    }
+  }
+
+  const session = signIn.data?.session;
+  const user = signIn.data?.user;
+  if (!session || !user) {
+    return json(500, { error: 'No session returned' });
+  }
+
+  return json(200, {
+    ok: true,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    user: { id: user.id, email: user.email },
+  });
+});

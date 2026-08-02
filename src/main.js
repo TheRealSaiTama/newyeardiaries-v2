@@ -9,7 +9,7 @@ import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategorie
 import { initFaqChatbot } from './components/FaqChatbot.js';
 import { renderFooter } from './components/Footer.js';
 import { renderAboutSection } from './components/AboutSection.js';
-import { renderQuickViewModal } from './components/QuickViewModal.js';
+import { renderQuickViewModal, initQuickViewEvents } from './components/QuickViewModal.js';
 import { renderHomeSkeleton } from './components/Skeleton.js';
 import { getContent } from './lib/content.js';
 
@@ -154,6 +154,7 @@ function setupShell() {
   try { initHeaderEvents(); } catch (e) { console.warn('[shell] initHeaderEvents failed:', e); }
   try { updateHeaderCounts(); } catch (e) { console.warn('[shell] updateHeaderCounts failed:', e); }
   try { initSearchModal(); } catch (e) { console.warn('[shell] initSearchModal failed:', e); }
+  try { initQuickViewEvents(); } catch (e) { console.warn('[shell] initQuickViewEvents failed:', e); }
   try { initFaqChatbot(); } catch (e) { console.warn('[shell] initFaqChatbot failed:', e); }
   initFloatingButtons();
 }

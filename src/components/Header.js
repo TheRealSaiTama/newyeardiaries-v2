@@ -238,13 +238,15 @@ export function initHeaderEvents() {
 
 export function updateHeaderCounts() {
   const cartCount = document.getElementById('cart-count');
-  const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-  // Only show the number of products selected
-  const totalProducts = cartItems.length;
+  let cartItems = [];
+  try { cartItems = JSON.parse(localStorage.getItem('cart') || '[]'); } catch { cartItems = []; }
+  // M10 fix: sum quantities (5 of same product = "5"), not unique product count.
+  const totalItems = cartItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
 
   if (cartCount) {
-    cartCount.textContent = totalProducts;
-    cartCount.style.display = totalProducts > 0 ? 'flex' : 'none';
+    cartCount.textContent = totalItems;
+    cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+    cartCount.setAttribute('aria-label', `${totalItems} item${totalItems === 1 ? '' : 's'} in cart`);
   }
 }
 
@@ -349,7 +351,7 @@ export function initSearchModal() {
         p.name.toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
         (p.shortDescription || '').toLowerCase().includes(q) ||
-        (p.categoryName || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
         (p.badge || '').toLowerCase().includes(q) ||
         (p.sku || '').toLowerCase().includes(q)
       ).slice(0, 8);
@@ -376,7 +378,7 @@ export function initSearchModal() {
               <div class="search-result-info">
                 <div class="search-result-name">${p.name}</div>
                 <div class="search-result-meta">
-                  ${p.categoryName ? `<span>${p.categoryName}</span>` : ''}
+                  ${p.category ? `<span>${p.category}</span>` : ''}
                   <span class="search-result-price">₹${Number(p.price).toLocaleString()}</span>
                   ${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
                 </div>

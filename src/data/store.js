@@ -9,13 +9,15 @@ export function addToCart(productId, qty = 1) {
   const cart = getCart();
   const existing = cart.find(item => String(item.productId) === String(productId));
   if (existing) {
-    existing.qty = qty;
+    // M4 fix: increment instead of replace — adding the same product again
+    // should raise the quantity, not silently overwrite it.
+    existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 1);
   } else {
-    cart.push({ productId, qty });
+    cart.push({ productId, qty: Number(qty) || 1 });
   }
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateHeaderCounts();
-  showToast('Added to Cart');
+  try { localStorage.setItem('cart', JSON.stringify(cart)); } catch (e) { console.warn('[cart] write failed', e); }
+  try { updateHeaderCounts(); } catch { /* header not ready yet */ }
+  try { showToast('Added to Cart'); } catch { /* toast not ready */ }
 }
 
 export function removeFromCart(productId) {

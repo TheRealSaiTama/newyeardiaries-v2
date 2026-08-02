@@ -5,7 +5,6 @@ import { CATEGORY_GROUPS, getCategoriesByGroup, fetchCategories, fetchCategoryGr
 import { bustProductsCache } from '../data/products.js';
 
 let currentTab = 'products';
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || 'nyd2026';
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const SECONDARY_MEDIA_TYPES = [...IMAGE_TYPES, 'video/mp4'];
 const MAX_MEDIA_SIZE = 8 * 1024 * 1024;
@@ -29,9 +28,19 @@ function acBust(prefix) {
 const tabCache = new Map();
 
 export function renderAdminPage() {
-  const isAuthed = sessionStorage.getItem('admin_auth') === '1';
+  // Supabase stores the auth session in localStorage under
+  // `sb-<project-ref>-auth-token`. We do a synchronous presence check
+  // so the login form can render without an async flicker. The full
+  // Supabase session validation happens in `initAdminPage` — if the
+  // token is expired or tampered with, the user is bounced to login.
+  let hasSession = false;
+  try {
+    const projectRef = (import.meta.env.VITE_SUPABASE_URL || '').match(/https?:\/\/([^.]+)/)?.[1];
+    const key = projectRef ? `sb-${projectRef}-auth-token` : null;
+    if (key && localStorage.getItem(key)) hasSession = true;
+  } catch { /* localStorage may be disabled */ }
 
-  if (!isAuthed) {
+  if (!hasSession) {
     return `
       <div class="admin-login-wrap">
         <div class="admin-login-brand">
@@ -336,26 +345,67 @@ function showToast(message, type = 'success') {
 }
 
 export async function initAdminPage() {
-  const isAuthed = sessionStorage.getItem('admin_auth') === '1';
+  // Check for an existing Supabase Auth session (replaces sessionStorage flag).
+  const { data: { session } } = await supabase.auth.getSession();
+  const isAuthed = !!session;
 
   if (!isAuthed) {
     const form = document.getElementById('admin-login-form');
-    form?.addEventListener('submit', (e) => {
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const pass = document.getElementById('admin-pass').value;
-      if (pass === ADMIN_PASS) {
-        sessionStorage.setItem('admin_auth', '1');
+      const errExisting = form.parentElement?.querySelector('.login-error');
+      if (errExisting) errExisting.remove();
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const origLabel = submitBtn?.innerHTML;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Signing in…';
+      }
+
+      try {
+        // Call the server-side verify-admin Edge Function. The shared password
+        // is now stored only as a Supabase secret — never in the JS bundle.
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const res = await fetch(`${supabaseUrl}/functions/v1/verify-admin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ password: pass }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.access_token) {
+          throw new Error(data?.error || `Sign-in failed (${res.status})`);
+        }
+        // Promote the anon-key client to the admin's authenticated session.
+        const setRes = await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+        if (setRes.error) throw setRes.error;
+
         document.getElementById('app').innerHTML = renderAdminPage();
-        initAdminPage();
-      } else {
-        const err = document.createElement('p');
-        err.className = 'login-error';
-        err.textContent = 'Wrong password. Try again.';
-        err.style.cssText = 'color:var(--color-error);text-align:center;font-size:var(--fs-sm);margin-top:var(--space-2)';
-        form.after(err);
+        await initAdminPage();
+      } catch (err) {
+        const errEl = document.createElement('p');
+        errEl.className = 'login-error';
+        errEl.setAttribute('role', 'alert');
+        errEl.setAttribute('aria-live', 'polite');
+        errEl.textContent = err?.message || 'Wrong password. Try again.';
+        errEl.style.cssText = 'color:var(--color-error);text-align:center;font-size:var(--fs-sm);margin-top:var(--space-2)';
+        form.after(errEl);
         document.getElementById('admin-pass').value = '';
         document.getElementById('admin-pass').focus();
-        setTimeout(() => err.remove(), 3000);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origLabel || 'Sign In';
+        }
+        setTimeout(() => errEl.remove(), 4000);
       }
     });
     return;
@@ -382,8 +432,13 @@ export async function initAdminPage() {
     });
   });
 
-  logoutBtn.addEventListener('click', () => {
-    sessionStorage.removeItem('admin_auth');
+  logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('__nyd_page_cache'));
+      keys.forEach(k => localStorage.removeItem(k));
+    } catch { /* ignore */ }
     document.getElementById('app').innerHTML = renderAdminPage();
     initAdminPage();
   });
@@ -1211,7 +1266,11 @@ async function duplicateProduct(source, container) {
   if (inserted?.id && catRows?.length) {
     const rows = catRows.map(r => ({ product_id: inserted.id, category_id: r.category_id }));
     const { error: pcError } = await supabase.from('product_categories').insert(rows);
-    if (pcError) console.error('Category copy failed:', pcError);
+    // H1.5 / A5 fix: surface the error so admin knows the duplicate is
+    // missing its category links (data integrity), not just console-log.
+    if (pcError) {
+      showToast(`Duplicated as "${newName}", but category copy failed: ${pcError.message}`, 'error');
+    }
   }
 
   showToast(`Duplicated as "${newName}"`);
@@ -2121,7 +2180,9 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
       const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === savedGroupId || c.group_name === oldName || c.group?.name === oldName) || []);
       const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
       if (catIds.length) {
-        await supabase.from('categories').update({ group_id: savedGroupId }).in('id', catIds);
+        // H1.4 / A4 fix: capture the error so the back-association isn't silent.
+        const { error: linkErr } = await supabase.from('categories').update({ group_id: savedGroupId }).in('id', catIds);
+        if (linkErr) showToast(`Group saved, but linking ${catIds.length} categories failed: ${linkErr.message}`, 'error');
       }
     }
 
@@ -2753,8 +2814,11 @@ async function renderEnquiries(container, tab = 'contact') {
       // ponytail: opening an enquiry marks it reviewed (Gmail-style: viewed = read).
       // Orders have no reviewed status, so only contact + enquiry auto-mark.
       if (item && tableName !== 'orders' && item.status !== 'reviewed') {
-        await supabase.from(tableName).update({ status: 'reviewed' }).eq('id', id);
-        item.status = 'reviewed';
+        // M16 fix: capture error and don't flip client-side status if the
+        // DB update failed (avoids UI showing 'reviewed' that didn't persist).
+        const { error: viewErr } = await supabase.from(tableName).update({ status: 'reviewed' }).eq('id', id);
+        if (viewErr) { showToast('Mark reviewed failed: ' + viewErr.message, 'error'); }
+        else item.status = 'reviewed';
         await renderEnquiries(container, tab);
       }
       openEnquiryDetailModal(item, tab);
@@ -2766,7 +2830,8 @@ async function renderEnquiries(container, tab = 'contact') {
       const id = btn.closest('tr').dataset.id;
       const item = currentData.find(d => d.id === id);
       const newStatus = item.status === 'reviewed' ? 'pending' : 'reviewed';
-      await supabase.from(tableName).update({ status: newStatus }).eq('id', id);
+      const { error: revErr } = await supabase.from(tableName).update({ status: newStatus }).eq('id', id);
+      if (revErr) { showToast('Status change failed: ' + revErr.message, 'error'); return; }
       showToast(newStatus === 'reviewed' ? 'Marked as reviewed!' : 'Marked as pending!');
       await renderEnquiries(container, tab);
     };
@@ -3216,14 +3281,16 @@ async function renderHomepageSection(container) {
   document.getElementById('hero-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    await supabase.from('homepage_sections').upsert({ section_key: 'hero', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link'), second_cta_text: fd.get('second_cta_text'), second_cta_link: fd.get('second_cta_link') }, { onConflict: 'section_key' });
+    const { error } = await supabase.from('homepage_sections').upsert({ section_key: 'hero', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link'), second_cta_text: fd.get('second_cta_text'), second_cta_link: fd.get('second_cta_link') }, { onConflict: 'section_key' });
+    if (error) { showToast('Hero save failed: ' + error.message, 'error'); return; }
     bustContentCache();
     showToast('Hero saved!');
   };
   document.getElementById('cta-form').onsubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    await supabase.from('homepage_sections').upsert({ section_key: 'cta', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link') }, { onConflict: 'section_key' });
+    const { error } = await supabase.from('homepage_sections').upsert({ section_key: 'cta', title: fd.get('title'), subtitle: fd.get('subtitle'), cta_text: fd.get('cta_text'), cta_link: fd.get('cta_link') }, { onConflict: 'section_key' });
+    if (error) { showToast('CTA save failed: ' + error.message, 'error'); return; }
     bustContentCache();
     showToast('CTA saved!');
   };
@@ -4046,16 +4113,19 @@ async function renderFooterSection(container) {
       return;
     }
     const footerKeys = ['about_left', 'exporter_right', 'services_list'];
+    let firstErr = null;
     for (const key of footerKeys) {
       const val = fd.get(`footer_${key}`);
       if (val !== null) {
-        await supabase.from('footer_sections').upsert({
+        const { error } = await supabase.from('footer_sections').upsert({
           section_key: key,
           content: val,
           active: true
         }, { onConflict: 'section_key' });
+        if (error && !firstErr) firstErr = `${key}: ${error.message}`;
       }
     }
+    if (firstErr) { showToast('Footer save failed: ' + firstErr, 'error'); return; }
     bustContentCache();
     showToast('Footer saved!');
     renderFooterSection(container);

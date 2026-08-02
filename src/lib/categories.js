@@ -47,6 +47,14 @@ export function bustCategoriesCache() {
   try {
     localStorage.removeItem(CAT_STORAGE_KEY);
   } catch (e) {}
+  // H1.9 / HIGH-2 fix: dispatch the event + clear page cache so the
+  // header mega-menu and any cached page re-render with the new categories.
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nyd-categories-updated'));
+      if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
+    }
+  } catch (e) { /* ignore */ }
 }
 
 // Fetch all categories WITH their group resolved. Falls back to the hardcoded

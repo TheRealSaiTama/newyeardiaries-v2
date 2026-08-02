@@ -1,6 +1,21 @@
 import { formatPrice, getProductById } from '../data/products.js';
 import { addToCart, getCart } from '../data/store.js';
 
+// Track the most recently focused element before opening the modal so we
+// can restore focus on close (a11y).
+let _lastFocus = null;
+
+function closeQuickView() {
+  const modal = document.getElementById('quick-view-modal');
+  const overlay = document.getElementById('quick-view-overlay');
+  modal?.classList.remove('active');
+  overlay?.classList.remove('active');
+  if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
+  if (_lastFocus && typeof _lastFocus.focus === 'function') {
+    try { _lastFocus.focus(); } catch { /* ignore */ }
+  }
+}
+
 export function renderQuickViewModal() {
   return `
     <div class="overlay" id="quick-view-overlay"></div>
@@ -13,9 +28,35 @@ export function renderQuickViewModal() {
   `;
 }
 
+// Wire close handlers exactly once at module load. Idempotent — safe to call
+// from multiple renderers.
+let _qvWired = false;
+export function initQuickViewEvents() {
+  if (_qvWired) return;
+  _qvWired = true;
+
+  document.getElementById('quick-view-close')?.addEventListener('click', closeQuickView);
+  document.getElementById('quick-view-overlay')?.addEventListener('click', closeQuickView);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('quick-view-modal');
+      if (modal?.classList.contains('active')) closeQuickView();
+    }
+  });
+}
+
 export async function openQuickView(productId) {
-  const product = await getProductById(productId);
+  let product;
+  try {
+    product = await getProductById(productId);
+  } catch (err) {
+    console.error('Quick view open failed:', err);
+    return;
+  }
   if (!product) return;
+
+  // Remember the trigger so focus can be restored on close.
+  try { _lastFocus = document.activeElement; } catch { _lastFocus = null; }
 
   const cart = getCart();
   const isInCart = cart.some(item => String(item.productId) === String(product.id));
@@ -50,8 +91,8 @@ export async function openQuickView(productId) {
           <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${moq} units</div>
         </div>
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:auto;width:100%;">
-          <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" style="width:100%;" id="qv-add-cart"${isInCart ? ' disabled' : ''}>
-            ${isInCart ? 'Added to Cart' : 'Add to Cart'}
+          <button class="btn btn--accent btn--lg${isInCart || !product.inStock ? ' btn--added' : ''}" style="width:100%;" id="qv-add-cart"${isInCart || !product.inStock ? ' disabled' : ''}>
+            ${!product.inStock ? 'Sold Out' : isInCart ? 'Added to Cart' : 'Add to Cart'}
           </button>
         </div>
         <a href="/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>

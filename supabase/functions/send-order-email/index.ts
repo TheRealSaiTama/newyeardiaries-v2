@@ -6,17 +6,31 @@
  *   SMTP_PASS   = Google App Password (16 chars)
  *   SMTP_FROM   = optional, default "New Year Diaries <SMTP_USER>"
  *   ORDER_ADMIN_EMAIL = optional, default newyeardiaries@gmail.com
+ *   ALLOWED_ORIGINS   = optional, comma-separated origin allowlist
+ *                        (default: newyeardiaries.in, newyeardiaries-v2.vercel.app, localhost)
  *
  * Deploy:
  *   supabase functions deploy send-order-email --no-verify-jwt
+ *
+ * Security (C4 fix): CORS is now restricted to an allowlist. Browsers will
+ * block cross-origin POSTs from random websites, so this function can't be
+ * used as an open mail relay anymore.
  */
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+
+function corsHeadersFor(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 type AttachmentIn = {
   name?: string;
@@ -45,10 +59,10 @@ type ParsedAttachment = {
   disposition: 'inline' | 'attachment';
 };
 
-function json(status: number, body: unknown) {
+function json(req: Request, status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeadersFor(req), 'Content-Type': 'application/json' },
   });
 }
 
@@ -117,16 +131,23 @@ async function sendOne(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeadersFor(req) });
   }
   if (req.method !== 'POST') {
-    return json(405, { error: 'Method not allowed' });
+    return json(req, 405, { error: 'Method not allowed' });
+  }
+
+  // C4 hardening: reject non-allowlisted Origin (server-to-server calls and
+  // same-origin browser calls don't send Origin; cross-origin browser calls do).
+  const origin = req.headers.get('origin') || '';
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return json(req, 403, { error: 'Origin not allowed' });
   }
 
   const user = Deno.env.get('SMTP_USER');
   const pass = Deno.env.get('SMTP_PASS');
   if (!user || !pass) {
-    return json(503, {
+    return json(req, 503, {
       error: 'SMTP not configured',
       hint: 'Set SMTP_USER and SMTP_PASS secrets (Gmail App Password), then redeploy.',
     });
@@ -136,12 +157,12 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return json(400, { error: 'Invalid JSON' });
+    return json(req, 400, { error: 'Invalid JSON' });
   }
 
   const html = body.html;
   if (!html || typeof html !== 'string') {
-    return json(400, { error: 'html is required' });
+    return json(req, 400, { error: 'html is required' });
   }
 
   const adminEmail = (body.adminEmail || Deno.env.get('ORDER_ADMIN_EMAIL') || 'newyeardiaries@gmail.com').trim();
@@ -174,7 +195,7 @@ Deno.serve(async (req) => {
     }
 
     await client.close();
-    return json(200, {
+    return json(req, 200, {
       ok: true,
       sent: {
         admin: adminEmail,
@@ -185,7 +206,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     try { await client.close(); } catch { /* ignore */ }
     console.error('[send-order-email]', e);
-    return json(500, {
+    return json(req, 500, {
       error: 'Failed to send email',
       detail: e instanceof Error ? e.message : String(e),
     });

@@ -12,6 +12,14 @@ export function bustContentCache() {
   try {
     localStorage.removeItem(CONTENT_STORAGE_KEY);
   } catch (e) {}
+  // H1.9 / HIGH-2 fix: dispatch the event + clear page cache so header
+  // and any cached page re-render with the new content immediately.
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nyd-content-updated'));
+      if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
+    }
+  } catch (e) { /* ignore */ }
 }
 
 export async function getContent() {

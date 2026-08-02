@@ -121,6 +121,9 @@ export function renderContactPage(params, appContent) {
       state: data.state,
       mobile: data.mobile,
       message: data.message,
+      // M18 fix: persist the generated enquiry code so admin can search
+      // by code in the panel and reply to the right ticket.
+      enquiry_code: data.enquiry_code,
     }]);
 
     if (error) {
