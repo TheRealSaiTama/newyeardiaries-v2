@@ -378,6 +378,7 @@ function wrapPage(renderFn) {
 addRoute('/', wrapPage(renderHomePage));
 addRoute('/shop', wrapPage(renderShopPage));
 addRoute('/shop/corporate', wrapPage(renderCorporatePage));
+addRoute('/corporate', wrapPage(renderCorporatePage));
 // Backward-compat: /product/:slug still works (redirects to /:slug)
 addRoute('/product/:slug', (params) => { navigateTo('/' + params.slug); return; });
 addRoute('/cart', wrapPage(renderCartPage));
