@@ -4,15 +4,11 @@ const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const ORDER_ADMIN_EMAIL = 'newyeardiaries@gmail.com';
-// Public site origin for product images in email (must be reachable by Gmail’s servers)
 const SITE_ORIGIN = (import.meta.env.VITE_SITE_URL || 'https://newyeardiaries-v2.vercel.app').replace(/\/$/, '');
 
 function sendEmail(templateParams, { toEmail, attachments } = {}) {
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) return Promise.resolve({ ok: false, skipped: true });
 
-  // EmailJS Variable Attachments: pass base64 (or data URL) under param names
-  // configured in template → Attachments tab as “Variable Attachment”.
-  // Also pass file1..file5 so one-time dashboard setup works for up to 5 files.
   const attachParams = {};
   (attachments || []).slice(0, 5).forEach((a, i) => {
     const n = i + 1;
@@ -48,14 +44,6 @@ export function sendContactEmail(data) {
   return sendEnquiryEmail('contact', data);
 }
 
-// ---------------------------------------------------------------------------
-// Enquiry (contact + bulk quote) mail — same Edge Function as orders.
-// Subject: [NYD-Query-{shortCode}] {Customer Name}
-// Sends to BOTH admin (newyeardiaries@gmail.com) and customer with NYD
-// Team signature. Customer gets a confirmation copy.
-// ---------------------------------------------------------------------------
-
-/** Pull a short 4-char code from the full enquiry code (NYD-XX-YYYYMMDD-XXXX). */
 function shortCode(enquiryCode) {
   if (!enquiryCode) return Math.random().toString(36).slice(2, 6).toUpperCase();
   const parts = String(enquiryCode).split('-');
@@ -69,14 +57,11 @@ async function sendEnquiryEmail(type, data) {
 
   const code = shortCode(data.enquiry_code);
   const name = (data.name || data.firstName || 'Customer').toString().trim() || 'Customer';
-  const subjectAdmin = `[NYD-Query-${code}] New ${type === 'bulk_quote' ? 'Bulk Quote' : 'Contact'} — ${name}`;
+  const subjectAdmin = `[NYD-Query-${code}] New ${type === 'bulk_quote' ? 'Bulk Quote' : 'Contact'} â€” ${name}`;
   const subjectCustomer = `[NYD-Query-${code}] We received your message, ${name}`;
 
   const html = buildEnquiryHtml(type, data, code);
 
-  // Build attachments list for the Edge Function. Each item needs
-  // {name, type, dataUrl} — the Edge Function parses base64 from the
-  // dataUrl and attaches it as a paperclip (4.5MB per file cap).
   const attachments = (data.attachments || []).filter(a => a && a.dataUrl).map(a => ({
     name: a.name,
     type: a.type || 'application/octet-stream',
@@ -206,7 +191,6 @@ function esc(str) {
   }[c]));
 }
 
-/** Absolute https URL for a product image path. */
 function absoluteUrl(src) {
   if (!src) return null;
   const s = String(src).trim();
@@ -217,17 +201,11 @@ function absoluteUrl(src) {
   return `${SITE_ORIGIN}${s.startsWith('/') ? s : `/${s}`}`;
 }
 
-/**
- * Gmail-friendly product thumb:
- * - .webp (and other formats) → public JPEG via images.weserv.nl proxy
- * - data:image → shrink to small JPEG data URL (inline)
- */
 async function toEmailThumb(src) {
   if (!src) return null;
   const s = String(src).trim();
   if (!s) return null;
 
-  // Already a small jpeg/png data URL
   if (s.startsWith('data:image/jpeg') || s.startsWith('data:image/png') || s.startsWith('data:image/gif')) {
     return s.length <= 200_000 ? s : await shrinkDataUrl(s, 120);
   }
@@ -238,7 +216,6 @@ async function toEmailThumb(src) {
   const abs = absoluteUrl(s);
   if (!abs) return null;
 
-  // Proxy to JPEG — Gmail often fails on .webp
   const hostPath = abs.replace(/^https?:\/\//i, '');
   return `https://images.weserv.nl/?url=${encodeURIComponent(hostPath)}&w=128&h=128&fit=cover&output=jpg&q=75`;
 }
@@ -284,7 +261,6 @@ async function prepareAttachments(logos = []) {
     let dataUrl = logo.dataUrl || logo.data || null;
     if (!dataUrl) continue;
 
-    // Shrink large images so the email payload stays reasonable
     if (dataUrl.startsWith('data:image/') && dataUrl.length > 250_000) {
       dataUrl = (await shrinkDataUrl(dataUrl, 1000)) || dataUrl;
     }
@@ -293,9 +269,6 @@ async function prepareAttachments(logos = []) {
     if (!parsed) continue;
 
     const isImage = parsed.type.startsWith('image/');
-    // Deterministic CID per image so the Edge Function can attach with
-    // Content-ID: <logoN@nyd> and the HTML can reference <img src="cid:logoN@nyd">.
-    // Non-image files stay as plain paperclips.
     const cid = isImage ? `logo${imgIdx++}@nyd` : null;
 
     out.push({
@@ -323,15 +296,10 @@ async function buildOrderHtml(data, attachments = []) {
   const tdC = `${td}text-align:center;`;
   const labelTd = `padding:12px 10px;border:${border};vertical-align:middle;background:#ffffff;color:#1a4a8a;font-size:13px;font-weight:600;text-align:right;`;
 
-  // Note: product image column was removed to keep the email lightweight
-  // and avoid triggering Gmail's image-rich mail spam heuristics. The
-  // admin sees product images in the admin panel — the mail just lists
-  // SKU / Product / Qty / Price / Total.
-
   const rowsHtml = (data.items || []).map((item) => {
     return `
       <tr>
-        <td style="${tdC}">${esc(item.sku || '—')}</td>
+        <td style="${tdC}">${esc(item.sku || 'â€”')}</td>
         <td style="${td}">${esc(item.name || 'Item')}</td>
         <td style="${tdC}">${esc(item.qty)}</td>
         <td style="${tdR}">${fmtINR(item.unitPrice ?? item.price)}</td>
@@ -339,19 +307,9 @@ async function buildOrderHtml(data, attachments = []) {
       </tr>`;
   }).join('');
 
-  // Inline previews for image uploads + list of all attachment names.
-  // Images use <img src="cid:logoN@nyd"> and are attached as inline
-  // Content-ID parts by the Edge Function — this is the only reliable
-  // way to render high-res image previews in Gmail/Outlook without
-  // hitting data-URL size limits.
   const logos = data.logos || [];
   let attachHtml = '';
   if (logos.length) {
-    // H1.6 / E1 fix: build a name → attachment map so CID pairing can't
-    // break if `prepareAttachments` filters out a logo (oversize, parse
-    // failure, etc). The `attachments[i]` index approach silently referenced
-    // the wrong CID when a logo was dropped, producing the broken-image
-    // icon the user saw in their inbox.
     const attByName = new Map();
     for (const a of attachments) {
       if (a?.name) attByName.set(a.name, a);
@@ -368,8 +326,6 @@ async function buildOrderHtml(data, attachments = []) {
           </div>`;
       }
       if (isImg) {
-        // Fallback: data URL inline (works for most email clients unless
-        // Gmail strips it for size).
         return `
           <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
             <img src="${du.replace(/"/g, '&quot;')}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">
@@ -378,7 +334,7 @@ async function buildOrderHtml(data, attachments = []) {
       }
       return `
         <div style="display:inline-block;margin:6px 10px 6px 0;padding:12px;border:1px solid #c8d0dc;border-radius:6px;font-size:12px;color:#1a2744;background:#f8fafc;">
-          📎 ${esc(l.name)}
+          ðŸ“Ž ${esc(l.name)}
         </div>`;
     }).join('');
 
@@ -472,7 +428,7 @@ async function buildOrderHtml(data, attachments = []) {
   <tr>
     <td style="padding:8px;background:#ffffff;">
       <div style="border:1px solid #c8d0dc;padding:12px 14px;font-size:13px;color:#1a4a8a;line-height:1.5;">
-        <strong>Special Instructions or Comments about your order:</strong> ${esc(noteBody || '—')}
+        <strong>Special Instructions or Comments about your order:</strong> ${esc(noteBody || 'â€”')}
       </div>
     </td>
   </tr>
@@ -481,7 +437,7 @@ async function buildOrderHtml(data, attachments = []) {
 
   <tr>
     <td style="padding:24px 20px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;">
-      <div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries — Premium Diaries, Planners &amp; Corporate Gifts</div>
+      <div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries â€” Premium Diaries, Planners &amp; Corporate Gifts</div>
       <div style="font-size:11px;color:#666666;">174 D, Bawana Industrial Area, Delhi 110039, India</div>
       <div style="font-size:11px;color:#666666;margin-top:2px;">Phone: +91 93111 35190 | Email: support@newyeardiaries.in | www.newyeardiaries.in</div>
     </td>
@@ -490,13 +446,6 @@ async function buildOrderHtml(data, attachments = []) {
 </table>`;
 }
 
-/**
- * Production order mail via Supabase Edge Function + Gmail SMTP.
- * Real PDF/JPG attachments, full HTML, dual delivery (admin + customer).
- * Requires the `send-order-email` Edge Function deployed and the
- * SMTP_USER / SMTP_PASS / SMTP_FROM / ORDER_ADMIN_EMAIL secrets set
- * in the Supabase project.
- */
 export async function sendOrderEmail(data) {
   const orderNo = data.orderNumber || 'ORD';
   const buyerName = (data.company && data.company.trim())
@@ -504,11 +453,8 @@ export async function sendOrderEmail(data) {
     : `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Customer';
 
   const subjectAdmin = `New Order # ${orderNo} (${buyerName})`;
-  const subjectCustomer = `Order Confirmed # ${orderNo} — New Year Diaries`;
+  const subjectCustomer = `Order Confirmed # ${orderNo} â€” New Year Diaries`;
 
-  // Build attachments first so each image gets a deterministic CID,
-  // then build HTML that references those CIDs via <img src="cid:...">
-  // (proper MIME inline part — survives Gmail's data-URL stripping).
   const attachments = await prepareAttachments(data.logos);
   const html = await buildOrderHtml(data, attachments);
 

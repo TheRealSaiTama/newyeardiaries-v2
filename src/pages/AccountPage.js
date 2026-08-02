@@ -2,14 +2,13 @@ import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
 
-// Real session-backed account page (H2.14 companion). Placeholder copy removed.
 export async function renderAccountPage() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="page-content">
       <div class="container section" style="text-align:center;padding:var(--space-16) 0;">
         <span class="material-symbols-outlined" style="font-size:40px;color:var(--color-text-tertiary)">progress_activity</span>
-        <p class="text-body" style="margin-top:var(--space-4)">Loading account…</p>
+        <p class="text-body" style="margin-top:var(--space-4)">Loading accountâ€¦</p>
       </div>
     </div>
   `;
@@ -65,13 +64,13 @@ export async function renderAccountPage() {
               For existing bulk orders, our team will contact you with proforma invoices.
             </p>
             <div class="account-stats">
-              <div class="account-stat"><div class="stat-value">—</div><div class="stat-label">Orders online</div></div>
-              <div class="account-stat"><div class="stat-value">—</div><div class="stat-label">Wishlist</div></div>
+              <div class="account-stat"><div class="stat-value">â€”</div><div class="stat-label">Orders online</div></div>
+              <div class="account-stat"><div class="stat-value">â€”</div><div class="stat-label">Wishlist</div></div>
               <div class="account-stat"><div class="stat-value">1</div><div class="stat-label">Session</div></div>
             </div>
             <div class="card" style="margin-top:var(--space-6);padding:var(--space-5)">
               <h3 class="heading-4" style="margin-bottom:var(--space-3)">Need help with an order?</h3>
-              <p class="text-sm" style="margin-bottom:var(--space-4)">Call customer care or send an enquiry — we respond during business hours.</p>
+              <p class="text-sm" style="margin-bottom:var(--space-4)">Call customer care or send an enquiry â€” we respond during business hours.</p>
               <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
                 <a href="tel:+919311135190" class="btn btn--secondary btn--sm">+91 93111 35190</a>
                 <a href="/contact" class="btn btn--accent btn--sm">Contact form</a>

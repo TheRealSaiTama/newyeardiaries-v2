@@ -1,8 +1,5 @@
-// H2.4: order success uses sessionStorage snapshot only.
-// After RLS hardening, anon cannot SELECT orders — and we must NOT re-open
-// a brute-forceable /order-success?order=… PII channel.
 
-const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const fmt = (n) => `â‚¹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const CARE_PHONE = '+91 9311135190';
 const CARE_TEL = '+919311135190';
 
@@ -16,7 +13,7 @@ function itemsRows(items) {
       </div>
       <div class="order-overview-item__main">
         <div class="order-overview-item__name">${it.name || it.product_name || 'Item'}</div>
-        <div class="order-overview-item__meta">${it.qty || it.quantity || 1} × ${fmt(it.unitPrice ?? it.unit_price)}</div>
+        <div class="order-overview-item__meta">${it.qty || it.quantity || 1} Ã— ${fmt(it.unitPrice ?? it.unit_price)}</div>
       </div>
       <div class="order-overview-item__total">${fmt(it.lineTotal ?? it.line_total)}</div>
     </div>`).join('');
@@ -48,7 +45,6 @@ export async function renderOrderSuccessPage() {
   let snap = null;
   try { snap = JSON.parse(sessionStorage.getItem('lastOrderSnapshot') || 'null'); } catch (_) {}
 
-  // Snapshot only — never fetch order PII from DB as anon (H2.4 / C3).
   const items = snap?.items || [];
   const subtotal = snap?.subtotal;
   const gstAmount = snap?.gstAmount;
@@ -128,7 +124,7 @@ export async function renderOrderSuccessPage() {
           <p style="font-size:var(--fs-sm);color:var(--color-text-secondary);line-height:var(--lh-normal);margin-bottom:0;">
             Our sales executive will call you shortly with a detailed proforma invoice for payment.<br><br>
             Questions? Call customer care at <a href="tel:${CARE_TEL}" style="color:var(--color-primary);font-weight:var(--fw-semibold);text-decoration:none;">${CARE_PHONE}</a>.<br><br>
-            <strong style="color:var(--color-text-primary);">Thanks…!!<br>New Year Diaries</strong>
+            <strong style="color:var(--color-text-primary);">Thanksâ€¦!!<br>New Year Diaries</strong>
           </p>
         </div>
 

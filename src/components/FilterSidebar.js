@@ -1,4 +1,3 @@
-// ===== FilterSidebar Component =====
 import { filters } from '../data/products.js';
 
 export function renderFilterSidebar() {
@@ -56,7 +55,6 @@ export function renderFilterSidebar() {
 }
 
 export function initFilterEvents() {
-  // M6: avoid stacking listeners when ShopPage re-inits after re-render
   document.querySelectorAll('.filter-section-title').forEach(title => {
     if (title.dataset.bound === '1') return;
     title.dataset.bound = '1';
@@ -66,7 +64,5 @@ export function initFilterEvents() {
       title.setAttribute('aria-expanded', String(!isCollapsed));
     };
     title.addEventListener('click', toggle);
-    // H3.13 fix: button is now a real <button>, so keyboard Enter/Space
-    // works natively. Just wire the click handler.
   });
 }

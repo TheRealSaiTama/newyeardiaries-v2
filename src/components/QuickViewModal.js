@@ -2,8 +2,6 @@ import { formatPrice, getProductById } from '../data/products.js';
 import { addToCart, getCart } from '../data/store.js';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock.js';
 
-// Track the most recently focused element before opening the modal so we
-// can restore focus on close (a11y).
 let _lastFocus = null;
 let _focusTrapHandler = null;
 
@@ -35,8 +33,6 @@ export function renderQuickViewModal() {
   `;
 }
 
-// Wire close handlers exactly once at module load. Idempotent — safe to call
-// from multiple renderers.
 let _qvWired = false;
 export function initQuickViewEvents() {
   if (_qvWired) return;
@@ -109,12 +105,12 @@ export async function openQuickView(productId) {
         <div class="pdp-price">${formatPrice(product.price)}</div>
         <div class="text-body">${product.description || ''}</div>
         <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
-          ${[product.material, product.size, product.pages ? product.pages + ' pages' : null].filter(Boolean).join(' • ')}
+          ${[product.material, product.size, product.pages ? product.pages + ' pages' : null].filter(Boolean).join(' â€¢ ')}
         </div>
         <div style="margin-top:var(--space-2);">
           <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);display:block;margin-bottom:var(--space-1);">Quantity</label>
           <div class="qty-stepper">
-            <button class="qty-step-btn" id="qv-qty-minus" aria-label="Decrease">−</button>
+            <button class="qty-step-btn" id="qv-qty-minus" aria-label="Decrease">âˆ’</button>
             <input type="number" class="qty-step-input" id="qv-qty" value="${moq}" min="${moq}" step="1">
             <button class="qty-step-btn" id="qv-qty-plus" aria-label="Increase">+</button>
           </div>
@@ -125,7 +121,7 @@ export async function openQuickView(productId) {
             ${soldOut ? 'Sold Out' : isInCart ? 'Added to Cart' : 'Add to Cart'}
           </button>
         </div>
-        <a href="/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
+        <a href="/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details â†’</a>
       </div>
     `;
   }
@@ -134,7 +130,6 @@ export async function openQuickView(productId) {
   overlay?.classList.add('active');
   lockBodyScroll();
   if (modal) trapFocus(modal);
-  // H3.16: initial focus on close button
   setTimeout(() => document.getElementById('quick-view-close')?.focus(), 50);
 
   const qvQty = document.getElementById('qv-qty');

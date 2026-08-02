@@ -1,6 +1,3 @@
-// Ref-counted body scroll lock so nested modals (search + quick view, etc.)
-// don't leave overflow permanently hidden (H3.14).
-
 let _locks = 0;
 
 export function lockBodyScroll() {

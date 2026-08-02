@@ -25,7 +25,7 @@ export function renderContactPage(params, appContent) {
             <div class="contact-info-cards">
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">call</span>
-                <div><strong>Phone</strong><br><span class="text-sm">${phone}${phone2 ? ' | ' + phone2 : ''}</span><br><span class="text-xs">Mon–Sat, 9am–6pm IST</span></div>
+                <div><strong>Phone</strong><br><span class="text-sm">${phone}${phone2 ? ' | ' + phone2 : ''}</span><br><span class="text-xs">Monâ€“Sat, 9amâ€“6pm IST</span></div>
               </div>
               <div class="contact-info-card">
                 <span class="material-symbols-outlined">mail</span>
@@ -53,7 +53,7 @@ export function renderContactPage(params, appContent) {
               <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
               <div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div>
               <div class="input-group">
-                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, briefs, references)</small></label>
+                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional â€” logos, briefs, references)</small></label>
                 <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="contact-files" class="input-field" style="padding:8px">
                 <small id="contact-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
               </div>
@@ -87,7 +87,6 @@ export function renderContactPage(params, appContent) {
     btn.disabled = true;
     btn.textContent = 'Sending...';
 
-    // Read each file as a data URL for the email attachment
     const attachments = [];
     for (const f of fileList) {
       try {
@@ -121,8 +120,6 @@ export function renderContactPage(params, appContent) {
       state: data.state,
       mobile: data.mobile,
       message: data.message,
-      // M18 fix: persist the generated enquiry code so admin can search
-      // by code in the panel and reply to the right ticket.
       enquiry_code: data.enquiry_code,
     }]);
 
@@ -138,7 +135,7 @@ export function renderContactPage(params, appContent) {
     form.reset();
     document.getElementById('contact-files-hint').textContent = 'Max 5 files, 5 MB each. Files come in the email as attachments.';
     btn.classList.add('btn--success');
-    btn.textContent = attachments.length ? `✓ Sent with ${attachments.length} file(s)!` : '✓ Message Sent!';
+    btn.textContent = attachments.length ? `âœ“ Sent with ${attachments.length} file(s)!` : 'âœ“ Message Sent!';
     setTimeout(() => {
       btn.disabled = false;
       btn.classList.remove('btn--success');

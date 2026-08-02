@@ -8,9 +8,6 @@ export default defineConfig({
   },
   appType: 'spa',
   build: {
-    // H3.1 / H3.8 fix: split AdminPage and CheckoutPage into separate
-    // chunks so visitors who never visit /admin or /checkout don't pay
-    // the ~250KB cost on the home/shop pages.
     cssCodeSplit: true,
     rollupOptions: {
       output: {

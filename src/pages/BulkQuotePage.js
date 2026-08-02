@@ -35,7 +35,6 @@ export async function renderBulkQuotePage() {
     `;
   }
 
-  // Pre-fill total units as placeholder/default value for quantity input
   const totalUnits = quoteItems.reduce((sum, item) => sum + item.qty, 0);
 
   app.innerHTML = `
@@ -95,7 +94,7 @@ export async function renderBulkQuotePage() {
                 <textarea name="custom_requirements" class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea>
               </div>
               <div class="input-group">
-                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, references)</small></label>
+                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional â€” logos, references)</small></label>
                 <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="bulk-files" class="input-field" style="padding:8px">
                 <small id="bulk-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
               </div>
@@ -131,7 +130,6 @@ export async function renderBulkQuotePage() {
 
     if (!form.reportValidity()) return;
 
-    // Read attached files
     const fileInput = document.getElementById('bulk-files');
     const fileList = fileInput ? Array.from(fileInput.files || []) : [];
     if (fileList.length > 5) {
@@ -147,13 +145,11 @@ export async function renderBulkQuotePage() {
 
     const enquiryCode = generateEnquiryCode('BQ');
 
-    // Compile dynamic selected items details into requirements if available
     const productNamesStr = quoteItems.map(it => `${it.product.title} (SKU: ${it.product.sku}) [Qty: ${it.qty}]`).join(', ');
 
     btn.disabled = true;
     btn.textContent = 'Submitting...';
 
-    // Read each file as a data URL for the email attachment
     const attachments = [];
     for (const f of fileList) {
       try {
@@ -176,7 +172,6 @@ export async function renderBulkQuotePage() {
       company,
       product_type: form.product_type.value || 'Custom / Bespoke',
       quantity,
-      // M17: required_by is a top-level field (also kept in body for older email templates)
       required_by: form.required_by.value || null,
       custom_requirements: [
         quoteItems.length > 0
@@ -197,16 +192,11 @@ export async function renderBulkQuotePage() {
       product_type: data.product_type,
       quantity: data.quantity,
       custom_requirements: data.custom_requirements,
-      // M18+M19 fix: persist the generated enquiry code AND the list of
-      // products the customer picked from the Quote List, so admin can
-      // see them in the panel without opening the email.
       enquiry_code: data.enquiry_code,
       product_names: data.product_names,
-      // M17: top-level required_by (column added in 20260802003)
       required_by: data.required_by,
     }]);
 
-    // If required_by column not migrated yet, retry without it
     if (error && (error.code === 'PGRST204' || error.message?.includes('required_by'))) {
       ({ error } = await supabase.from('quote_requests').insert([{
         name: data.name,
@@ -234,7 +224,7 @@ export async function renderBulkQuotePage() {
 
     clearQuoteList();
     btn.classList.add('btn--success');
-    btn.textContent = attachments.length ? `✓ Submitted with ${attachments.length} file(s)!` : '✓ Enquiry Submitted!';
+    btn.textContent = attachments.length ? `âœ“ Submitted with ${attachments.length} file(s)!` : 'âœ“ Enquiry Submitted!';
     sendQuoteEmail(data).catch((err) => console.error('Quote email failed:', err));
     setTimeout(() => navigateTo('/enquiry-success'), 900);
   });

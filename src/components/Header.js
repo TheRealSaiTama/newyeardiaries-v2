@@ -32,9 +32,6 @@ export function renderHeader(content) {
     { label: 'Branding', path: '/branding' },
   ];
 
-  // Build the explore-group list from the categories the cache actually has,
-  // ordered by the DB's sort_order. Falls back to the hardcoded map if the
-  // cache is cold (e.g. server-side render or before boot completes).
   const groupedCats = getCategoriesByGroup(_cachedCategories || []);
   const exploreGroups = Object.keys(groupedCats).length
     ? Object.keys(groupedCats)
@@ -45,7 +42,6 @@ export function renderHeader(content) {
     const [main] = text.split('|').map(s => s.trim()).filter(Boolean);
     return { text: main || text, link: i === annParts.length - 1 ? link : null };
   });
-
 
   const firstGroup = exploreGroups[0];
   const firstCats = groupedCats[firstGroup] || [];
@@ -161,12 +157,10 @@ export function renderHeader(content) {
   `;
 }
 
-// Module-level so document-level listeners aren't re-bound on every wrapPage()
 let _headerDocWired = false;
 let _exploreTimeout = null;
 
 function wireHeaderDomOnce() {
-  // Called after every header re-render — binds element listeners with clone-safe approach
   const menuBtn = document.getElementById('mobile-menu-btn');
   const closeBtn = document.getElementById('mobile-nav-close');
   const overlay = document.getElementById('mobile-overlay');
@@ -185,7 +179,6 @@ function wireHeaderDomOnce() {
     unlockBodyScroll();
   }
 
-  // Re-bind fresh nodes (header HTML is replaced each nav)
   if (menuBtn && menuBtn.dataset.bound !== '1') {
     menuBtn.dataset.bound = '1';
     menuBtn.addEventListener('click', openMenu);
@@ -206,7 +199,6 @@ function wireHeaderDomOnce() {
 
   if (!_headerDocWired) {
     _headerDocWired = true;
-    // H3.15: Esc closes mobile nav (once on document)
     document.addEventListener('keydown', (e) => {
       const n = document.getElementById('mobile-nav');
       if (e.key === 'Escape' && n?.classList.contains('active')) {
@@ -286,14 +278,12 @@ export function updateHeaderCounts() {
   const cartCount = document.getElementById('cart-count');
   let cartItems = [];
   try { cartItems = JSON.parse(localStorage.getItem('cart') || '[]'); } catch { cartItems = []; }
-  // M10 fix: sum quantities (5 of same product = "5"), not unique product count.
   const totalItems = cartItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
 
   if (cartCount) {
     cartCount.textContent = totalItems;
     cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
     cartCount.setAttribute('aria-label', `${totalItems} item${totalItems === 1 ? '' : 's'} in cart`);
-    // H3.17: announce cart badge changes to screen readers
     if (!cartCount.hasAttribute('aria-live')) {
       cartCount.setAttribute('aria-live', 'polite');
       cartCount.setAttribute('aria-atomic', 'true');
@@ -329,9 +319,6 @@ export function initSearchModal() {
 
   if (!searchBtn || !overlay) return;
 
-  // Idempotency guard — wrapPage() re-runs this on every navigation.
-  // Without it, input/keydown listeners stack up and race each other,
-  // causing the "shows results then reverts" glitch.
   if (searchBtn.dataset.bound === '1') return;
   searchBtn.dataset.bound = '1';
 
@@ -342,7 +329,6 @@ export function initSearchModal() {
   let productsLoading = null;
   async function loadProducts() {
     if (allProducts.length) return allProducts;
-    // H2.13: share one in-flight fetch so typing while loading waits correctly
     if (!productsLoading) {
       productsLoading = getProducts({ limit: 200 })
         .then((list) => {
@@ -405,7 +391,6 @@ export function initSearchModal() {
 
     debounceTimer = setTimeout(async () => {
       const products = await loadProducts();
-      // Stale guard: bail if a newer keystroke/close superseded this one
       if (myToken !== searchToken) return;
       const matched = products.filter(p => {
         const cat = (p.category || p.categoryName || '').toLowerCase();
@@ -441,7 +426,7 @@ export function initSearchModal() {
                 <div class="search-result-name">${p.name || p.title || ''}</div>
                 <div class="search-result-meta">
                   ${(p.category || p.categoryName) ? `<span>${p.category || p.categoryName}</span>` : ''}
-                  <span class="search-result-price">₹${Number(p.price).toLocaleString()}</span>
+                  <span class="search-result-price">â‚¹${Number(p.price).toLocaleString()}</span>
                   ${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
                 </div>
               </div>

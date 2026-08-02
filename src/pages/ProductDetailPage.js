@@ -58,7 +58,6 @@ export async function renderProductDetailPage(params) {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page-content"><div class="container section">${renderPDPSkeleton()}</div></div>`;
 
-  // Load product first so reviews query uses product.id (not slug)
   const [product, allProducts] = await Promise.all([
     getProductBySlug(params.slug),
     getProducts(),
@@ -80,12 +79,10 @@ export async function renderProductDetailPage(params) {
     productCategoryList = (links || []).map(l => l.categories?.name).filter(Boolean);
   }
 
-  // H3.31: per-product title + basic JSON-LD Product schema
   try {
     document.title = `${product.title || product.name} | New Year Diaries`;
     const origin = window.location.origin || 'https://newyeardiaries.in';
     const pageUrl = `${origin}/${product.slug || ''}`;
-    // Canonical + basic OG for PDP
     let canon = document.head.querySelector('link[rel="canonical"]');
     if (!canon) {
       canon = document.createElement('link');
@@ -178,7 +175,6 @@ export async function renderProductDetailPage(params) {
             </div>
           `;
 
-  // M12/M13: match on categoryId OR shared junction slugs; fallback bestsellers
   let related = allProducts.filter(p => {
     if (p.id === product.id) return false;
     if (product.categoryId && p.categoryId === product.categoryId) return true;
@@ -222,7 +218,7 @@ export async function renderProductDetailPage(params) {
           </div>
 
           <div class="pdp-info">
-            ${productCategoryList.length ? `<div class="label">${productCategoryList.join(', ')} ${product.sku ? '• ' + product.sku : ''}</div>` : ''}
+            ${productCategoryList.length ? `<div class="label">${productCategoryList.join(', ')} ${product.sku ? 'â€¢ ' + product.sku : ''}</div>` : ''}
             <h1 class="pdp-title">${product.title}</h1>
             <div class="pdp-price">
               ${formatPrice(product.price)}
@@ -268,7 +264,7 @@ export async function renderProductDetailPage(params) {
                 <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label>
                 <div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
                   <div style="display:flex;align-items:center;">
-                    <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
+                    <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">âˆ’</button>
                     <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
                     <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
                   </div>
@@ -328,7 +324,6 @@ export async function renderProductDetailPage(params) {
 
   initProductCardSlideshows();
 
-  // Qty stepper
   let pdpMOQ = product.minBulkOrder;
   const qtyInput = document.getElementById('pdp-qty');
   const minusBtn = document.getElementById('qty-minus');
@@ -378,7 +373,6 @@ export async function renderProductDetailPage(params) {
     });
   });
 
-  // Rating stars
   let selectedRating = 0;
   document.getElementById('pdp-write-review-btn')?.addEventListener('click', () => {
     document.getElementById('pdp-review-form-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -395,7 +389,6 @@ export async function renderProductDetailPage(params) {
     });
   });
 
-  // Review form — H2.8: client-side rate limit (1 review / product / 10 min)
   document.getElementById('review-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -431,7 +424,6 @@ export async function renderProductDetailPage(params) {
     }
   });
 
-  // Image gallery
   const mainImageEl = document.querySelector('.pdp-main-image');
   const thumbs = document.querySelectorAll('.pdp-thumb');
   const images = product.images;

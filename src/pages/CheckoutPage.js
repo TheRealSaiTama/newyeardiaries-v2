@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase.js';
 import { sendOrderEmail } from '../lib/notify.js';
 import { renderCheckoutSkeleton } from '../components/Skeleton.js';
 
-// Module-level storage for logo uploads (too large for sessionStorage).
 let uploadedLogos = []; // Array of { name, dataUrl (image/jpeg;base64,...) }
 
 function showToast(message, type = 'success') {
@@ -43,7 +42,6 @@ function setCheckoutStep(step) {
   sessionStorage.setItem('checkoutStep', step);
 }
 
-// Module-level cache to keep cart item data and avoid redundant Supabase requests on step change
 let cachedCartItems = null;
 let lastCartJson = '';
 
@@ -77,7 +75,6 @@ export async function renderCheckoutPage() {
   if (cachedCartItems && currentCartJson === lastCartJson) {
     cartItems = cachedCartItems;
   } else {
-    // Show a clean skeleton loader instantly while fetching from Supabase
     app.innerHTML = renderCheckoutSkeleton();
 
     cartItems = (await Promise.all(
@@ -91,7 +88,6 @@ export async function renderCheckoutPage() {
     lastCartJson = currentCartJson;
   }
 
-  // Enforce MOQ on existing cart items
   cartItems.forEach(item => {
     const moq = item.product.minBulkOrder || 1;
     if (item.qty < moq) {
@@ -109,7 +105,6 @@ export async function renderCheckoutPage() {
   const shipping = subtotal >= 5000 ? 0 : 250;
   const total = subtotal + gstAmount;
 
-  // Stepper reflects the active step.
   const stepState = (n) => n < (currentStep === 'review' ? 2 : 1) ? 'completed'
     : n === (currentStep === 'review' ? 2 : 1) ? 'active' : '';
   const stepperHtml = `
@@ -137,16 +132,16 @@ export async function renderCheckoutPage() {
               </div>
               <div style="flex:1;min-width:0;">
                 <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);">${item.product.title}</div>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${item.product.material || ''} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${item.product.material || ''} ${item.product.size ? 'â€¢ ' + item.product.size : ''} â€¢ Min. ${moq} units</div>
                 <div class="qty-stepper checkout-qty-stepper">
-                  <button class="qty-step-btn checkout-qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
+                  <button class="qty-step-btn checkout-qty-minus" data-id="${item.product.id}" data-moq="${moq}">âˆ’</button>
                   <input type="number" class="qty-step-input checkout-qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}" step="1">
                   <button class="qty-step-btn checkout-qty-plus" data-id="${item.product.id}" data-moq="${moq}">+</button>
                 </div>
               </div>
               <div style="font-weight:var(--fw-semibold);font-size:var(--fs-sm);text-align:right;">
                 <div class="checkout-item-subtotal">${formatPrice(item.product.price * item.qty)}</div>
-                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">₹${Number(item.product.price).toLocaleString()} × ${item.qty}</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">â‚¹${Number(item.product.price).toLocaleString()} Ã— ${item.qty}</div>
               </div>
             </div>
           `;
@@ -158,7 +153,6 @@ export async function renderCheckoutPage() {
     </div>
   `;
 
-  // Step 1 — all form fields live here (contact, shipping, tax, branding, files)
   const formHtml = `
       <div class="checkout-form-section">
         <div class="checkout-form-group">
@@ -231,7 +225,6 @@ export async function renderCheckoutPage() {
       </div>
     `;
 
-  // Step 2 — review box only (read-only) + payment notices + place order
   const reviewHtml = `
     <div class="checkout-form-section">
       <div class="checkout-form-group">
@@ -311,7 +304,6 @@ export async function renderCheckoutPage() {
     </div>
   `;
 
-  // Quantity handlers
   function recalcCheckout() {
     const cart = getCart();
     let newSub = 0;
@@ -324,7 +316,7 @@ export async function renderCheckoutPage() {
       const subtotalEl = el.querySelector('.checkout-item-subtotal');
       if (subtotalEl) subtotalEl.textContent = formatPrice(lineTotal);
       const detailEl = el.querySelector('.checkout-item-subtotal + div');
-      if (detailEl) detailEl.textContent = `₹${Number(price).toLocaleString()} × ${item.qty}`;
+      if (detailEl) detailEl.textContent = `â‚¹${Number(price).toLocaleString()} Ã— ${item.qty}`;
     });
 
     const newGst = newSub * gstRate;
@@ -338,7 +330,7 @@ export async function renderCheckoutPage() {
 
   document.querySelectorAll('.checkout-qty-minus').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = btn.dataset.id; // UUID string — parseInt corrupts it
+      const id = btn.dataset.id; // UUID string â€” parseInt corrupts it
       const moq = parseInt(btn.dataset.moq);
       const input = document.querySelector(`.checkout-qty-input[data-id="${id}"]`);
       const newQty = Math.max(moq, (parseInt(input.value) || moq) - 1);
@@ -370,7 +362,6 @@ export async function renderCheckoutPage() {
     });
   });
 
-  // ---- Logo upload handling ----
   function convertToJpg(file, maxWidth = 1200) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -429,8 +420,6 @@ export async function renderCheckoutPage() {
     });
   }
 
-  // H2.5 fix: max 10 MB per file, 20 MB total — prevents tab crash on
-  // 500MB uploads and the resulting 20MB JSONB row from choking Supabase.
   const MAX_FILE_BYTES = 10 * 1024 * 1024;
   const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
   async function handleLogoFiles(files) {
@@ -469,21 +458,18 @@ export async function renderCheckoutPage() {
           showToast('File added');
         }
       } else {
-        alert(`"${f.name}" — unsupported file type.`);
+        alert(`"${f.name}" â€” unsupported file type.`);
       }
     }
     renderLogoPreviews();
     persistLogos();
   }
 
-  // M1 fix: persist uploaded logos in sessionStorage so a refresh or
-  // accidental F5 doesn't wipe 5 minutes of work.
   const LOGO_STORAGE_KEY = '__nyd_checkout_logos';
   function persistLogos() {
     try { sessionStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(uploadedLogos)); } catch { /* quota */ }
   }
   function restoreLogos() {
-    // Only restore when module list is empty — re-renders must not double-append
     if (uploadedLogos.length) return false;
     try {
       const raw = sessionStorage.getItem(LOGO_STORAGE_KEY);
@@ -523,15 +509,11 @@ export async function renderCheckoutPage() {
     });
   }
 
-  // Render any previously uploaded logos (when step 1 is re-rendered, or
-  // when logos were persisted from a previous session/page load).
   renderLogoPreviews();
   if (restored && uploadedLogos.length) {
     showToast(`Restored ${uploadedLogos.length} previously uploaded file(s)`);
   }
 
-  // Step 1 → Step 2: validate the form, persist the data, advance to review.
-  // ponytail: validation + collection shared with submit via collectCheckoutData().
   function collectCheckoutData() {
     const email = document.getElementById('chk-email')?.value.trim();
     const phone = document.getElementById('chk-phone')?.value.trim();
@@ -573,14 +555,12 @@ export async function renderCheckoutPage() {
     window.scrollTo(0, 0);
   });
 
-  // Step 2 → Step 1: edit (all fields already in sessionStorage)
   document.getElementById('btn-edit-info')?.addEventListener('click', () => {
     setCheckoutStep('shipping');
     renderCheckoutPage();
     window.scrollTo(0, 0);
   });
 
-  // Place Order (step 2) — uses data saved on Save and Proceed
   document.getElementById('btn-place-order')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-place-order');
     const data = getCheckoutData();
@@ -597,11 +577,8 @@ export async function renderCheckoutPage() {
       return;
     }
 
-    // ponytail: no payment UI now → default to bank transfer (offline confirmation).
     const paymentMethod = 'bank';
 
-    // Email/preview line items use client display prices; DB totals come from
-    // place_order RPC (server-side product prices — H2.3).
     const displayItems = cartItems.map(item => {
       const rawImg = item.product.image || item.product.images?.[0] || null;
       return {
@@ -617,11 +594,9 @@ export async function renderCheckoutPage() {
       };
     });
 
-    if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
-    showToast('Processing your order…', 'success');
+    if (btn) { btn.disabled = true; btn.textContent = 'Placing orderâ€¦'; }
+    showToast('Processing your orderâ€¦', 'success');
 
-    // H2.1: single atomic RPC (order + items). H2.3: server recomputes prices.
-    // Fallback: dual insert if RPC not deployed yet.
     let orderNumber = null;
     let orderId = null;
     let serverSubtotal = Number(subtotal.toFixed(2));
@@ -629,8 +604,6 @@ export async function renderCheckoutPage() {
     let serverShipping = Number(shipping.toFixed(2));
     let serverTotal = Number((subtotal + subtotal * gstRate + (shipping > 0 ? shipping : 0)).toFixed(2));
 
-    // M3 mitigation: store only file names + sizes in DB (not multi-MB base64).
-    // Full binaries still go out on the order email attachments.
     const logoPayload = uploadedLogos.length
       ? uploadedLogos.map(l => ({
           name: l.name,
@@ -676,7 +649,6 @@ export async function renderCheckoutPage() {
       serverShipping = Number(rpcData.shipping);
       serverTotal = Number(rpcData.total);
     } else {
-      // RPC missing / failed → legacy dual insert (still better than failing hard)
       console.warn('[checkout] place_order RPC unavailable, using fallback insert', rpcErr);
 
       const _now = new Date();
@@ -775,7 +747,6 @@ export async function renderCheckoutPage() {
         }))
       );
       if (itemsErr) {
-        // H2.1 partial: order without items — surface error, keep order for support
         console.error('Order items insert failed:', itemsErr);
         showToast('Order saved but items failed to save. Contact support with your order number.', 'error');
       }
@@ -820,8 +791,7 @@ export async function renderCheckoutPage() {
       tAndCAgreed: true,
     };
 
-    // H2.2: wait for email before navigating (with soft timeout so user isn't stuck)
-    if (btn) btn.textContent = 'Sending confirmation…';
+    if (btn) btn.textContent = 'Sending confirmationâ€¦';
     let emailOk = false;
     let emailWarn = '';
     try {
@@ -838,7 +808,6 @@ export async function renderCheckoutPage() {
       emailOk = false;
     }
 
-    // H2.4: success page uses session snapshot only — no anon order SELECT by number
     const orderSnapshot = {
       ...emailPayload,
       orderId,
@@ -865,7 +834,7 @@ export async function renderCheckoutPage() {
     uploadedLogos = [];
 
     if (!emailOk) {
-      showToast('Order placed — confirmation email may be delayed. We have your order.' + emailWarn, 'error');
+      showToast('Order placed â€” confirmation email may be delayed. We have your order.' + emailWarn, 'error');
     } else if (emailWarn) {
       showToast('Order placed!' + emailWarn, 'success');
     }

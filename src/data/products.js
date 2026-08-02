@@ -10,7 +10,6 @@ function normalize(p) {
     slug: p.slug,
     name: p.name,
     title: p.name,
-    // `category` is the display NAME (legacy). Prefer `categorySlug` for filtering.
     category: p.category?.name || '',
     categorySlug: p.category?.slug || '',
     categoryId: p.category_id || '',
@@ -19,7 +18,7 @@ function normalize(p) {
     pages: p.pages,
     price: Number(p.price) || 0,
     originalPrice: Number(p.original_price) || 0,
-    currency: '₹',
+    currency: 'â‚¹',
     sku: p.sku || '',
     badge: p.badge || '',
     description: p.description || '',
@@ -49,7 +48,6 @@ export function bustProductsCache() {
   try {
     localStorage.removeItem(PRODUCTS_STORAGE_KEY);
   } catch (e) {}
-  // Also drop painted shop/home HTML so deleted products don't linger on-screen
   try {
     if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
   } catch (e) {}
@@ -57,7 +55,6 @@ export function bustProductsCache() {
 
 export async function getProducts({ fresh = false } = {}) {
   if (fresh) {
-    // Force network only — don't clear page HTML (that's admin-delete's job)
     _cache = null;
     _fetchedAt = null;
     try { localStorage.removeItem(PRODUCTS_STORAGE_KEY); } catch (e) {}
@@ -71,7 +68,6 @@ export async function getProducts({ fresh = false } = {}) {
       const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Ignore localStorage older than TTL — prevents deleted products sticking around
         if (parsed.fetchedAt && Date.now() - parsed.fetchedAt < CACHE_TTL) {
           _cache = parsed.data;
           _fetchedAt = parsed.fetchedAt;
@@ -97,9 +93,6 @@ export async function getProducts({ fresh = false } = {}) {
 
 async function fetchProductsFresh(attempt = 1) {
   try {
-    // Fetch products with their primary category's name+slug, AND the full
-    // product_categories junction so we know every category a product belongs to
-    // AND its per-category sort_order (1..100).
     const [prodRes, juncRes] = await Promise.all([
       supabase
         .from('products')
@@ -111,7 +104,6 @@ async function fetchProductsFresh(attempt = 1) {
         .select('product_id, category_id, sort_order, category:categories!product_categories_category_id_fkey(slug)'),
     ]);
 
-    // H3.26: retry once on transport / timeout style failures
     if ((prodRes.error || juncRes.error) && attempt < 3) {
       const msg = (prodRes.error || juncRes.error)?.message || '';
       if (/timeout|network|fetch|502|503|504/i.test(msg) || !prodRes.data) {
@@ -121,9 +113,7 @@ async function fetchProductsFresh(attempt = 1) {
     }
 
     const products = prodRes.data || [];
-    // Build a map: productId -> array of category slugs (from the junction)
     const extraSlugsByProduct = new Map();
-    // Build a map: productId -> { slug -> sort_order } for per-category sort
     const sortByProductSlug = new Map();
     for (const row of juncRes.data || []) {
       const slug = row.category?.slug;
@@ -140,11 +130,9 @@ async function fetchProductsFresh(attempt = 1) {
 
     const newCache = products.map(p => {
       const base = normalize(p);
-      // categorySlugs: [primary slug, ...all junction slugs], deduped
       const allSlugs = [base.categorySlug, ...(extraSlugsByProduct.get(p.id) || [])]
         .filter(Boolean);
       base.categorySlugs = Array.from(new Set(allSlugs));
-      // categorySortOrders: { [slug]: order } for per-category sort
       base.categorySortOrders = sortByProductSlug.get(p.id) || {};
       return base;
     });
@@ -152,8 +140,6 @@ async function fetchProductsFresh(attempt = 1) {
     _cache = newCache;
     _fetchedAt = Date.now();
 
-    // M5: don't persist base64 image blobs to localStorage (quota killer).
-    // Memory cache keeps full images; storage gets http(s) only.
     try {
       const slim = _cache.map(p => ({
         ...p,
@@ -168,7 +154,6 @@ async function fetchProductsFresh(attempt = 1) {
     return _cache;
   } catch (err) {
     console.error('[products] fetchProductsFresh failed:', err);
-    // H3.26: one retry on hard throw
     if (attempt < 3) {
       await new Promise(r => setTimeout(r, 400 * attempt));
       return fetchProductsFresh(attempt + 1);
@@ -182,7 +167,6 @@ async function fetchProductsBackground() {
   if (_isFetchingProductsBackground) return;
   _isFetchingProductsBackground = true;
   try {
-    // M20: compare ids+prices+slugs only — not full base64 image payloads
     const fingerprint = (list) => (list || []).map(p =>
       `${p.id}|${p.slug}|${p.price}|${p.inStock}|${(p.images || []).length}`
     ).join(';');
@@ -201,7 +185,6 @@ async function fetchProductsBackground() {
 
 export async function getProductBySlug(slug) {
   if (!slug) return null;
-  // ponytail: hit DB directly so deleted products never resolve from stale cache
   try {
     const { data, error } = await supabase
       .from('products')
@@ -250,8 +233,6 @@ export async function getProductsByCategory(categorySlug) {
     .single();
   if (!cats) return [];
 
-  // Pull the junction rows for this category — they carry the per-category
-  // sort_order (1..100) that controls the display order on category pages.
   const { data: pcRows } = await supabase
     .from('product_categories')
     .select('product_id, sort_order')
@@ -271,26 +252,18 @@ export async function getProductsByCategory(categorySlug) {
     if (r.sort_order != null) sortByJunction.set(r.product_id, r.sort_order);
   });
 
-  // Attach per-category sortOrder to each product so the admin / sort UI
-  // can see the current value for THIS category (not the product's global
-  // products.sort_order).
   const normalized = products.map(p => {
     const base = normalize(p);
     base.categorySortOrder = sortByJunction.get(p.id) ?? null;
     return base;
   });
 
-  // Sort logic
   const isAZ = cats.slug === 'a-to-z-diary-collection';
   if (isAZ) {
-    // A to Z diary collection: alphabetical (case-insensitive) regardless
-    // of the per-category sort_order.
     normalized.sort((a, b) =>
       (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())
     );
   } else {
-    // Per-category sort_order ASC, then name ASC as tiebreaker for unsorted
-    // products. Products without a sort_order float to the end.
     normalized.sort((a, b) => {
       const sa = a.categorySortOrder;
       const sb = b.categorySortOrder;
@@ -304,7 +277,7 @@ export async function getProductsByCategory(categorySlug) {
   return normalized;
 }
 
-export function formatPrice(price, currency = '₹') {
+export function formatPrice(price, currency = 'â‚¹') {
   return `${currency}${price.toLocaleString('en-IN')}`;
 }
 
@@ -338,10 +311,10 @@ export const filters = {
   material: ['Leather', 'PU Leather', 'Vegan Leather', 'Linen', 'Hardbound'],
   size: ['A4', 'A5', 'B5'],
   priceRange: [
-    { label: 'Under ₹100', min: 0, max: 100 },
-    { label: '₹100 – ₹300', min: 100, max: 300 },
-    { label: '₹300 – ₹500', min: 300, max: 500 },
-    { label: '₹500 – ₹1,000', min: 500, max: 1000 },
-    { label: '₹1,000 – ₹2,000', min: 1000, max: 2000 },
+    { label: 'Under â‚¹100', min: 0, max: 100 },
+    { label: 'â‚¹100 â€“ â‚¹300', min: 100, max: 300 },
+    { label: 'â‚¹300 â€“ â‚¹500', min: 300, max: 500 },
+    { label: 'â‚¹500 â€“ â‚¹1,000', min: 500, max: 1000 },
+    { label: 'â‚¹1,000 â€“ â‚¹2,000', min: 1000, max: 2000 },
   ],
 };

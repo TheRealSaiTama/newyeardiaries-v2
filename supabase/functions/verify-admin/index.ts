@@ -1,14 +1,3 @@
-// Server-side admin authentication.
-// Replaces the previous client-side `pass === VITE_ADMIN_PASSWORD` check
-// that bundled the password into the public JS bundle.
-//
-// Required Supabase secrets (set via `supabase secrets set`):
-//   SERVICE_ROLE_KEY  — Supabase service_role key (admin operations)
-//   ADMIN_PASSWORD    — the shared admin password (replaces VITE_ADMIN_PASSWORD)
-//   ADMIN_EMAIL       — optional, default 'admin@newyeardiaries.in'
-//
-// Deploy:
-//   supabase functions deploy verify-admin --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
@@ -18,11 +7,12 @@ const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
 function isAllowedOrigin(origin: string) {
   if (!origin) return true;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Preview / production Vercel deploys for this project
   try {
     const host = new URL(origin).hostname;
     if (host.endsWith('.vercel.app')) return true;
-  } catch { /* ignore */ }
+  } catch {
+    return false;
+  }
   return false;
 }
 
@@ -37,8 +27,6 @@ function corsHeadersFor(req: Request) {
   };
 }
 
-// Supabase auto-injects SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY on deploy.
-// Also accept manual SERVICE_ROLE_KEY secret for compatibility.
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY =
   Deno.env.get('SERVICE_ROLE_KEY') ??
@@ -92,10 +80,7 @@ Deno.serve(async (req) => {
     return json(req, 400, { error: 'password is required' });
   }
 
-  // Constant-ish-time compare to limit timing attacks (string compare is fine here, the
-  // password is shared and not super sensitive, but good hygiene).
   if (password !== ADMIN_PASSWORD) {
-    // small delay to make brute-force less attractive
     await new Promise((r) => setTimeout(r, 250));
     return json(req, 401, { error: 'Invalid password' });
   }
@@ -104,7 +89,6 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Try to sign in. If user doesn't exist yet, create it.
   let signIn = await admin.auth.signInWithPassword({
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
@@ -118,7 +102,6 @@ Deno.serve(async (req) => {
       signIn.error.status === 400;
 
     if (isInvalidLogin) {
-      // Auto-provision the admin user on first run.
       const created = await admin.auth.admin.createUser({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
@@ -127,7 +110,6 @@ Deno.serve(async (req) => {
       if (created.error) {
         return json(req, 500, { error: 'Failed to create admin user: ' + created.error.message });
       }
-      // Now sign in
       signIn = await admin.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,

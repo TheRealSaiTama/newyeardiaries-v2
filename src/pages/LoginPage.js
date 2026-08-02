@@ -1,8 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { navigateTo } from '../router.js';
 
-// H2.14: wire real Supabase Auth (email/password). Account page still
-// depends on a session; decorative form is gone.
 export function renderLoginPage() {
   document.getElementById('app').innerHTML = `
     <div class="page-content">
@@ -17,7 +15,7 @@ export function renderLoginPage() {
             </div>
             <div class="input-group">
               <label for="login-password">Password</label>
-              <input id="login-password" name="password" type="password" class="input-field" placeholder="••••••••" autocomplete="current-password" required>
+              <input id="login-password" name="password" type="password" class="input-field" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" required>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <label class="filter-option" style="font-size:var(--fs-sm);">
@@ -47,7 +45,7 @@ export function renderLoginPage() {
     const password = document.getElementById('login-password')?.value;
     if (!email || !password) return;
 
-    if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing inâ€¦'; }
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;

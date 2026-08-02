@@ -1,4 +1,3 @@
-// ===== Store — Cart (localStorage) =====
 import { updateHeaderCounts } from '../components/Header.js';
 
 export function getCart() {
@@ -9,8 +8,6 @@ export function addToCart(productId, qty = 1) {
   const cart = getCart();
   const existing = cart.find(item => String(item.productId) === String(productId));
   if (existing) {
-    // M4 fix: increment instead of replace — adding the same product again
-    // should raise the quantity, not silently overwrite it.
     existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 1);
   } else {
     cart.push({ productId, qty: Number(qty) || 1 });
@@ -40,7 +37,6 @@ export function clearCart() {
   updateHeaderCounts();
 }
 
-// Toast notification
 function showToast(message) {
   let toast = document.getElementById('toast-notification');
   if (!toast) {
@@ -68,10 +64,8 @@ function showToast(message) {
   }, 2500);
 }
 
-// Global function for inline onclick handlers
 window.__addToCart = (id, qty) => addToCart(id, qty);
 
-// ===== Quote List (localStorage) =====
 export function getQuoteList() {
   return JSON.parse(localStorage.getItem('quoteList') || '[]');
 }
@@ -80,7 +74,6 @@ export function addToQuoteList(productId, qty = 100) {
   const quoteList = getQuoteList();
   const existing = quoteList.find(item => String(item.productId) === String(productId));
   if (existing) {
-    // Match cart behaviour: re-adding same product raises qty, not silent replace
     existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 100);
   } else {
     quoteList.push({ productId, qty: Number(qty) || 100 });
