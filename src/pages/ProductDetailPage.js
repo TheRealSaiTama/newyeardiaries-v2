@@ -83,6 +83,34 @@ export async function renderProductDetailPage(params) {
   // H3.31: per-product title + basic JSON-LD Product schema
   try {
     document.title = `${product.title || product.name} | New Year Diaries`;
+    const origin = window.location.origin || 'https://newyeardiaries.in';
+    const pageUrl = `${origin}/${product.slug || ''}`;
+    // Canonical + basic OG for PDP
+    let canon = document.head.querySelector('link[rel="canonical"]');
+    if (!canon) {
+      canon = document.createElement('link');
+      canon.rel = 'canonical';
+      document.head.appendChild(canon);
+    }
+    canon.href = pageUrl;
+    const setOg = (prop, val) => {
+      if (!val) return;
+      let el = document.head.querySelector(`meta[property="${prop}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', val);
+    };
+    setOg('og:title', product.title || product.name);
+    setOg('og:url', pageUrl);
+    const img = product.image && !String(product.image).startsWith('data:')
+      ? product.image
+      : undefined;
+    if (img) setOg('og:image', img.startsWith('http') ? img : origin + img);
+    setOg('og:type', 'product');
+
     let ld = document.getElementById('pdp-jsonld');
     if (!ld) {
       ld = document.createElement('script');
@@ -90,9 +118,6 @@ export async function renderProductDetailPage(params) {
       ld.id = 'pdp-jsonld';
       document.head.appendChild(ld);
     }
-    const img = product.image && !String(product.image).startsWith('data:')
-      ? product.image
-      : undefined;
     ld.textContent = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -100,6 +125,7 @@ export async function renderProductDetailPage(params) {
       description: product.shortDescription || product.description || '',
       sku: product.sku || undefined,
       image: img,
+      url: pageUrl,
       offers: {
         '@type': 'Offer',
         priceCurrency: 'INR',
@@ -107,6 +133,7 @@ export async function renderProductDetailPage(params) {
         availability: product.inStock === false
           ? 'https://schema.org/OutOfStock'
           : 'https://schema.org/InStock',
+        url: pageUrl,
       },
     });
   } catch { /* ignore */ }

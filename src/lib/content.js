@@ -50,42 +50,70 @@ export async function getContent() {
 }
 
 async function fetchContentFresh() {
+  // H3.27: per-query isolation — one failed table no longer blanks all content
+  const safe = async (label, promise) => {
+    try {
+      const { data, error } = await promise;
+      if (error) {
+        console.warn(`[content] ${label}:`, error.message);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.warn(`[content] ${label} threw:`, e);
+      return null;
+    }
+  };
+
   try {
     const [
-      { data: siteSettings },
-      { data: siteContent },
-      { data: homepageSections },
-      { data: announcements },
-      { data: footerSections },
-      { data: banners },
-      { data: trustBadges },
-      { data: sliderSections },
-      { data: sliderItems },
-      { data: shopCategories },
+      siteSettings,
+      siteContent,
+      homepageSections,
+      announcements,
+      footerSections,
+      banners,
+      trustBadges,
+      sliderSections,
+      sliderItems,
+      shopCategories,
     ] = await Promise.all([
-      supabase.from('site_settings').select('*'),
-      supabase.from('site_content').select('*'),
-      supabase.from('homepage_sections').select('*').order('sort_order'),
-      supabase.from('announcements').select('*').order('created_at'),
-      supabase.from('footer_sections').select('*').eq('active', true).order('sort_order'),
-      supabase.from('banners').select('*').eq('active', true).order('order_index'),
-      supabase.from('trust_badges').select('*').order('position'),
-      supabase.from('homepage_slider_sections').select('*').eq('active', true).order('sort_order'),
-      supabase.from('homepage_slider_items').select('*').order('position'),
-      supabase.from('shop_categories').select('*').eq('active', true).order('sort_order'),
+      safe('site_settings', supabase.from('site_settings').select('*')),
+      safe('site_content', supabase.from('site_content').select('*')),
+      safe('homepage_sections', supabase.from('homepage_sections').select('*').order('sort_order')),
+      safe('announcements', supabase.from('announcements').select('*').order('created_at')),
+      safe('footer_sections', supabase.from('footer_sections').select('*').eq('active', true).order('sort_order')),
+      safe('banners', supabase.from('banners').select('*').eq('active', true).order('order_index')),
+      safe('trust_badges', supabase.from('trust_badges').select('*').order('position')),
+      safe('slider_sections', supabase.from('homepage_slider_sections').select('*').eq('active', true).order('sort_order')),
+      safe('slider_items', supabase.from('homepage_slider_items').select('*').order('position')),
+      safe('shop_categories', supabase.from('shop_categories').select('*').eq('active', true).order('sort_order')),
     ]);
 
+    const prev = _cache || {};
     const newCache = {
-      siteSettings: Object.fromEntries((siteSettings || []).map(s => [s.key, s.value])),
-      siteContent: Object.fromEntries((siteContent || []).map(s => [`${s.section}.${s.key}`, s.value])),
-      homepageSections: Object.fromEntries((homepageSections || []).map(s => [s.section_key, s])),
-      announcements: (announcements || []).filter(a => a.active),
-      footerSections: Object.fromEntries((footerSections || []).map(s => [s.section_key, s])),
-      banners: banners || [],
-      trustBadges: (trustBadges || []).filter(b => b.active !== false),
-      sliderSections: sliderSections || [],
-      sliderItems: sliderItems || [],
-      shopCategories: shopCategories || [],
+      siteSettings: siteSettings
+        ? Object.fromEntries(siteSettings.map(s => [s.key, s.value]))
+        : (prev.siteSettings || {}),
+      siteContent: siteContent
+        ? Object.fromEntries(siteContent.map(s => [`${s.section}.${s.key}`, s.value]))
+        : (prev.siteContent || {}),
+      homepageSections: homepageSections
+        ? Object.fromEntries(homepageSections.map(s => [s.section_key, s]))
+        : (prev.homepageSections || {}),
+      announcements: announcements
+        ? announcements.filter(a => a.active)
+        : (prev.announcements || []),
+      footerSections: footerSections
+        ? Object.fromEntries(footerSections.map(s => [s.section_key, s]))
+        : (prev.footerSections || {}),
+      banners: banners || prev.banners || [],
+      trustBadges: trustBadges
+        ? trustBadges.filter(b => b.active !== false)
+        : (prev.trustBadges || []),
+      sliderSections: sliderSections || prev.sliderSections || [],
+      sliderItems: sliderItems || prev.sliderItems || [],
+      shopCategories: shopCategories || prev.shopCategories || [],
     };
 
     _cache = newCache;

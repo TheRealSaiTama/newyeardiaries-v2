@@ -88,11 +88,11 @@ export async function renderShopPage() {
               <span class="material-symbols-outlined" style="font-size:16px;">tune</span>
               Filters
             </button>
-            <select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select">
-              <option>Sort by: Featured</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest First</option>
+            <select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select" aria-label="Sort products">
+              <option value="featured">Sort by: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="newest">Newest First</option>
             </select>
           </div>
         </div>
@@ -407,15 +407,23 @@ function getActiveFilters() {
   return active;
 }
 
-function keywordMatch(product, keyword) {
+function keywordMatch(product, keyword, field) {
+  // Prefer exact field match for material/size filters (avoids "A5" matching random text)
   const kw = keyword.toLowerCase();
+  if (field === 'material') {
+    return String(product.material || '').toLowerCase().includes(kw)
+      || String(product.tags || '').toLowerCase().includes(kw);
+  }
+  if (field === 'size') {
+    return String(product.size || '').toLowerCase() === kw
+      || String(product.size || '').toLowerCase().includes(kw);
+  }
   const searchable = [
     product.name,
     product.material,
     product.size,
     product.shortDescription,
     product.description,
-    product.longDescription,
     product.tagline,
     product.tags,
     product.category,
@@ -438,8 +446,8 @@ function resolveFeaturedSlugs(products, params) {
 function applyFilters(allProducts) {
   const { material, size, price } = getActiveFilters();
   let filtered = allProducts;
-  if (material.length > 0) filtered = filtered.filter(p => material.some(m => keywordMatch(p, m)));
-  if (size.length > 0) filtered = filtered.filter(p => size.some(s => keywordMatch(p, s)));
+  if (material.length > 0) filtered = filtered.filter(p => material.some(m => keywordMatch(p, m, 'material')));
+  if (size.length > 0) filtered = filtered.filter(p => size.some(s => keywordMatch(p, s, 'size')));
   if (price.length > 0) filtered = filtered.filter(p => {
     const pPrice = Number(p.price) || 0;
     return price.some(range => {
@@ -455,36 +463,29 @@ function initShopEvents(products, currentPage, totalPages, searchQ, usePerCatego
     document.getElementById('filter-sidebar')?.classList.toggle('mobile-active');
   });
 
-  document.getElementById('sort-select')?.addEventListener('change', (e) => {
-    const sorted = applyFilters(products);
-    const val = e.target.value;
-    if (val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
-    else if (val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
-    else if (val.includes('Newest')) {
+  function applySort(list, val) {
+    const sorted = list.slice();
+    if (val === 'price-asc' || val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
+    else if (val === 'price-desc' || val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
+    else if (val === 'newest' || val.includes('Newest')) {
       sorted.sort((a, b) => {
         if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
         return (b.sortOrder || 0) - (a.sortOrder || 0);
       });
-    }
-    else if (usePerCategoryFeatured) sorted.sort(categoryFeaturedSort(featuredSlugs));
+    } else if (usePerCategoryFeatured) sorted.sort(categoryFeaturedSort(featuredSlugs));
     else sorted.sort(globalFeaturedSort);
+    return sorted;
+  }
+
+  document.getElementById('sort-select')?.addEventListener('change', (e) => {
+    const sorted = applySort(applyFilters(products), e.target.value);
     renderFilteredGrid(sorted, 1, Math.max(1, Math.ceil(sorted.length / PRODUCTS_PER_PAGE)), searchQ);
   });
 
   document.querySelectorAll('.filter-sidebar input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', () => {
-      const filtered = applyFilters(products);
-      const sortVal = document.getElementById('sort-select')?.value || '';
-      if (sortVal.includes('Low to High')) filtered.sort((a, b) => a.price - b.price);
-      else if (sortVal.includes('High to Low')) filtered.sort((a, b) => b.price - a.price);
-      else if (sortVal.includes('Newest')) {
-        filtered.sort((a, b) => {
-          if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
-          return (b.sortOrder || 0) - (a.sortOrder || 0);
-        });
-      }
-      else if (usePerCategoryFeatured) filtered.sort(categoryFeaturedSort(featuredSlugs));
-      else filtered.sort(globalFeaturedSort);
+      const sortVal = document.getElementById('sort-select')?.value || 'featured';
+      const filtered = applySort(applyFilters(products), sortVal);
       renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), searchQ);
     });
   });

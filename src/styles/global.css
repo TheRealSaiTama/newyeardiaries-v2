@@ -7,6 +7,22 @@ body {
   overflow-x: hidden;
 }
 
+/* Skip link — keyboard users jump past chrome */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  padding: 12px 20px;
+  background: var(--color-primary, #A0522D);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
 /* Container */
 .container {
   width: 100%;
@@ -208,8 +224,9 @@ body {
 .btn--sm {
   padding: var(--space-2) var(--space-4);
   font-size: var(--fs-xs);
-  /* H3.19 fix: 36px min-height for small buttons (was ~28-32px, below 44px touch target) */
-  min-height: 36px;
+  /* H3.19: min 44px touch target */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .btn--full {

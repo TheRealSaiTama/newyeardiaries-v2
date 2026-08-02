@@ -629,8 +629,14 @@ export async function renderCheckoutPage() {
     let serverShipping = Number(shipping.toFixed(2));
     let serverTotal = Number((subtotal + subtotal * gstRate + (shipping > 0 ? shipping : 0)).toFixed(2));
 
+    // M3 mitigation: store only file names + sizes in DB (not multi-MB base64).
+    // Full binaries still go out on the order email attachments.
     const logoPayload = uploadedLogos.length
-      ? uploadedLogos.map(l => ({ name: l.name, data: l.dataUrl }))
+      ? uploadedLogos.map(l => ({
+          name: l.name,
+          size: l.dataUrl?.length || 0,
+          type: (l.dataUrl || '').startsWith('data:') ? String(l.dataUrl).slice(5, String(l.dataUrl).indexOf(';')) : null,
+        }))
       : [];
 
     const rpcItems = cartItems.map(item => ({

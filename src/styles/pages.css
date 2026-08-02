@@ -60,16 +60,26 @@
   gap: 8px;
 }
 .hero-dot {
-  width: 10px;
-  height: 10px;
+  /* Visual 10px dot inside 44px touch target (H3.20) */
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   cursor: pointer;
   padding: 0;
+  position: relative;
+  transition: transform 0.2s;
+}
+.hero-dot::after {
+  content: '';
+  position: absolute;
+  inset: 17px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
   transition: background 0.2s, transform 0.2s;
 }
-.hero-dot.active {
+.hero-dot.active::after {
   background: #fff;
   transform: scale(1.3);
 }
@@ -1662,15 +1672,38 @@ body.is-admin-route #faq-chatbot {
   .b-cta__chip--2 { display: none; }
 }
 
-/* Reduced motion: disable branding animations */
+/* H3.21: reduced motion — cover site-wide motion, not just branding */
 @media (prefers-reduced-motion: reduce) {
   .b-anim,
-  .b-reveal {
+  .b-reveal,
+  .hero-slide,
+  .loader-page,
+  .loader-ribbon,
+  .ap-product-img,
+  .pdp-slide,
+  .toast-notification,
+  #toast-notification,
+  .skeleton,
+  .admin-loading .spin {
     animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
     transition: none !important;
   }
+  .b-anim,
+  .b-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  #app-loader { transition: none !important; }
+}
+
+/* Print */
+@media print {
+  #header-area, #footer-area, #floating-buttons, #faq-chatbot,
+  .floating-wa-btn, .go-top-btn, .filter-sidebar, .checkout-stepper {
+    display: none !important;
+  }
+  body { background: #fff; color: #000; }
+  a[href]::after { content: none !important; }
 }
 
 /* ---- Enquiry Success ---- */

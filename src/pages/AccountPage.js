@@ -1,58 +1,80 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
+import { supabase } from '../lib/supabase.js';
+import { navigateTo } from '../router.js';
 
-export function renderAccountPage() {
-  document.getElementById('app').innerHTML = `
+// Real session-backed account page (H2.14 companion). Placeholder copy removed.
+export async function renderAccountPage() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-content">
+      <div class="container section" style="text-align:center;padding:var(--space-16) 0;">
+        <span class="material-symbols-outlined" style="font-size:40px;color:var(--color-text-tertiary)">progress_activity</span>
+        <p class="text-body" style="margin-top:var(--space-4)">Loading account…</p>
+      </div>
+    </div>
+  `;
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    app.innerHTML = `
+      <div class="page-content">
+        <div class="container section" style="max-width:480px;margin:0 auto;text-align:center;padding:var(--space-16) 0;">
+          ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'My Account' }])}
+          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);margin:var(--space-6) 0">person</span>
+          <h1 class="heading-2">Sign in required</h1>
+          <p class="text-body" style="margin:var(--space-4) 0 var(--space-8)">
+            Log in to view your account. Customer accounts use the same secure sign-in as our order system.
+          </p>
+          <a href="/login" class="btn btn--accent btn--lg">Sign In</a>
+          <p style="margin-top:var(--space-6);font-size:var(--fs-sm);color:var(--color-text-secondary)">
+            Looking for order help? <a href="/contact">Contact us</a> or call +91 93111 35190.
+          </p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const user = session.user;
+  const email = user.email || 'Account';
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
+
+  app.innerHTML = `
     <div class="page-content">
       <div class="container section">
         ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'My Account' }])}
         <div class="account-layout">
           <aside class="account-sidebar">
             <nav>
-              <a href="#" class="active"><span class="material-symbols-outlined">dashboard</span> Dashboard</a>
-              <a href="#"><span class="material-symbols-outlined">inventory_2</span> My Orders</a>
-              <a href="#"><span class="material-symbols-outlined">favorite</span> Wishlist</a>
-              <a href="#"><span class="material-symbols-outlined">manage_accounts</span> Account Details</a>
-              <a href="#"><span class="material-symbols-outlined">location_on</span> Saved Addresses</a>
+              <a href="/account" class="active"><span class="material-symbols-outlined">dashboard</span> Dashboard</a>
+              <a href="/contact"><span class="material-symbols-outlined">support_agent</span> Support</a>
+              <a href="/shop"><span class="material-symbols-outlined">storefront</span> Shop</a>
             </nav>
           </aside>
           <div class="account-main">
             <div class="account-welcome">
               <div>
-                <h2 class="heading-3">Eleanor Vance</h2>
-                <p class="text-sm">eleanor.vance@example.com</p>
+                <h2 class="heading-3">${escapeHtml(name)}</h2>
+                <p class="text-sm">${escapeHtml(email)}</p>
               </div>
-              <a href="#" class="btn btn--ghost btn--sm">Edit Details <span class="material-symbols-outlined" style="font-size:14px;">arrow_forward</span></a>
+              <button type="button" class="btn btn--ghost btn--sm" id="account-signout">Sign out</button>
             </div>
-            <p class="text-body" style="margin-bottom:var(--space-6);">Here is an overview of your recent acquisitions and curated selections.</p>
+            <p class="text-body" style="margin-bottom:var(--space-6);">
+              You're signed in. Full order history for customer accounts will appear here as we expand self-serve features.
+              For existing bulk orders, our team will contact you with proforma invoices.
+            </p>
             <div class="account-stats">
-              <div class="account-stat"><div class="stat-value">3</div><div class="stat-label">Orders</div></div>
-              <div class="account-stat"><div class="stat-value">2</div><div class="stat-label">Wishlist</div></div>
-              <div class="account-stat"><div class="stat-value">1</div><div class="stat-label">Addresses</div></div>
+              <div class="account-stat"><div class="stat-value">—</div><div class="stat-label">Orders online</div></div>
+              <div class="account-stat"><div class="stat-value">—</div><div class="stat-label">Wishlist</div></div>
+              <div class="account-stat"><div class="stat-value">1</div><div class="stat-label">Session</div></div>
             </div>
-
-            <h3 class="heading-4" style="margin-bottom:var(--space-4);">Recent Order</h3>
-            <div class="card" style="margin-bottom:var(--space-6);">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--space-4);">
-                <div>
-                  <h4 style="font-weight:var(--fw-semibold);margin-bottom:var(--space-1);">Bespoke Leather Folio</h4>
-                  <p class="text-sm">Your custom embossed folio in deep espresso is currently en route. Expected delivery tomorrow.</p>
-                </div>
-                <span class="badge badge--success">In Transit</span>
-              </div>
-            </div>
-
-            <h3 class="heading-4" style="margin-bottom:var(--space-4);">
-              <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">draw</span>
-              Saved Drafts & Configurations
-            </h3>
-            <div style="display:flex;flex-direction:column;gap:var(--space-3);">
-              <div class="card" style="padding:var(--space-4);display:flex;justify-content:space-between;align-items:center;">
-                <div><strong>Corporate Gifting Set - Q4</strong><br><span class="text-xs">Last modified: 2 days ago</span></div>
-                <a href="#" class="btn btn--ghost btn--sm">Edit</a>
-              </div>
-              <div class="card" style="padding:var(--space-4);display:flex;justify-content:space-between;align-items:center;">
-                <div><strong>Personal 2025 Planner Layout</strong><br><span class="text-xs">Last modified: 1 week ago</span></div>
-                <a href="#" class="btn btn--ghost btn--sm">Edit</a>
+            <div class="card" style="margin-top:var(--space-6);padding:var(--space-5)">
+              <h3 class="heading-4" style="margin-bottom:var(--space-3)">Need help with an order?</h3>
+              <p class="text-sm" style="margin-bottom:var(--space-4)">Call customer care or send an enquiry — we respond during business hours.</p>
+              <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+                <a href="tel:+919311135190" class="btn btn--secondary btn--sm">+91 93111 35190</a>
+                <a href="/contact" class="btn btn--accent btn--sm">Contact form</a>
               </div>
             </div>
           </div>
@@ -60,4 +82,17 @@ export function renderAccountPage() {
       </div>
     </div>
   `;
+
+  document.getElementById('account-signout')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    navigateTo('/login');
+  });
+}
+
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }

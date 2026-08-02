@@ -1,24 +1,33 @@
-import { formatPrice } from '../data/products.js';
+/** Prefer http(s) URLs over base64 data URLs for list cards (H2.9 mitigation). */
+function safeCardSrc(src) {
+  if (!src || typeof src !== 'string') return '';
+  if (src.startsWith('data:')) return ''; // skip huge base64 in grid HTML
+  return src;
+}
 
 export function renderProductCard(product) {
-  const images = product.images || [];
+  const rawImages = product.images || [];
+  const images = rawImages.map(safeCardSrc).filter(Boolean);
+  // Fall back to single image field if gallery was all base64
+  if (!images.length) {
+    const one = safeCardSrc(product.image);
+    if (one) images.push(one);
+  }
   const hasMultiple = images.length > 1;
 
   let img;
   if (hasMultiple) {
-    // H3.4 fix: first image eager + high priority so it paints immediately,
-    // remaining images stay lazy.
+    // H3.4: first image eager; rest lazy
     img = images.map((src, i) => {
       const isFirst = i === 0;
       const loading = isFirst ? 'eager' : 'lazy';
       const fetchpriority = isFirst ? 'high' : 'auto';
-      const decoding = 'async';
-      return `<img src="${src}" alt="${product.title || product.name}" class="ap-product-img ${isFirst ? 'ap-product-img--active' : ''}" loading="${loading}" fetchpriority="${fetchpriority}" decoding="${decoding}" />`;
+      return `<img src="${src}" alt="${product.title || product.name}" class="ap-product-img ${isFirst ? 'ap-product-img--active' : ''}" loading="${loading}" fetchpriority="${fetchpriority}" decoding="async" draggable="false" />`;
     }).join('');
+  } else if (images[0]) {
+    img = `<img src="${images[0]}" alt="${product.title || product.name}" loading="eager" fetchpriority="high" decoding="async" draggable="false" />`;
   } else {
-    img = product.image
-      ? `<img src="${product.image}" alt="${product.title || product.name}" loading="eager" fetchpriority="high" decoding="async" />`
-      : `<div class="ap-product-icon"><span class="material-symbols-outlined">menu_book</span></div>`;
+    img = `<div class="ap-product-icon"><span class="material-symbols-outlined">menu_book</span></div>`;
   }
 
   const badgeMap = { New: 'ap-badge--new', Sale: 'ap-badge--sale', Bestseller: 'ap-badge--bestseller' };
@@ -27,7 +36,7 @@ export function renderProductCard(product) {
   const outOfStock = !product.inStock;
 
   return `
-    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''}>
+    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''} draggable="false">
       <div class="ap-product-image-wrapper">
         ${badge}
         ${img}
@@ -62,34 +71,34 @@ export function initProductCardSlideshows(container = document) {
     let interval = null;
     let current = 0;
 
-    // Prepare initial positions for swipe
     imgs.forEach((img, i) => {
-      if (i === 0) {
-        img.classList.add('ap-product-img--active');
-      } else {
-        img.style.transform = 'translateX(100%)';
-      }
+      if (i === 0) img.classList.add('ap-product-img--active');
+      else img.style.transform = 'translateX(100%)';
     });
 
-    card.addEventListener('mouseenter', () => {
+    const advance = () => {
+      const prev = current;
+      imgs[prev].classList.remove('ap-product-img--active');
+      imgs[prev].classList.add('ap-product-img--prev');
+
+      current = (current + 1) % imgs.length;
+      imgs[current].classList.remove('ap-product-img--prev');
+      imgs[current].classList.add('ap-product-img--active');
+
+      // Clear prev class after transition without leaving dangling timers
+      const prevEl = imgs[prev];
+      window.setTimeout(() => {
+        prevEl.classList.remove('ap-product-img--prev');
+        prevEl.style.transform = 'translateX(100%)';
+      }, 400);
+    };
+
+    const start = () => {
       if (interval) return;
-      interval = setInterval(() => {
-        const prev = current;
-        imgs[prev].classList.remove('ap-product-img--active');
-        imgs[prev].classList.add('ap-product-img--prev');
+      interval = setInterval(advance, 2000);
+    };
 
-        current = (current + 1) % imgs.length;
-        imgs[current].classList.remove('ap-product-img--prev');
-        imgs[current].classList.add('ap-product-img--active');
-
-        setTimeout(() => {
-          imgs[prev].classList.remove('ap-product-img--prev');
-          imgs[prev].style.transform = 'translateX(100%)';
-        }, 2000);
-      }, 2000);
-    });
-
-    card.addEventListener('mouseleave', () => {
+    const stop = () => {
       if (interval) {
         clearInterval(interval);
         interval = null;
@@ -104,6 +113,22 @@ export function initProductCardSlideshows(container = document) {
         }
       });
       current = 0;
+    };
+
+    // Desktop hover
+    card.addEventListener('mouseenter', start);
+    card.addEventListener('mouseleave', stop);
+
+    // H3.12: touch — brief slideshow on tap/focus without blocking navigation
+    let touchTimer = null;
+    card.addEventListener('touchstart', () => {
+      start();
+      clearTimeout(touchTimer);
+      touchTimer = setTimeout(stop, 4000);
+    }, { passive: true });
+    card.addEventListener('focusin', start);
+    card.addEventListener('focusout', (e) => {
+      if (!card.contains(e.relatedTarget)) stop();
     });
   });
 }

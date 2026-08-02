@@ -152,8 +152,15 @@ async function fetchProductsFresh(attempt = 1) {
     _cache = newCache;
     _fetchedAt = Date.now();
 
+    // M5: don't persist base64 image blobs to localStorage (quota killer).
+    // Memory cache keeps full images; storage gets http(s) only.
     try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify({ data: _cache, fetchedAt: _fetchedAt }));
+      const slim = _cache.map(p => ({
+        ...p,
+        image: p.image && !String(p.image).startsWith('data:') ? p.image : '',
+        images: (p.images || []).filter(src => src && !String(src).startsWith('data:')),
+      }));
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify({ data: slim, fetchedAt: _fetchedAt }));
     } catch (e) {
       console.warn('[products] failed to save to localStorage:', e);
     }
@@ -175,11 +182,13 @@ async function fetchProductsBackground() {
   if (_isFetchingProductsBackground) return;
   _isFetchingProductsBackground = true;
   try {
-    const oldCacheStr = JSON.stringify(_cache);
+    // M20: compare ids+prices+slugs only — not full base64 image payloads
+    const fingerprint = (list) => (list || []).map(p =>
+      `${p.id}|${p.slug}|${p.price}|${p.inStock}|${(p.images || []).length}`
+    ).join(';');
+    const oldFp = fingerprint(_cache);
     const fresh = await fetchProductsFresh();
-    const newCacheStr = JSON.stringify(fresh);
-    
-    if (oldCacheStr !== newCacheStr) {
+    if (oldFp !== fingerprint(fresh)) {
       console.log('[products] products updated in background, dispatching event');
       window.dispatchEvent(new CustomEvent('nyd-products-updated', { detail: fresh }));
     }

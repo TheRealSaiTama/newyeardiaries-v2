@@ -2,6 +2,7 @@ import { getContent, getAnnouncementContent } from '../lib/content.js';
 import { fetchCategories, seedCategoriesIfEmpty, getCategoriesByGroup, CATEGORY_GROUPS } from '../lib/categories.js';
 import { getProducts } from '../lib/products.js';
 import { renderProductCard } from './ProductCard.js';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock.js';
 
 let _cachedContent = null;
 let _cachedCategories = null;
@@ -160,7 +161,12 @@ export function renderHeader(content) {
   `;
 }
 
-export function initHeaderEvents() {
+// Module-level so document-level listeners aren't re-bound on every wrapPage()
+let _headerDocWired = false;
+let _exploreTimeout = null;
+
+function wireHeaderDomOnce() {
+  // Called after every header re-render — binds element listeners with clone-safe approach
   const menuBtn = document.getElementById('mobile-menu-btn');
   const closeBtn = document.getElementById('mobile-nav-close');
   const overlay = document.getElementById('mobile-overlay');
@@ -169,54 +175,74 @@ export function initHeaderEvents() {
   function openMenu() {
     overlay?.classList.add('active');
     nav?.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   }
 
   function closeMenu() {
+    if (!nav?.classList.contains('active')) return;
     overlay?.classList.remove('active');
     nav?.classList.remove('active');
-    document.body.style.overflow = '';
+    unlockBodyScroll();
   }
 
-  menuBtn?.addEventListener('click', openMenu);
-  closeBtn?.addEventListener('click', closeMenu);
-  overlay?.addEventListener('click', closeMenu);
-
+  // Re-bind fresh nodes (header HTML is replaced each nav)
+  if (menuBtn && menuBtn.dataset.bound !== '1') {
+    menuBtn.dataset.bound = '1';
+    menuBtn.addEventListener('click', openMenu);
+  }
+  if (closeBtn && closeBtn.dataset.bound !== '1') {
+    closeBtn.dataset.bound = '1';
+    closeBtn.addEventListener('click', closeMenu);
+  }
+  if (overlay && overlay.dataset.bound !== '1') {
+    overlay.dataset.bound = '1';
+    overlay.addEventListener('click', closeMenu);
+  }
   nav?.querySelectorAll('a').forEach(link => {
+    if (link.dataset.bound === '1') return;
+    link.dataset.bound = '1';
     link.addEventListener('click', closeMenu);
   });
+
+  if (!_headerDocWired) {
+    _headerDocWired = true;
+    // H3.15: Esc closes mobile nav (once on document)
+    document.addEventListener('keydown', (e) => {
+      const n = document.getElementById('mobile-nav');
+      if (e.key === 'Escape' && n?.classList.contains('active')) {
+        document.getElementById('mobile-overlay')?.classList.remove('active');
+        n.classList.remove('active');
+        unlockBodyScroll();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('nav-explore-wrapper');
+      if (wrap && !wrap.contains(e.target)) {
+        wrap.classList.remove('show-explore-menu');
+      }
+    });
+  }
 
   const exploreWrapper = document.getElementById('nav-explore-wrapper');
   const exploreBtn = document.getElementById('nav-explore-btn');
   const exploreMenu = document.getElementById('explore-mega-menu');
-  let exploreTimeout;
 
-  if (exploreWrapper && exploreMenu) {
+  if (exploreWrapper && exploreMenu && exploreWrapper.dataset.bound !== '1') {
+    exploreWrapper.dataset.bound = '1';
     exploreWrapper.addEventListener('mouseenter', () => {
-      clearTimeout(exploreTimeout);
+      clearTimeout(_exploreTimeout);
       exploreWrapper.classList.add('show-explore-menu');
     });
-
     exploreWrapper.addEventListener('mouseleave', () => {
-      exploreTimeout = setTimeout(() => {
+      _exploreTimeout = setTimeout(() => {
         exploreWrapper.classList.remove('show-explore-menu');
       }, 150);
     });
-
     exploreBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       exploreWrapper.classList.toggle('show-explore-menu');
     });
 
-    document.addEventListener('click', (e) => {
-      if (!exploreWrapper.contains(e.target)) {
-        exploreWrapper.classList.remove('show-explore-menu');
-      }
-    });
-
-    // Sidebar hover/click/focus → show right panel
-    // H3.10/H3.11/M11 fix: also bind click + focusin so touch devices and
-    // keyboard users can switch the right panel.
     const sidebarBtns = exploreMenu.querySelectorAll('.explore-mega-cat-btn');
     const activateSidebar = (btn) => {
       sidebarBtns.forEach(b => {
@@ -234,7 +260,6 @@ export function initHeaderEvents() {
       btn.addEventListener('mouseenter', () => activateSidebar(btn));
       btn.addEventListener('focusin', () => activateSidebar(btn));
       btn.addEventListener('click', (e) => {
-        // Allow navigation if a real link is clicked; only intercept the button.
         if (e.target.closest('a')) return;
         e.preventDefault();
         activateSidebar(btn);
@@ -244,10 +269,17 @@ export function initHeaderEvents() {
 
   const mobileExploreToggle = document.getElementById('mobile-explore-toggle');
   const mobileExploreGroups = document.getElementById('mobile-explore-groups');
-  mobileExploreToggle?.addEventListener('click', () => {
-    mobileExploreGroups.classList.toggle('open');
-    mobileExploreToggle.classList.toggle('open');
-  });
+  if (mobileExploreToggle && mobileExploreToggle.dataset.bound !== '1') {
+    mobileExploreToggle.dataset.bound = '1';
+    mobileExploreToggle.addEventListener('click', () => {
+      mobileExploreGroups?.classList.toggle('open');
+      mobileExploreToggle.classList.toggle('open');
+    });
+  }
+}
+
+export function initHeaderEvents() {
+  wireHeaderDomOnce();
 }
 
 export function updateHeaderCounts() {
@@ -275,7 +307,7 @@ export function renderSearchModal() {
       <div class="search-modal">
         <div class="search-input-wrap">
           <span class="material-symbols-outlined search-icon">search</span>
-          <input type="text" id="search-input" class="search-input" placeholder="Search for diaries, planners, gifts..." autocomplete="off" autofocus>
+          <input type="search" id="search-input" class="search-input" placeholder="Search for diaries, planners, gifts..." autocomplete="off" autofocus aria-label="Search products">
           <button class="search-close" id="search-close" aria-label="Close search">
             <span class="material-symbols-outlined">close</span>
           </button>
@@ -324,14 +356,15 @@ export function initSearchModal() {
 
   function openSearch() {
     overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
     setTimeout(() => input?.focus(), 50);
     loadProducts();
   }
 
   function closeSearch() {
+    if (!overlay.classList.contains('active')) return;
     overlay.classList.remove('active');
-    document.body.style.overflow = '';
+    unlockBodyScroll();
     if (input) input.value = '';
     if (resultsEl) resultsEl.innerHTML = '<p class="search-hint">Start typing to search...</p>';
     searchToken++; // invalidate any in-flight search

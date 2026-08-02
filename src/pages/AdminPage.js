@@ -3849,8 +3849,12 @@ async function openSliderPickerModal(container, section, currentProductIds) {
       showToast(`Maximum ${SLIDER_PICKER_LIMIT} products.`, 'error');
       return;
     }
-    // Replace all items for this section
-    await supabase.from('homepage_slider_items').delete().eq('section_id', section.id);
+    // M14: check delete error before insert (avoid duplicate rows on partial fail)
+    const { error: delErr } = await supabase.from('homepage_slider_items').delete().eq('section_id', section.id);
+    if (delErr) {
+      showToast('Failed to clear previous slider items: ' + delErr.message, 'error');
+      return;
+    }
     if (SLIDER_PICKER_STATE.selected.length > 0) {
       const rows = SLIDER_PICKER_STATE.selected.map((productId, i) => ({
         section_id: section.id,

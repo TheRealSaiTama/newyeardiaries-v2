@@ -65,6 +65,42 @@ function setMeta(selector, attr, value) {
   el.setAttribute(attr, value);
 }
 
+function ensureCanonical(url) {
+  let link = document.head.querySelector('link[rel="canonical"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+  link.setAttribute('href', url);
+}
+
+function ensureOrgJsonLd(s) {
+  let el = document.getElementById('org-jsonld');
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'org-jsonld';
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: s?.site_title || 'New Year Diaries',
+    url: s?.og_url || 'https://newyeardiaries.in',
+    logo: s?.og_image || 'https://newyeardiaries.in/logo-big-transparent.png',
+    email: s?.contact_email || 'support@newyeardiaries.in',
+    telephone: s?.contact_phone || '+91-9311135190',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: s?.contact_address || '174 D, Bawana Industrial Area',
+      addressLocality: 'Delhi',
+      postalCode: '110039',
+      addressCountry: 'IN',
+    },
+  });
+}
+
 function applyMetaTags(s) {
   if (!s) return;
   if (s.site_title)        document.title = s.site_title;
@@ -79,6 +115,10 @@ function applyMetaTags(s) {
   if (s.twitter_title)     setMeta('meta[name="twitter:title"]',      'content', s.twitter_title);
   if (s.twitter_description) setMeta('meta[name="twitter:description"]', 'content', s.twitter_description);
   if (s.twitter_image)     setMeta('meta[name="twitter:image"]',      'content', s.twitter_image);
+  // H3.30 / H3.32
+  const canon = s.og_url || (typeof location !== 'undefined' ? location.origin + '/' : 'https://newyeardiaries.in/');
+  ensureCanonical(canon);
+  ensureOrgJsonLd(s);
 }
 
 async function loadContent() {
@@ -276,15 +316,23 @@ function wrapPage(renderFn) {
     // H3.33 fix: noindex on private / non-content routes so search engines
     // don't index /admin, /cart, /checkout, /account, /login, /order-success
     const path = window.location.pathname;
+    let robots = document.querySelector('meta[name="robots"]');
     if (/^\/(admin|cart|checkout|account|login|order-success|enquiry-success|bulk-quote|quote-list)(\/|$)/.test(path)) {
-      let robots = document.querySelector('meta[name="robots"]');
       if (!robots) {
         robots = document.createElement('meta');
         robots.setAttribute('name', 'robots');
         document.head.appendChild(robots);
       }
       robots.setAttribute('content', 'noindex, nofollow');
+    } else if (robots) {
+      robots.setAttribute('content', 'index, follow');
     }
+
+    // H3.30: per-route canonical (PDP overwrites with product URL when rendered)
+    try {
+      const origin = window.location.origin || 'https://newyeardiaries.in';
+      ensureCanonical(origin + path + (window.location.search || ''));
+    } catch { /* ignore */ }
 
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
     document.getElementById('footer-area').style.display = '';

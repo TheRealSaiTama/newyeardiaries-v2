@@ -1,16 +1,23 @@
 import { formatPrice, getProductById } from '../data/products.js';
 import { addToCart, getCart } from '../data/store.js';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock.js';
 
 // Track the most recently focused element before opening the modal so we
 // can restore focus on close (a11y).
 let _lastFocus = null;
+let _focusTrapHandler = null;
 
 function closeQuickView() {
   const modal = document.getElementById('quick-view-modal');
   const overlay = document.getElementById('quick-view-overlay');
-  modal?.classList.remove('active');
+  if (!modal?.classList.contains('active')) return;
+  modal.classList.remove('active');
   overlay?.classList.remove('active');
-  if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
+  unlockBodyScroll();
+  if (_focusTrapHandler) {
+    document.removeEventListener('keydown', _focusTrapHandler);
+    _focusTrapHandler = null;
+  }
   if (_lastFocus && typeof _lastFocus.focus === 'function') {
     try { _lastFocus.focus(); } catch { /* ignore */ }
   }
@@ -45,6 +52,27 @@ export function initQuickViewEvents() {
   });
 }
 
+function trapFocus(modal) {
+  if (_focusTrapHandler) document.removeEventListener('keydown', _focusTrapHandler);
+  _focusTrapHandler = (e) => {
+    if (e.key !== 'Tab' || !modal.classList.contains('active')) return;
+    const focusable = modal.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener('keydown', _focusTrapHandler);
+}
+
 export async function openQuickView(productId) {
   let product;
   try {
@@ -55,7 +83,6 @@ export async function openQuickView(productId) {
   }
   if (!product) return;
 
-  // Remember the trigger so focus can be restored on close.
   try { _lastFocus = document.activeElement; } catch { _lastFocus = null; }
 
   const cart = getCart();
@@ -65,19 +92,22 @@ export async function openQuickView(productId) {
   const modal = document.getElementById('quick-view-modal');
   const overlay = document.getElementById('quick-view-overlay');
   const moq = product.minBulkOrder || 1;
+  const soldOut = product.inStock === false;
 
   if (content) {
     content.innerHTML = `
       <div class="quick-view-image">
-        ${product.image
+        ${product.image && !String(product.image).startsWith('data:')
           ? `<img src="${product.image}" alt="${product.title}" style="width:100%;height:100%;object-fit:cover;">`
+          : product.image
+            ? `<img src="${product.image}" alt="${product.title}" style="width:100%;height:100%;object-fit:cover;">`
           : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,var(--color-surface-alt),var(--color-border-light));"><span class="material-symbols-outlined" style="font-size:64px;color:var(--color-accent);opacity:0.3;">menu_book</span></div>`}
       </div>
       <div class="quick-view-details">
-        <div class="label">${product.category}</div>
+        <div class="label">${product.category || ''}</div>
         <h2 class="heading-3">${product.title}</h2>
         <div class="pdp-price">${formatPrice(product.price)}</div>
-        <div class="text-body">${product.description}</div>
+        <div class="text-body">${product.description || ''}</div>
         <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
           ${[product.material, product.size, product.pages ? product.pages + ' pages' : null].filter(Boolean).join(' • ')}
         </div>
@@ -91,8 +121,8 @@ export async function openQuickView(productId) {
           <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${moq} units</div>
         </div>
         <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:auto;width:100%;">
-          <button class="btn btn--accent btn--lg${isInCart || !product.inStock ? ' btn--added' : ''}" style="width:100%;" id="qv-add-cart"${isInCart || !product.inStock ? ' disabled' : ''}>
-            ${!product.inStock ? 'Sold Out' : isInCart ? 'Added to Cart' : 'Add to Cart'}
+          <button class="btn btn--accent btn--lg${isInCart || soldOut ? ' btn--added' : ''}" style="width:100%;" id="qv-add-cart"${isInCart || soldOut ? ' disabled' : ''}>
+            ${soldOut ? 'Sold Out' : isInCart ? 'Added to Cart' : 'Add to Cart'}
           </button>
         </div>
         <a href="/${product.slug}" class="btn btn--ghost" style="text-align:center;" id="qv-view-details">View Full Details →</a>
@@ -102,6 +132,10 @@ export async function openQuickView(productId) {
 
   modal?.classList.add('active');
   overlay?.classList.add('active');
+  lockBodyScroll();
+  if (modal) trapFocus(modal);
+  // H3.16: initial focus on close button
+  setTimeout(() => document.getElementById('quick-view-close')?.focus(), 50);
 
   const qvQty = document.getElementById('qv-qty');
   const qvMinus = document.getElementById('qv-qty-minus');
@@ -114,6 +148,7 @@ export async function openQuickView(productId) {
 
   document.getElementById('qv-add-cart')?.addEventListener('click', () => {
     try {
+      if (soldOut) return;
       const qty = parseInt(qvQty?.value) || moq;
       addToCart(product.id, qty);
 
