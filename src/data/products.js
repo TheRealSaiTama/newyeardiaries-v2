@@ -152,18 +152,51 @@ async function fetchProductsFresh(attempt = 1) {
     _cache = newCache;
     _fetchedAt = Date.now();
 
-    // M5: don't persist base64 image blobs to localStorage (quota killer).
-    // Memory cache keeps full images; storage gets http(s) only.
     try {
       const slim = _cache.map(p => ({
-        ...p,
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        title: p.title,
+        category: p.category,
+        categorySlug: p.categorySlug,
+        categoryId: p.categoryId,
+        categorySlugs: p.categorySlugs,
+        categorySortOrders: p.categorySortOrders,
+        material: p.material,
+        size: p.size,
+        pages: p.pages,
+        price: p.price,
+        originalPrice: p.originalPrice,
+        sku: p.sku,
+        badge: p.badge,
+        shortDescription: (p.shortDescription || '').slice(0, 500),
         image: p.image && !String(p.image).startsWith('data:') ? p.image : '',
-        images: (p.images || []).filter(src => src && !String(src).startsWith('data:')),
+        images: (p.images || []).filter(src => src && !String(src).startsWith('data:')).slice(0, 4),
+        tags: p.tags,
+        minBulkOrder: p.minBulkOrder,
+        inStock: p.inStock,
+        active: p.active,
+        sortOrder: p.sortOrder,
+        createdAt: p.createdAt,
       }));
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify({ data: slim, fetchedAt: _fetchedAt }));
-    } catch (e) {
-      console.warn('[products] failed to save to localStorage:', e);
-    }
+      const payload = JSON.stringify({ data: slim, fetchedAt: _fetchedAt });
+      try {
+        localStorage.setItem(PRODUCTS_STORAGE_KEY, payload);
+      } catch (_) {
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('__nyd')) keys.push(k);
+          }
+          keys.forEach((k) => { try { localStorage.removeItem(k); } catch (__) {} });
+          localStorage.setItem(PRODUCTS_STORAGE_KEY, payload);
+        } catch (__) {
+          try { localStorage.removeItem(PRODUCTS_STORAGE_KEY); } catch (___) {}
+        }
+      }
+    } catch (_) {}
 
     return _cache;
   } catch (err) {

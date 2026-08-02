@@ -6,20 +6,116 @@ const CACHE_TTL = 60_000;
 
 const CONTENT_STORAGE_KEY = '__nyd_content_cache';
 
+function stripHeavy(value) {
+  if (value == null) return value;
+  if (typeof value === 'string') {
+    if (value.startsWith('data:') && value.length > 200) return '';
+    if (value.length > 50000) return value.slice(0, 50000);
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(stripHeavy);
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (/image|logo|map_embed|banner|photo|thumbnail|html|content/i.test(k) && typeof v === 'string' && v.startsWith('data:')) {
+        out[k] = '';
+        continue;
+      }
+      out[k] = stripHeavy(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+function slimContentForStorage(data) {
+  if (!data || typeof data !== 'object') return data;
+  return {
+    siteSettings: stripHeavy(data.siteSettings || {}),
+    siteContent: stripHeavy(data.siteContent || {}),
+    homepageSections: stripHeavy(data.homepageSections || {}),
+    announcements: (data.announcements || []).map((a) => ({
+      id: a.id,
+      text: a.text,
+      link: a.link,
+      active: a.active,
+      sort_order: a.sort_order,
+    })),
+    footerSections: stripHeavy(data.footerSections || {}),
+    banners: (data.banners || []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      subtitle: b.subtitle,
+      cta_text: b.cta_text,
+      cta_link: b.cta_link,
+      image_url: typeof b.image_url === 'string' && b.image_url.startsWith('data:') ? '' : b.image_url,
+      mobile_image_url: typeof b.mobile_image_url === 'string' && b.mobile_image_url.startsWith('data:') ? '' : b.mobile_image_url,
+      order_index: b.order_index,
+      active: b.active,
+    })),
+    trustBadges: (data.trustBadges || []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      subtitle: b.subtitle,
+      icon: typeof b.icon === 'string' && b.icon.startsWith('data:') ? '' : b.icon,
+      position: b.position,
+      active: b.active,
+    })),
+    sliderSections: data.sliderSections || [],
+    sliderItems: data.sliderItems || [],
+    shopCategories: (data.shopCategories || []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      link: c.link,
+      image_url: typeof c.image_url === 'string' && c.image_url.startsWith('data:') ? '' : c.image_url,
+      sort_order: c.sort_order,
+      active: c.active,
+    })),
+  };
+}
+
+function clearNydStorageKeys() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('__nyd') || k.startsWith('nyd') || k.includes('page_cache'))) keys.push(k);
+    }
+    keys.forEach((k) => {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+function persistContentCache(data, fetchedAt) {
+  const payload = JSON.stringify({ data: slimContentForStorage(data), fetchedAt });
+  try {
+    localStorage.setItem(CONTENT_STORAGE_KEY, payload);
+    return true;
+  } catch (_) {
+    try {
+      clearNydStorageKeys();
+      localStorage.setItem(CONTENT_STORAGE_KEY, payload);
+      return true;
+    } catch (_) {
+      try { localStorage.removeItem(CONTENT_STORAGE_KEY); } catch (__) {}
+      return false;
+    }
+  }
+}
+
 export function bustContentCache() {
   _cache = null;
   _fetchedAt = null;
   try {
     localStorage.removeItem(CONTENT_STORAGE_KEY);
   } catch (e) {}
-  // H1.9 / HIGH-2 fix: dispatch the event + clear page cache so header
-  // and any cached page re-render with the new content immediately.
   try {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nyd-content-updated'));
       if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 }
 
 export async function getContent() {
@@ -118,12 +214,7 @@ async function fetchContentFresh() {
 
     _cache = newCache;
     _fetchedAt = Date.now();
-
-    try {
-      localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify({ data: _cache, fetchedAt: _fetchedAt }));
-    } catch (e) {
-      console.warn('[content] failed to save to localStorage:', e);
-    }
+    persistContentCache(_cache, _fetchedAt);
 
     return _cache;
   } catch (err) {
