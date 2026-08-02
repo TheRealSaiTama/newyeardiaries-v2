@@ -332,19 +332,20 @@ body.is-admin-route #faq-chatbot {
 }
 
 .floating-wa-icon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   width: 56px;
   height: 56px;
+  line-height: 0;
 }
 
 .floating-wa-icon svg {
   width: 28px;
   height: 28px;
-  fill: #fff;
   display: block;
+  flex-shrink: 0;
 }
 
 .floating-wa-label {
