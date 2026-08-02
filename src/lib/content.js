@@ -12,6 +12,8 @@ export function bustContentCache() {
   try {
     localStorage.removeItem(CONTENT_STORAGE_KEY);
   } catch (e) {}
+  // H1.9 / HIGH-2 fix: dispatch the event + clear page cache so header
+  // and any cached page re-render with the new content immediately.
   try {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nyd-content-updated'));
@@ -48,6 +50,7 @@ export async function getContent() {
 }
 
 async function fetchContentFresh() {
+  // H3.27: per-query isolation — one failed table no longer blanks all content
   const safe = async (label, promise) => {
     try {
       const { data, error } = await promise;
@@ -186,6 +189,9 @@ export function getTrustBadges(content) {
   return (content?.trustBadges || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
 }
 
+// Returns the list of homepage slider sections, each with its products
+// pre-resolved and in display order. Empty list if the table is missing
+// or has no rows.
 export function getHomepageSliders(content) {
   const sections = (content?.sliderSections || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const items = content?.sliderItems || [];

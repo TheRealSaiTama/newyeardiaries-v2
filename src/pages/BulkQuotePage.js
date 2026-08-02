@@ -21,18 +21,91 @@ export async function renderBulkQuotePage() {
   let productsHtml = '';
   if (quoteItems.length > 0) {
     productsHtml = `
-      <div class="bulk-quote-selected-products" style="margin-bottom:var(--space-6);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)"><h3 style="font-size:var(--fs-base);font-weight:var(--fw-bold);margin-bottom:var(--space-3)">Selected Products for Enquiry:</h3><div style="display:flex;flex-direction:column;gap:var(--space-2)">${quoteItems.map(item => `
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);font-size:var(--fs-sm)"><div style="flex:1"><strong>${item.product.title}</strong> <span style="color:var(--color-text-tertiary)">(${item.product.sku})</span></div><div>Qty: <strong>${item.qty} units</strong></div></div>`).join('')}
-        </div></div>`;
+      <div class="bulk-quote-selected-products" style="margin-bottom:var(--space-6);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
+        <h3 style="font-size:var(--fs-base);font-weight:var(--fw-bold);margin-bottom:var(--space-3)">Selected Products for Enquiry:</h3>
+        <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+          ${quoteItems.map(item => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);font-size:var(--fs-sm)">
+              <div style="flex:1"><strong>${item.product.title}</strong> <span style="color:var(--color-text-tertiary)">(${item.product.sku})</span></div>
+              <div>Qty: <strong>${item.qty} units</strong></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
   }
 
+  // Pre-fill total units as placeholder/default value for quantity input
   const totalUnits = quoteItems.reduce((sum, item) => sum + item.qty, 0);
 
   app.innerHTML = `
-    <div class="page-content"><div class="container section">${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Request a Bulk Quote' }])}
+    <div class="page-content">
+      <div class="container section">
+        ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Request a Bulk Quote' }])}
 
-        <div class="bulk-quote-layout"><div class="bulk-quote-info"><h1>Request a Bulk Quote</h1><p class="text-body" style="font-size:var(--fs-md);">Elevate your corporate gifting with our handcrafted, premium stationery. From blind debossing to exquisite gold foiling, we offer extensive customization.</p><div class="bulk-quote-trust"><div class="bulk-quote-trust-item"><span class="material-symbols-outlined">palette</span><div><strong>Artisan Craftsmanship</strong><br><span class="text-sm">Each piece is meticulously crafted in our workshops.</span></div></div><div class="bulk-quote-trust-item"><span class="material-symbols-outlined">schedule</span><div><strong>Dedicated Lead Times</strong><br><span class="text-sm">Standard production: 14-21 days. Rush orders available.</span></div></div><div class="bulk-quote-trust-item"><span class="material-symbols-outlined">brush</span><div><strong>Bespoke Customization</strong><br><span class="text-sm">Deep blind debossing, gold/silver foiling, custom end-papers.</span></div></div></div></div><div class="bulk-quote-form">${productsHtml}
-            <h2 class="heading-3" style="margin-bottom:var(--space-6);">Tell Us About Your Needs</h2><form id="bulk-quote-form" class="auth-form"><div class="form-row"><div class="input-group"><label>Full Name *</label><input name="name" type="text" class="input-field" autocomplete="name" minlength="2" pattern="[A-Za-z][A-Za-z .'-]{1,}" required></div><div class="input-group"><label>Company Name *</label><input name="company" type="text" class="input-field" minlength="2" required></div></div><div class="form-row"><div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" autocomplete="email" required></div><div class="input-group"><label>Phone *</label><input name="phone" type="tel" class="input-field" autocomplete="tel" inputmode="tel" pattern="(?:\\+91[- ]?)?[6-9][0-9]{9}" required></div></div><div class="input-group"><label for="bq-product-type">Product Interest *</label><select id="bq-product-type" name="product_type" class="input-field select-field" required><option value="">Select a category</option><option ${quoteItems.length > 0 ? 'selected' : ''}>Custom / Bespoke</option><option>2027 Diaries</option><option>Executive Planners</option><option>Corporate Gift Sets</option></select></div><div class="form-row"><div class="input-group"><label for="bq-quantity">Estimated Quantity *</label><input id="bq-quantity" name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" value="${totalUnits || 100}" required></div><div class="input-group"><label for="bq-required-by">Required By *</label><input id="bq-required-by" name="required_by" type="date" class="input-field" min="${today}" required></div></div><div class="input-group"><label>Customization Details</label><textarea name="custom_requirements" class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea></div><div class="input-group"><label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, references)</small></label><input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="bulk-files" class="input-field" style="padding:8px"><small id="bulk-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small></div><button type="submit" class="btn btn--accent btn--lg btn--full" id="submit-btn">Submit Enquiry</button></form></div></div></div></div>`;
+        <div class="bulk-quote-layout">
+          <div class="bulk-quote-info">
+            <h1>Request a Bulk Quote</h1>
+            <p class="text-body" style="font-size:var(--fs-md);">Elevate your corporate gifting with our handcrafted, premium stationery. From blind debossing to exquisite gold foiling, we offer extensive customization.</p>
+
+            <div class="bulk-quote-trust">
+              <div class="bulk-quote-trust-item">
+                <span class="material-symbols-outlined">palette</span>
+                <div><strong>Artisan Craftsmanship</strong><br><span class="text-sm">Each piece is meticulously crafted in our workshops.</span></div>
+              </div>
+              <div class="bulk-quote-trust-item">
+                <span class="material-symbols-outlined">schedule</span>
+                <div><strong>Dedicated Lead Times</strong><br><span class="text-sm">Standard production: 14-21 days. Rush orders available.</span></div>
+              </div>
+              <div class="bulk-quote-trust-item">
+                <span class="material-symbols-outlined">brush</span>
+                <div><strong>Bespoke Customization</strong><br><span class="text-sm">Deep blind debossing, gold/silver foiling, custom end-papers.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bulk-quote-form">
+            ${productsHtml}
+            <h2 class="heading-3" style="margin-bottom:var(--space-6);">Tell Us About Your Needs</h2>
+            <form id="bulk-quote-form" class="auth-form">
+              <div class="form-row">
+                <div class="input-group"><label>Full Name *</label><input name="name" type="text" class="input-field" autocomplete="name" minlength="2" pattern="[A-Za-z][A-Za-z .'-]{1,}" required></div>
+                <div class="input-group"><label>Company Name *</label><input name="company" type="text" class="input-field" minlength="2" required></div>
+              </div>
+              <div class="form-row">
+                <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" autocomplete="email" required></div>
+                <div class="input-group"><label>Phone *</label><input name="phone" type="tel" class="input-field" autocomplete="tel" inputmode="tel" pattern="(?:\\+91[- ]?)?[6-9][0-9]{9}" required></div>
+              </div>
+              <div class="input-group">
+                <label for="bq-product-type">Product Interest *</label>
+                <select id="bq-product-type" name="product_type" class="input-field select-field" required>
+                  <option value="">Select a category</option>
+                  <option ${quoteItems.length > 0 ? 'selected' : ''}>Custom / Bespoke</option>
+                  <option>2027 Diaries</option>
+                  <option>Executive Planners</option>
+                  <option>Corporate Gift Sets</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div class="input-group"><label for="bq-quantity">Estimated Quantity *</label><input id="bq-quantity" name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" value="${totalUnits || 100}" required></div>
+                <div class="input-group"><label for="bq-required-by">Required By *</label><input id="bq-required-by" name="required_by" type="date" class="input-field" min="${today}" required></div>
+              </div>
+              <div class="input-group">
+                <label>Customization Details</label>
+                <textarea name="custom_requirements" class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea>
+              </div>
+              <div class="input-group">
+                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, references)</small></label>
+                <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="bulk-files" class="input-field" style="padding:8px">
+                <small id="bulk-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
+              </div>
+              <button type="submit" class="btn btn--accent btn--lg btn--full" id="submit-btn">Submit Enquiry</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 
   document.getElementById('bulk-quote-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -58,6 +131,7 @@ export async function renderBulkQuotePage() {
 
     if (!form.reportValidity()) return;
 
+    // Read attached files
     const fileInput = document.getElementById('bulk-files');
     const fileList = fileInput ? Array.from(fileInput.files || []) : [];
     if (fileList.length > 5) {
@@ -73,11 +147,13 @@ export async function renderBulkQuotePage() {
 
     const enquiryCode = generateEnquiryCode('BQ');
 
+    // Compile dynamic selected items details into requirements if available
     const productNamesStr = quoteItems.map(it => `${it.product.title} (SKU: ${it.product.sku}) [Qty: ${it.qty}]`).join(', ');
 
     btn.disabled = true;
     btn.textContent = 'Submitting...';
 
+    // Read each file as a data URL for the email attachment
     const attachments = [];
     for (const f of fileList) {
       try {
@@ -100,6 +176,7 @@ export async function renderBulkQuotePage() {
       company,
       product_type: form.product_type.value || 'Custom / Bespoke',
       quantity,
+      // M17: required_by is a top-level field (also kept in body for older email templates)
       required_by: form.required_by.value || null,
       custom_requirements: [
         quoteItems.length > 0
@@ -120,11 +197,16 @@ export async function renderBulkQuotePage() {
       product_type: data.product_type,
       quantity: data.quantity,
       custom_requirements: data.custom_requirements,
+      // M18+M19 fix: persist the generated enquiry code AND the list of
+      // products the customer picked from the Quote List, so admin can
+      // see them in the panel without opening the email.
       enquiry_code: data.enquiry_code,
       product_names: data.product_names,
+      // M17: top-level required_by (column added in 20260802003)
       required_by: data.required_by,
     }]);
 
+    // If required_by column not migrated yet, retry without it
     if (error && (error.code === 'PGRST204' || error.message?.includes('required_by'))) {
       ({ error } = await supabase.from('quote_requests').insert([{
         name: data.name,
@@ -152,7 +234,7 @@ export async function renderBulkQuotePage() {
 
     clearQuoteList();
     btn.classList.add('btn--success');
-    btn.textContent = attachments.length ? `âœ“ Submitted with ${attachments.length} file(s)!` : 'âœ“ Enquiry Submitted!';
+    btn.textContent = attachments.length ? `✓ Submitted with ${attachments.length} file(s)!` : '✓ Enquiry Submitted!';
     sendQuoteEmail(data).catch((err) => console.error('Quote email failed:', err));
     setTimeout(() => navigateTo('/enquiry-success'), 900);
   });

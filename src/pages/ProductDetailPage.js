@@ -21,7 +21,8 @@ function renderProductThumb(src, alt) {
 }
 
 function renderStars(rating) {
-  return Array.from({ length: 5 }, (_, i) =>`<span class="material-symbols-outlined star ${i < rating ? 'filled' : ''}">star</span>`
+  return Array.from({ length: 5 }, (_, i) =>
+    `<span class="material-symbols-outlined star ${i < rating ? 'filled' : ''}">star</span>`
   ).join('');
 }
 
@@ -29,8 +30,21 @@ function reviewItemHtml(r) {
   const initials = r.reviewer_name.trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
   const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   return `
-    <article class="pdp-review-card"><div class="pdp-review-card__head"><span class="pdp-review-avatar">${initials || 'A'}</span><div class="pdp-review-card__who"><div class="pdp-review-card__namerow"><strong>${r.reviewer_name}</strong>${r.verified_purchase ? `<span class="pdp-review-verified"><span class="material-symbols-outlined">verified</span> Verified Purchase</span>` : ''}
-          </div><div class="pdp-review-card__sub"><span class="pdp-review-stars">${renderStars(r.rating)}</span><span class="pdp-review-date">${date}</span></div></div></div>${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
+    <article class="pdp-review-card">
+      <div class="pdp-review-card__head">
+        <span class="pdp-review-avatar">${initials || 'A'}</span>
+        <div class="pdp-review-card__who">
+          <div class="pdp-review-card__namerow">
+            <strong>${r.reviewer_name}</strong>
+            ${r.verified_purchase ? `<span class="pdp-review-verified"><span class="material-symbols-outlined">verified</span> Verified Purchase</span>` : ''}
+          </div>
+          <div class="pdp-review-card__sub">
+            <span class="pdp-review-stars">${renderStars(r.rating)}</span>
+            <span class="pdp-review-date">${date}</span>
+          </div>
+        </div>
+      </div>
+      ${r.review_text ? `<p class="pdp-review-text">${r.review_text}</p>` : ''}
     </article>`;
 }
 
@@ -44,6 +58,7 @@ export async function renderProductDetailPage(params) {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page-content"><div class="container section">${renderPDPSkeleton()}</div></div>`;
 
+  // Load product first so reviews query uses product.id (not slug)
   const [product, allProducts] = await Promise.all([
     getProductBySlug(params.slug),
     getProducts(),
@@ -65,10 +80,12 @@ export async function renderProductDetailPage(params) {
     productCategoryList = (links || []).map(l => l.categories?.name).filter(Boolean);
   }
 
+  // H3.31: per-product title + basic JSON-LD Product schema
   try {
     document.title = `${product.title || product.name} | New Year Diaries`;
     const origin = window.location.origin || 'https://newyeardiaries.in';
     const pageUrl = `${origin}/${product.slug || ''}`;
+    // Canonical + basic OG for PDP
     let canon = document.head.querySelector('link[rel="canonical"]');
     if (!canon) {
       canon = document.createElement('link');
@@ -123,10 +140,45 @@ export async function renderProductDetailPage(params) {
 
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
   const reviewsContent = `
-            <div class="pdp-reviews-summary"><div class="pdp-reviews-summary__score"><span class="pdp-reviews-summary__num">${avgRating.toFixed(1)}</span><div><span class="pdp-review-stars pdp-review-stars--lg">${renderStars(Math.round(avgRating))}</span><span class="pdp-reviews-summary__count">Based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''}</span></div></div><button type="button" class="btn btn--secondary btn--sm" id="pdp-write-review-btn">Write a Review</button></div><div id="pdp-reviews-list" class="pdp-reviews-list">${reviewsListHtml(reviews)}
-            </div><div class="pdp-review-form-wrap" id="pdp-review-form-wrap"><h3 style="font-size:var(--fs-lg);margin-bottom:var(--space-4);">Write a Review</h3><form id="review-form" class="pdp-review-form"><div class="form-row"><div class="form-group"><label>Your Name *</label><input type="text" name="reviewer_name" required placeholder="Rajesh Sharma"></div><div class="form-group"><label>Rating *</label><div class="rating-input-wrap" id="rating-input-wrap">${[1,2,3,4,5].map(n => `<button type="button" class="rating-star-btn" data-rating="${n}"><span class="material-symbols-outlined">star</span></button>`).join('')}
-                      <input type="hidden" name="rating" id="review-rating-val" value="0"></div></div></div><div class="form-group"><label>Your Review *</label><textarea name="review_text" required placeholder="Share your experience with this product..." rows="4"></textarea></div><button type="submit" class="btn btn--accent">Submit Review</button></form></div>`;
+            <div class="pdp-reviews-summary">
+              <div class="pdp-reviews-summary__score">
+                <span class="pdp-reviews-summary__num">${avgRating.toFixed(1)}</span>
+                <div>
+                  <span class="pdp-review-stars pdp-review-stars--lg">${renderStars(Math.round(avgRating))}</span>
+                  <span class="pdp-reviews-summary__count">Based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn--secondary btn--sm" id="pdp-write-review-btn">Write a Review</button>
+            </div>
+            <div id="pdp-reviews-list" class="pdp-reviews-list">
+              ${reviewsListHtml(reviews)}
+            </div>
+            <div class="pdp-review-form-wrap" id="pdp-review-form-wrap">
+              <h3 style="font-size:var(--fs-lg);margin-bottom:var(--space-4);">Write a Review</h3>
+              <form id="review-form" class="pdp-review-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Your Name *</label>
+                    <input type="text" name="reviewer_name" required placeholder="Rajesh Sharma">
+                  </div>
+                  <div class="form-group">
+                    <label>Rating *</label>
+                    <div class="rating-input-wrap" id="rating-input-wrap">
+                      ${[1,2,3,4,5].map(n => `<button type="button" class="rating-star-btn" data-rating="${n}"><span class="material-symbols-outlined">star</span></button>`).join('')}
+                      <input type="hidden" name="rating" id="review-rating-val" value="0">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Your Review *</label>
+                  <textarea name="review_text" required placeholder="Share your experience with this product..." rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn--accent">Submit Review</button>
+              </form>
+            </div>
+          `;
 
+  // M12/M13: match on categoryId OR shared junction slugs; fallback bestsellers
   let related = allProducts.filter(p => {
     if (p.id === product.id) return false;
     if (product.categoryId && p.categoryId === product.categoryId) return true;
@@ -143,53 +195,140 @@ export async function renderProductDetailPage(params) {
   }
 
   app.innerHTML = `
-    <div class="page-content"><div class="container section">${renderBreadcrumbs([
+    <div class="page-content">
+      <div class="container section">
+        ${renderBreadcrumbs([
           { label: 'Home', path: '/' },
           { label: product.category || 'Shop', path: '/shop' },
           { label: product.title },
         ])}
 
-        <div class="pdp-layout"><div class="pdp-gallery"><div class="pdp-main-image" data-images='${JSON.stringify(product.images)}' data-alt="${product.title.replace(/'/g, "&#39;")}" data-current="0"><div class="pdp-slide pdp-slide--active">${renderProductMedia(product.image, product.title)}</div></div><div class="pdp-thumbnails">${product.images.slice(0, 8).map((img, i) => `
-                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">${renderProductThumb(img, product.title)}
-                </div>`).join('') || Array(4).fill('').map((_, i) => `
-                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}"><span class="material-symbols-outlined" style="font-size:20px;color:var(--color-accent);opacity:0.4;">menu_book</span></div>`).join('')}
-            </div></div><div class="pdp-info">${productCategoryList.length ? `<div class="label">${productCategoryList.join(', ')} ${product.sku ? '· ' + product.sku : ''}</div>` : ''}
-            <h1 class="pdp-title">${product.title}</h1><div class="pdp-price">${formatPrice(product.price)}
-              ${product.originalPrice ? `<span style="font-size:var(--fs-md);color:var(--color-text-tertiary);text-decoration:line-through;margin-left:var(--space-3);">${formatPrice(product.originalPrice)}</span>` : ''}
-            </div><div class="pdp-description">${product.shortDescription || product.description}</div>${product.hasShippingBadge || product.hasWarrantyBadge ? `
-              <div style="margin-top:var(--space-4);font-size:var(--fs-sm);line-height:1.6;display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4);">${product.hasWarrantyBadge ? `<div style="color:#1565c0;font-weight:var(--fw-medium);">" COD facility not available for this product "</div>` : ''}
-                ${product.hasShippingBadge ? `
-                  <div style="color:#e53935;font-weight:var(--fw-medium);">*This product has minimum order quantity restriction.</div><div style="color:#e53935;font-weight:var(--fw-medium);">** If your order quantity is little less than MOQ then please write us.</div>` : ''}
-              </div>` : ''}
+        <div class="pdp-layout">
+          <div class="pdp-gallery">
+            <div class="pdp-main-image" data-images='${JSON.stringify(product.images)}' data-alt="${product.title.replace(/'/g, "&#39;")}" data-current="0">
+              <div class="pdp-slide pdp-slide--active">${renderProductMedia(product.image, product.title)}</div>
+            </div>
+            <div class="pdp-thumbnails">
+              ${product.images.slice(0, 8).map((img, i) => `
+                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
+                  ${renderProductThumb(img, product.title)}
+                </div>
+              `).join('') || Array(4).fill('').map((_, i) => `
+                <div class="pdp-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
+                  <span class="material-symbols-outlined" style="font-size:20px;color:var(--color-accent);opacity:0.4;">menu_book</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
 
-            <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">${product.material ? `<strong>Material:</strong> ${product.material} &nbsp;|&nbsp;` : ''}
+          <div class="pdp-info">
+            ${productCategoryList.length ? `<div class="label">${productCategoryList.join(', ')} ${product.sku ? '• ' + product.sku : ''}</div>` : ''}
+            <h1 class="pdp-title">${product.title}</h1>
+            <div class="pdp-price">
+              ${formatPrice(product.price)}
+              ${product.originalPrice ? `<span style="font-size:var(--fs-md);color:var(--color-text-tertiary);text-decoration:line-through;margin-left:var(--space-3);">${formatPrice(product.originalPrice)}</span>` : ''}
+            </div>
+
+            <div class="pdp-description">${product.shortDescription || product.description}</div>
+
+            ${product.hasShippingBadge || product.hasWarrantyBadge ? `
+              <div style="margin-top:var(--space-4);font-size:var(--fs-sm);line-height:1.6;display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-4);">
+                ${product.hasWarrantyBadge ? `<div style="color:#1565c0;font-weight:var(--fw-medium);">" COD facility not available for this product "</div>` : ''}
+                ${product.hasShippingBadge ? `
+                  <div style="color:#e53935;font-weight:var(--fw-medium);">*This product has minimum order quantity restriction.</div>
+                  <div style="color:#e53935;font-weight:var(--fw-medium);">** If your order quantity is little less than MOQ then please write us.</div>
+                ` : ''}
+              </div>
+            ` : ''}
+
+            <div style="font-size:var(--fs-sm);color:var(--color-text-secondary);">
+              ${product.material ? `<strong>Material:</strong> ${product.material} &nbsp;|&nbsp;` : ''}
               ${product.size ? `<strong>Size:</strong> ${product.size} &nbsp;|&nbsp;` : ''}
               ${product.pages ? `<strong>Pages:</strong> ${product.pages}` : ''}
-            </div>${product.colors?.length ? `
-              <div><div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);margin-bottom:var(--space-2);">Available Colors</div><div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">${product.colors.map(c => `<span class="badge">${c}</span>`).join('')}
-                </div></div>` : ''}
+            </div>
+
+            ${product.colors?.length ? `
+              <div>
+                <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);margin-bottom:var(--space-2);">Available Colors</div>
+                <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+                  ${product.colors.map(c => `<span class="badge">${c}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
 
             ${product.tags ? `
-              <div class="pdp-tags-wrap"><span style="font-size:var(--fs-xs);font-weight:var(--fw-semibold);color:var(--color-text-tertiary);margin-right:var(--space-2);">Tags:</span><div class="pdp-tags">${product.tags.split(',').map(t => `<span class="pdp-tag">${t.trim()}</span>`).filter(t => t).join('')}</div></div>` : ''}
+              <div class="pdp-tags-wrap">
+                <span style="font-size:var(--fs-xs);font-weight:var(--fw-semibold);color:var(--color-text-tertiary);margin-right:var(--space-2);">Tags:</span>
+                <div class="pdp-tags">${product.tags.split(',').map(t => `<span class="pdp-tag">${t.trim()}</span>`).filter(t => t).join('')}</div>
+              </div>
+            ` : ''}
 
-            <div class="pdp-actions"><div class="pdp-qty-wrap"><label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label><div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;"><div style="display:flex;align-items:center;"><button class="qty-step-btn" id="qty-minus" aria-label="Decrease">âˆ’</button><input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1"><button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button></div><div style="display:flex;gap:var(--space-3);flex-wrap:wrap;width:100%;"><button class="btn btn--accent btn--lg${isInCart || product.inStock === false ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart || product.inStock === false ? ' disabled' : ''} style="width:100%;">${product.inStock === false ? 'Sold Out' : isInCart ? 'Added to Cart' : `
-                        <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>Add to Cart
+            <div class="pdp-actions">
+              <div class="pdp-qty-wrap">
+                <label style="font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:block;">Quantity</label>
+                <div class="qty-stepper" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;">
+                    <button class="qty-step-btn" id="qty-minus" aria-label="Decrease">−</button>
+                    <input type="number" class="qty-step-input" id="pdp-qty" value="${product.minBulkOrder}" min="${product.minBulkOrder}" step="1">
+                    <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
+                  </div>
+                  <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;width:100%;">
+                    <button class="btn btn--accent btn--lg${isInCart || product.inStock === false ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart || product.inStock === false ? ' disabled' : ''} style="width:100%;">
+                      ${product.inStock === false ? 'Sold Out' : isInCart ? 'Added to Cart' : `
+                        <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
+                        Add to Cart
                       `}
-                    </button></div></div><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div></div></div></div></div><div class="pdp-detail-tabs"><div class="pdp-tab-bar" role="tablist"><button type="button" class="pdp-tab active" role="tab" aria-selected="true" aria-controls="pdp-tab-desc" id="tab-desc" data-tab="desc">Description</button><button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-tags" id="tab-tags" data-tab="tags">Tags</button><button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-reviews" id="tab-reviews" data-tab="reviews">Reviews (${reviews.length})</button></div><div id="pdp-tab-desc" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-desc">${(productCategoryList.length || product.tags) ? `
-              <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-bottom:var(--space-4);line-height:1.5;">${productCategoryList.length ? `<div><strong>Categories:</strong> ${productCategoryList.join(', ')}</div>` : ''}
-                ${product.tags ? `<div><strong>Tags:</strong> ${product.tags}</div>` : ''}
-              </div>` : ''}
-            ${product.description ? `<div class="pdp-long-desc" style="margin:0;">${product.description}</div>` : '<p style="color:var(--color-text-tertiary);">No description available.</p>'}
-          </div><div id="pdp-tab-tags" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-tags" style="display:none;">${product.tags ? product.tags.split(',').map(t=>t.trim()).filter(Boolean).join(', ') : 'No tags.'}
-          </div><div id="pdp-tab-reviews" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-reviews" style="display:none;">${reviewsContent}
-          </div></div></div>${related.length ? `
-        <section class="section" style="background:var(--color-surface-alt);"><div class="container"><h2 class="heading-3" style="margin-bottom:var(--space-6);">You May Also Like</h2><div class="product-grid">${related.map(p => renderProductCard(p)).join('')}
-            </div></div></section>` : ''}
+                    </button>
+                  </div>
+                </div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:var(--space-1);">Min. order: ${product.minBulkOrder} units</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    </div>`;
+        <div class="pdp-detail-tabs">
+          <div class="pdp-tab-bar" role="tablist">
+            <button type="button" class="pdp-tab active" role="tab" aria-selected="true" aria-controls="pdp-tab-desc" id="tab-desc" data-tab="desc">Description</button>
+            <button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-tags" id="tab-tags" data-tab="tags">Tags</button>
+            <button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-reviews" id="tab-reviews" data-tab="reviews">Reviews (${reviews.length})</button>
+          </div>
+          <div id="pdp-tab-desc" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-desc">
+            ${(productCategoryList.length || product.tags) ? `
+              <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-bottom:var(--space-4);line-height:1.5;">
+                ${productCategoryList.length ? `<div><strong>Categories:</strong> ${productCategoryList.join(', ')}</div>` : ''}
+                ${product.tags ? `<div><strong>Tags:</strong> ${product.tags}</div>` : ''}
+              </div>
+            ` : ''}
+            ${product.description ? `<div class="pdp-long-desc" style="margin:0;">${product.description}</div>` : '<p style="color:var(--color-text-tertiary);">No description available.</p>'}
+          </div>
+          <div id="pdp-tab-tags" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-tags" style="display:none;">
+            ${product.tags ? product.tags.split(',').map(t=>t.trim()).filter(Boolean).join(', ') : 'No tags.'}
+          </div>
+          <div id="pdp-tab-reviews" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-reviews" style="display:none;">
+            ${reviewsContent}
+          </div>
+        </div>
+
+      </div>
+
+      ${related.length ? `
+        <section class="section" style="background:var(--color-surface-alt);">
+          <div class="container">
+            <h2 class="heading-3" style="margin-bottom:var(--space-6);">You May Also Like</h2>
+            <div class="product-grid">
+              ${related.map(p => renderProductCard(p)).join('')}
+            </div>
+          </div>
+        </section>
+      ` : ''}
+
+    </div>
+  `;
 
   initProductCardSlideshows();
 
+  // Qty stepper
   let pdpMOQ = product.minBulkOrder;
   const qtyInput = document.getElementById('pdp-qty');
   const minusBtn = document.getElementById('qty-minus');
@@ -239,6 +378,7 @@ export async function renderProductDetailPage(params) {
     });
   });
 
+  // Rating stars
   let selectedRating = 0;
   document.getElementById('pdp-write-review-btn')?.addEventListener('click', () => {
     document.getElementById('pdp-review-form-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -255,6 +395,7 @@ export async function renderProductDetailPage(params) {
     });
   });
 
+  // Review form — H2.8: client-side rate limit (1 review / product / 10 min)
   document.getElementById('review-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -290,6 +431,7 @@ export async function renderProductDetailPage(params) {
     }
   });
 
+  // Image gallery
   const mainImageEl = document.querySelector('.pdp-main-image');
   const thumbs = document.querySelectorAll('.pdp-thumb');
   const images = product.images;

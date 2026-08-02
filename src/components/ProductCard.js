@@ -1,3 +1,4 @@
+/** Prefer http(s) URLs over base64 data URLs for list cards (H2.9 mitigation). */
 function safeCardSrc(src) {
   if (!src || typeof src !== 'string') return '';
   if (src.startsWith('data:')) return ''; // skip huge base64 in grid HTML
@@ -7,6 +8,7 @@ function safeCardSrc(src) {
 export function renderProductCard(product) {
   const rawImages = product.images || [];
   const images = rawImages.map(safeCardSrc).filter(Boolean);
+  // Fall back to single image field if gallery was all base64
   if (!images.length) {
     const one = safeCardSrc(product.image);
     if (one) images.push(one);
@@ -15,6 +17,7 @@ export function renderProductCard(product) {
 
   let img;
   if (hasMultiple) {
+    // H3.4: first image eager; rest lazy
     img = images.map((src, i) => {
       const isFirst = i === 0;
       const loading = isFirst ? 'eager' : 'lazy';
@@ -33,13 +36,23 @@ export function renderProductCard(product) {
   const outOfStock = !product.inStock;
 
   return `
-    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''} draggable="false"><div class="ap-product-image-wrapper">${badge}
+    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''} draggable="false">
+      <div class="ap-product-image-wrapper">
+        ${badge}
         ${img}
         ${outOfStock ? '<div class="ap-sold-out-overlay"><span>Sold Out</span></div>' : ''}
-      </div><div class="ap-product-body"><div class="ap-product-price">${product.originalPrice && product.originalPrice > product.price
+      </div>
+      <div class="ap-product-body">
+        <div class="ap-product-price">
+          ${product.originalPrice && product.originalPrice > product.price
             ? `<span class="ap-price-sale">₹${product.originalPrice}</span>`
             : ''}
-          <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">₹${product.price}</span></div><h3 class="ap-product-title">${product.name || product.title}</h3></div></a>`;
+          <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">₹${product.price}</span>
+        </div>
+        <h3 class="ap-product-title">${product.name || product.title}</h3>
+      </div>
+    </a>
+  `;
 }
 
 export function renderProductGrid(products) {
@@ -72,6 +85,7 @@ export function initProductCardSlideshows(container = document) {
       imgs[current].classList.remove('ap-product-img--prev');
       imgs[current].classList.add('ap-product-img--active');
 
+      // Clear prev class after transition without leaving dangling timers
       const prevEl = imgs[prev];
       window.setTimeout(() => {
         prevEl.classList.remove('ap-product-img--prev');
@@ -101,9 +115,11 @@ export function initProductCardSlideshows(container = document) {
       current = 0;
     };
 
+    // Desktop hover
     card.addEventListener('mouseenter', start);
     card.addEventListener('mouseleave', stop);
 
+    // H3.12: touch — brief slideshow on tap/focus without blocking navigation
     let touchTimer = null;
     card.addEventListener('touchstart', () => {
       start();

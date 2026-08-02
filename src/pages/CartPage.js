@@ -70,19 +70,64 @@ export async function renderCartPage() {
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.qty, 0);
 
   app.innerHTML = `
-    <div class="page-content"><div class="container section">${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Your Cart' }])}
-        <h1 class="heading-2" style="margin-bottom:var(--space-8);">Your Curated Selection</h1>${cartItems.length === 0 ? `
-          <div class="cart-empty"><span class="material-symbols-outlined">shopping_bag</span><h2 class="heading-3" style="margin-bottom:var(--space-3);">Your cart is empty</h2><p class="text-body" style="margin-bottom:var(--space-6);">Browse our collection to find the perfect diary or planner.</p><a href="/shop" class="btn btn--accent">Browse Collection</a></div>` : `
-          <div class="cart-layout"><div>${cartItems.map(item => {
+    <div class="page-content">
+      <div class="container section">
+        ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Your Cart' }])}
+        <h1 class="heading-2" style="margin-bottom:var(--space-8);">Your Curated Selection</h1>
+
+        ${cartItems.length === 0 ? `
+          <div class="cart-empty">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <h2 class="heading-3" style="margin-bottom:var(--space-3);">Your cart is empty</h2>
+            <p class="text-body" style="margin-bottom:var(--space-6);">Browse our collection to find the perfect diary or planner.</p>
+            <a href="/shop" class="btn btn--accent">Browse Collection</a>
+          </div>
+        ` : `
+          <div class="cart-layout">
+            <div>
+              ${cartItems.map(item => {
                 const moq = item.product.minBulkOrder || 1;
                 return `
-                <div class="cart-item" data-product-id="${item.product.id}"><div class="cart-item-image">${item.product.image
+                <div class="cart-item" data-product-id="${item.product.id}">
+                  <div class="cart-item-image">
+                    ${item.product.image
                       ? `<img src="${item.product.image}" alt="${item.product.title}">`
                       : `<div style="width:100%;height:100%;background:var(--color-surface-alt);display:flex;align-items:center;justify-content:center;"><span class="material-symbols-outlined" style="color:var(--color-accent);opacity:0.3;">menu_book</span></div>`}
-                  </div><div class="cart-item-details"><div class="cart-item-title">${item.product.title}</div><div class="cart-item-variant">${item.product.material} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div><div class="qty-stepper" style="align-self:flex-start;"><button class="qty-step-btn qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button><input type="number" class="qty-step-input qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}"><button class="qty-step-btn qty-plus" data-id="${item.product.id}">+</button></div><button class="btn btn--accent btn--sm update-cart-item-btn" data-id="${item.product.id}" data-original-qty="${item.qty}" style="display:none;align-self:flex-start;margin-top:var(--space-1);">Update Cart</button><button class="btn btn--ghost btn--sm remove-cart-item" data-id="${item.product.id}" style="align-self:flex-start;color:var(--color-error);padding-left:0;">Remove</button></div><div class="cart-item-price">${formatPrice(item.product.price * item.qty)}</div></div>`;
+                  </div>
+                  <div class="cart-item-details">
+                    <div class="cart-item-title">${item.product.title}</div>
+                    <div class="cart-item-variant">${item.product.material} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
+                    <div class="qty-stepper" style="align-self:flex-start;">
+                      <button class="qty-step-btn qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
+                      <input type="number" class="qty-step-input qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}">
+                      <button class="qty-step-btn qty-plus" data-id="${item.product.id}">+</button>
+                    </div>
+                    <button class="btn btn--accent btn--sm update-cart-item-btn" data-id="${item.product.id}" data-original-qty="${item.qty}" style="display:none;align-self:flex-start;margin-top:var(--space-1);">Update Cart</button>
+                    <button class="btn btn--ghost btn--sm remove-cart-item" data-id="${item.product.id}" style="align-self:flex-start;color:var(--color-error);padding-left:0;">Remove</button>
+                  </div>
+                  <div class="cart-item-price">${formatPrice(item.product.price * item.qty)}</div>
+                </div>
+              `;
               }).join('')}
-              <div style="margin-top:var(--space-6);"><a href="/shop" class="btn btn--secondary"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Continue Curating</a></div></div><div class="order-summary"><h3>Order Summary</h3><div class="order-summary-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div><div class="order-summary-row"><span>Shipping</span><span>Calculated at checkout</span></div><div class="order-summary-total"><span>Total</span><span>${formatPrice(subtotal)}</span></div><a href="/checkout" class="btn btn--accent btn--lg btn--full" style="margin-top:var(--space-4);">Proceed to Checkout</a><div style="text-align:center;margin-top:var(--space-3);"><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Secure, encrypted payment processing.</span></div></div></div>`}
-      </div></div>`;
+              <div style="margin-top:var(--space-6);">
+                <a href="/shop" class="btn btn--secondary"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Continue Curating</a>
+              </div>
+            </div>
+            <div class="order-summary">
+              <h3>Order Summary</h3>
+              <div class="order-summary-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+              <div class="order-summary-row"><span>Shipping</span><span>Calculated at checkout</span></div>
+              <div class="order-summary-total"><span>Total</span><span>${formatPrice(subtotal)}</span></div>
+              <a href="/checkout" class="btn btn--accent btn--lg btn--full" style="margin-top:var(--space-4);">Proceed to Checkout</a>
+              <div style="text-align:center;margin-top:var(--space-3);">
+                <span style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">Secure, encrypted payment processing.</span>
+              </div>
+            </div>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
 
   function checkQtyChange(id) {
     const input = document.querySelector(`.qty-input[data-id="${id}"]`);

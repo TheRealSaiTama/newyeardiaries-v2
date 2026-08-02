@@ -38,6 +38,7 @@ import { renderAdminPage, initAdminPage } from './pages/AdminPage.js';
 
 let appContent = null;
 
+// H3.24: global error surface — avoid silent white screens
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (ev) => {
     console.error('[nyd:uncaught]', ev.error || ev.message, ev.filename, ev.lineno);
@@ -47,11 +48,16 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Helpers to upsert <meta> tags in document.head. Upsert by name/property so
+// re-calls (e.g. after a settings change) replace the old value rather than
+// stacking duplicates. Defaults in index.html are kept as the SSR-ish fallback
+// for crawlers that don't execute JS — these values override them on load.
 function setMeta(selector, attr, value) {
   if (!value) return;
   let el = document.head.querySelector(selector);
   if (!el) {
     el = document.createElement('meta');
+    // selector like 'meta[name="description"]' — pull the attr out
     const m = selector.match(/\[(name|property)="([^"]+)"\]/);
     if (m) el.setAttribute(m[1], m[2]);
     document.head.appendChild(el);
@@ -109,6 +115,7 @@ function applyMetaTags(s) {
   if (s.twitter_title)     setMeta('meta[name="twitter:title"]',      'content', s.twitter_title);
   if (s.twitter_description) setMeta('meta[name="twitter:description"]', 'content', s.twitter_description);
   if (s.twitter_image)     setMeta('meta[name="twitter:image"]',      'content', s.twitter_image);
+  // H3.30 / H3.32
   const canon = s.og_url || (typeof location !== 'undefined' ? location.origin + '/' : 'https://newyeardiaries.in/');
   ensureCanonical(canon);
   ensureOrgJsonLd(s);
@@ -135,10 +142,14 @@ async function preloadCategories() {
 function hideLoader() {
   const loader = document.getElementById('app-loader');
   if (loader) {
+    // The diary-loader CSS uses `transition: opacity .35s ease`, so setting
+    // opacity:0 here triggers the fade. .is-gone is the macOS-spinner
+    // variant — both classes are safe to apply.
     loader.style.opacity = '0';
     loader.classList.add('is-gone');
     setTimeout(() => loader.remove(), 360);
   }
+  // Snappier shell reveal — was 0.4s, now 0.22s.
   const shell = document.getElementById('shell');
   if (shell && shell.style.opacity !== '1') {
     shell.style.opacity = '0';
@@ -154,7 +165,13 @@ const WHATSAPP_MESSAGE = encodeURIComponent('Hi Team NYD,\n\nContacting through 
 
 function renderFloatingButtons() {
   return `
-    <a class="floating-wa-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}" target="_blank" rel="noopener" aria-label="WhatsApp Enquiry"><span class="floating-wa-icon"><svg viewBox="0 0 32 32"><path d="M16.033 0a15.938 15.938 0 0 0-13.8 23.945L0 31.989l8.225-2.156A15.93 15.93 0 0 0 16.033 31.99c8.8 0 15.967-7.16 15.967-15.967S24.832 0 16.033 0zm0 29.317c-2.482 0-4.914-.633-7.06-1.831l-.506-.283-5.244 1.374 1.398-5.118-.311-.495A13.262 13.262 0 0 1 2.766 16.02c0-7.323 5.96-13.292 13.268-13.292 7.323 0 13.292 5.969 13.292 13.292s-5.969 13.297-13.293 13.297zm7.262-9.923c-.398-.2-2.355-1.164-2.72-1.298-.364-.132-.63-.2-.895.198-.266.398-1.028 1.298-1.26 1.564-.233.265-.465.298-.863.1-2.223-1.116-3.805-2.261-5.187-4.577-.266-.447.264-.413.644-1.178.132-.265.066-.497-.033-.695-.1-.2-1.026-2.484-1.358-3.361-.413-1.089-.824-.942-1.125-.961-.266-.015-.565-.015-.863-.015-.298 0-.796.116-1.212.646-.414.53-1.593 1.558-1.593 3.797 0 2.239 1.625 4.402 1.858 4.667.232.265 3.178 4.846 7.697 6.793 1.077.464 1.916.742 2.571.95 1.082.343 2.066.294 2.842.178.868-.13 2.355-.96 2.688-1.888.332-.928.332-1.722.232-1.888-.1-.166-.364-.265-.762-.464z"/></svg></span><span class="floating-wa-label">WhatsApp Enquiry</span></a>`;
+    <a class="floating-wa-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}" target="_blank" rel="noopener" aria-label="WhatsApp Enquiry">
+      <span class="floating-wa-icon">
+        <svg viewBox="0 0 32 32"><path d="M16.033 0a15.938 15.938 0 0 0-13.8 23.945L0 31.989l8.225-2.156A15.93 15.93 0 0 0 16.033 31.99c8.8 0 15.967-7.16 15.967-15.967S24.832 0 16.033 0zm0 29.317c-2.482 0-4.914-.633-7.06-1.831l-.506-.283-5.244 1.374 1.398-5.118-.311-.495A13.262 13.262 0 0 1 2.766 16.02c0-7.323 5.96-13.292 13.268-13.292 7.323 0 13.292 5.969 13.292 13.292s-5.969 13.297-13.293 13.297zm7.262-9.923c-.398-.2-2.355-1.164-2.72-1.298-.364-.132-.63-.2-.895.198-.266.398-1.028 1.298-1.26 1.564-.233.265-.465.298-.863.1-2.223-1.116-3.805-2.261-5.187-4.577-.266-.447.264-.413.644-1.178.132-.265.066-.497-.033-.695-.1-.2-1.026-2.484-1.358-3.361-.413-1.089-.824-.942-1.125-.961-.266-.015-.565-.015-.863-.015-.298 0-.796.116-1.212.646-.414.53-1.593 1.558-1.593 3.797 0 2.239 1.625 4.402 1.858 4.667.232.265 3.178 4.846 7.697 6.793 1.077.464 1.916.742 2.571.95 1.082.343 2.066.294 2.842.178.868-.13 2.355-.96 2.688-1.888.332-.928.332-1.722.232-1.888-.1-.166-.364-.265-.762-.464z"/></svg>
+      </span>
+      <span class="floating-wa-label">WhatsApp Enquiry</span>
+    </a>
+  `;
 }
 
 function initFloatingButtons() {
@@ -162,6 +179,9 @@ function initFloatingButtons() {
   if (container) container.innerHTML = renderFloatingButtons();
 }
 
+// Render one part of the shell, falling back to an empty string if it throws.
+// Without this, a single broken component (e.g. Footer when content hasn't
+// loaded yet) can take down the whole shell and leave a white page.
 function safeRender(label, fn) {
   try { return fn(); }
   catch (e) { console.warn(`[shell] ${label} render failed:`, e); return ''; }
@@ -169,10 +189,19 @@ function safeRender(label, fn) {
 
 function setupShell() {
   const shell = document.getElementById('shell');
+  // appContent may be null here on first paint (we run setupShell BEFORE
+  // loadContent resolves). Each component must accept null safely — use
+  // safeRender as a second line of defense.
   shell.innerHTML = `
-    <div id="header-area">${safeRender('Header', () => renderHeader(appContent))}</div>${safeRender('QuickView', renderQuickViewModal)}
+    <div id="header-area">${safeRender('Header', () => renderHeader(appContent))}</div>
+    ${safeRender('QuickView', renderQuickViewModal)}
     ${safeRender('Search', renderSearchModal)}
-    <main id="app"></main><div id="about-section">${safeRender('About', renderAboutSection)}</div><div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div><div id="floating-buttons"></div><div id="faq-chatbot"></div>`;
+    <main id="app"></main>
+    <div id="about-section">${safeRender('About', renderAboutSection)}</div>
+    <div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div>
+    <div id="floating-buttons"></div>
+    <div id="faq-chatbot"></div>
+  `;
   try { initHeaderEvents(); } catch (e) { console.warn('[shell] initHeaderEvents failed:', e); }
   try { updateHeaderCounts(); } catch (e) { console.warn('[shell] updateHeaderCounts failed:', e); }
   try { initSearchModal(); } catch (e) { console.warn('[shell] initSearchModal failed:', e); }
@@ -181,6 +210,10 @@ function setupShell() {
   initFloatingButtons();
 }
 
+// Show/hide the About section, floating WhatsApp button, and FAQ chatbot
+// based on the current route. They're part of the main website shell and
+// should not appear in the admin dashboard. The About section (SEO content)
+// is home-only.
 function syncShellExtras() {
   const path = window.location.pathname || '/';
   const isHome = path === '/' || path === '/index.html';
@@ -188,19 +221,30 @@ function syncShellExtras() {
 
   document.body.classList.toggle('is-admin-route', isAdmin);
 
+  // Show the About section only on the homepage
   document.querySelectorAll('#about-section, .nyd-about-section')
     .forEach(el => { el.style.display = isHome ? '' : 'none'; });
 
+  // Show floating buttons and FAQ chatbot everywhere except admin route
   document.querySelectorAll('#floating-buttons, #faq-chatbot')
     .forEach(el => { el.style.display = isAdmin ? 'none' : ''; });
 }
 
+// Per-page sessionStorage cache. Keyed by the page's base path. The value
+// is the last-rendered HTML for that page, so re-navigation can paint
+// instantly while a background re-fetch refreshes the data.
+//
+// Capacity: sessionStorage is limited (~5MB). The cap here is 3 pages, with
+// per-HTML size check. We don't store anything >1MB so a single huge page
+// can't blow the budget.
 const PAGE_CACHE_PREFIX = '__nyd_page_cache:';
 const PAGE_CACHE_MAX_ENTRIES = 8;
 const PAGE_CACHE_MAX_HTML_BYTES = 800_000; // ~800KB
 const HOME_CACHE_KEY = PAGE_CACHE_PREFIX + 'persistent:/';
 
 function pageCacheKey(params) {
+  // Include search params so distinct category/group/q filters cache
+  // separately. We deliberately don't include the hash.
   const path = window.location.pathname || '/';
   const search = window.location.search || '';
   return PAGE_CACHE_PREFIX + path + search;
@@ -208,6 +252,7 @@ function pageCacheKey(params) {
 
 function isPageCacheable(path) {
   const normalized = path.endsWith('/') ? path.slice(0, -1) : path;
+  // Only cache homepage (which normalizes to empty string) and shop page
   return normalized === '' || normalized === '/shop';
 }
 
@@ -236,6 +281,7 @@ function setCachedPage(params, html) {
     const payload = JSON.stringify({ html, t: Date.now() });
     sessionStorage.setItem(key, payload);
     if (key === PAGE_CACHE_PREFIX + '/') localStorage.setItem(HOME_CACHE_KEY, payload);
+    // Enforce max entries — evict oldest.
     const keys = Object.keys(sessionStorage).filter(k => k.startsWith(PAGE_CACHE_PREFIX));
     if (keys.length > PAGE_CACHE_MAX_ENTRIES) {
       const entries = keys.map(k => {
@@ -258,6 +304,7 @@ function clearPageCache() {
   } catch { /* ignore */ }
 }
 
+// Expose for the admin "bust cache" actions
 window.__clearPageCache = clearPageCache;
 window.__nydPageCachePrefix = PAGE_CACHE_PREFIX;
 
@@ -266,6 +313,8 @@ function wrapPage(renderFn) {
     const app = document.getElementById('app');
     const cached = getCachedPage(params);
 
+    // H3.33 fix: noindex on private / non-content routes so search engines
+    // don't index /admin, /cart, /checkout, /account, /login, /order-success
     const path = window.location.pathname;
     let robots = document.querySelector('meta[name="robots"]');
     if (/^\/(admin|cart|checkout|account|login|order-success|enquiry-success|bulk-quote|quote-list)(\/|$)/.test(path)) {
@@ -279,6 +328,7 @@ function wrapPage(renderFn) {
       robots.setAttribute('content', 'index, follow');
     }
 
+    // H3.30: per-route canonical (PDP overwrites with product URL when rendered)
     try {
       const origin = window.location.origin || 'https://newyeardiaries.in';
       ensureCanonical(origin + path + (window.location.search || ''));
@@ -291,11 +341,18 @@ function wrapPage(renderFn) {
     initSearchModal();
     syncShellExtras();
 
+    // FAST PATH: paint cached HTML immediately. The original code re-ran
+    // renderFn() in the background which rewrote app.innerHTML with a fresh
+    // shell+skeleton — users saw a flash and felt the click was ignored.
+    // Skip the re-render; the cache is good enough until next nav. If a page
+    // wants in-place data refresh, it can register window.__nydCacheRefresh.
     if (cached && cached.html && app) {
       app.innerHTML = cached.html;
       if (typeof window.__reinitPage === 'function') {
         try { window.__reinitPage(); } catch (e) { console.warn('[cache] reinit failed:', e); }
       }
+      // Quiet background data refresh — only swaps the grid in place, never
+      // the whole shell. Failures are silent.
       if (typeof window.__nydCacheRefresh === 'function') {
         Promise.resolve()
           .then(() => window.__nydCacheRefresh(params, appContent))
@@ -304,6 +361,8 @@ function wrapPage(renderFn) {
       return Promise.resolve();
     }
 
+    // COLD PATH: full render. May be async — return the promise so first
+    // paint waits for content.
     const targetPath = window.location.pathname + window.location.search;
     if (targetPath === '/' && app) app.innerHTML = renderHomeSkeleton();
     return Promise.resolve(renderFn(params, appContent)).then(() => {
@@ -319,6 +378,7 @@ function wrapPage(renderFn) {
 addRoute('/', wrapPage(renderHomePage));
 addRoute('/shop', wrapPage(renderShopPage));
 addRoute('/shop/corporate', wrapPage(renderCorporatePage));
+// Backward-compat: /product/:slug still works (redirects to /:slug)
 addRoute('/product/:slug', (params) => { navigateTo('/' + params.slug); return; });
 addRoute('/cart', wrapPage(renderCartPage));
 addRoute('/checkout', wrapPage(renderCheckoutPage));
@@ -343,7 +403,10 @@ addRoute('/admin', (params) => {
   initAdminPage();
 });
 
+// Catch-all short URL: /<slug> renders the product directly. Must be added
+// LAST so specific routes (/cart, /about, /admin, etc.) win.
 addRoute('/:slug', async (params) => {
+  // Ignore obvious asset paths and known prefixes that should never reach here.
   const reservedPrefixes = ['assets', 'images', 'logo', 'favicon', 'robots.txt', 'sitemap.xml'];
   if (reservedPrefixes.some(p => params.slug.startsWith(p))) {
     return wrapPage(renderNotFoundPage)(params);
@@ -353,16 +416,27 @@ addRoute('/:slug', async (params) => {
     const product = await getProductBySlug(params.slug);
     if (product) return wrapPage(renderProductDetailPage)({ slug: params.slug });
   } catch (e) { /* fall through */ }
+  // Unknown slug → render a proper 404 page (H3.34 fix)
   return wrapPage(renderNotFoundPage)(params);
 });
 
+// Boot strategy
+// --------------
+// 1. Show the shell + render the first route ASAP so the user sees something.
+// 2. Fire-and-forget the slow Supabase fetches; they re-render in place when they resolve.
+// 3. Hard cap on the splash — never block the user on a slow backend.
 let loaderHidden = false;
 function hideLoaderOnce() {
   if (loaderHidden) return;
   loaderHidden = true;
   hideLoader();
 }
+// Hard safety: hide loader no matter what after 3s.
+// Hard cap: hide the splash after 1.2s no matter what. The new spinner
+// is paint-cheap so 1.2s is plenty even on slow Supabase cold starts.
 setTimeout(hideLoaderOnce, 1200);
+// Soft safety: a second cap at 4s in case the first timer was lost
+// (tab throttled in background, devtools open, etc.).
 setTimeout(hideLoaderOnce, 4000);
 
 function raceWithTimeout(promise, ms, label) {
@@ -381,12 +455,17 @@ function raceWithTimeout(promise, ms, label) {
   });
 }
 
+// Listen for background cache updates and refresh the UI when they occur
 window.addEventListener('nyd-content-updated', (e) => {
   appContent = e.detail;
+  // Re-apply meta tags immediately so admin edits show up without a reload
   try { applyMetaTags(appContent?.siteSettings); } catch (err) {
     console.warn('[main] applyMetaTags after content update failed:', err);
   }
   try {
+    // Page HTML cache is now stale — clear it so the next render is fresh.
+    // Without this, wrapPage() serves the cached HTML and admin edits are
+    // invisible until a full reload. Reported 2026-07-31.
     clearPageCache();
     resolveRoute();
   } catch (err) {
@@ -413,6 +492,9 @@ window.addEventListener('nyd-categories-updated', () => {
 });
 
 (async () => {
+  // Step 1: bring up the empty shell + a HOMEPAGE SKELETON IMMEDIATELY so
+  // the main area is never empty (which would expose the About section
+  // from the shell as the apparent page content while the route loads).
   try {
     setupShell();
     syncShellExtras();
@@ -429,6 +511,8 @@ window.addEventListener('nyd-categories-updated', () => {
     console.warn('[boot] home skeleton failed:', e);
   }
 
+  // Step 2: kick off the first route. wrapPage() returns the (possibly Promise)
+  // result of the page render — do NOT await it indefinitely.
   let firstRender;
   try {
     firstRender = initRouter();
@@ -436,15 +520,22 @@ window.addEventListener('nyd-categories-updated', () => {
     console.error('[boot] initRouter failed:', e);
   }
 
+  // Step 3: race the first render against a 3s cap. If it doesn't finish, hide
+  // the loader anyway — the page will continue rendering in place when its
+  // Supabase queries resolve.
   if (firstRender && typeof firstRender.then === 'function') {
     await raceWithTimeout(firstRender, 1000, 'firstRender');
   }
 
   hideLoaderOnce();
 
+  // Step 4: still load content + categories in the background so any subsequent
+  // re-render has fresh data. Failures here are non-fatal.
   Promise.allSettled([
     loadContent().then(() => preloadCategories()),
   ]).then(() => {
+    // Once content is in, refresh the page render so DB-driven sections
+    // (banners, products, etc.) populate. Re-resolve the current route.
     try {
       resolveRoute();
     } catch (e) {

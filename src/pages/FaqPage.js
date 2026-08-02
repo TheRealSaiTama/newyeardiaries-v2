@@ -13,11 +13,35 @@ const faqData = [
 
 export function renderFaqPage() {
   document.getElementById('app').innerHTML = `
-    <div class="page-content"><div class="container section">${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'FAQ' }])}
-      </div><div class="static-hero"><div class="container"><h1>Frequently Asked Questions</h1><p>Everything you need to know about our products, ordering, and services.</p></div></div><div class="static-content">${faqData.map((item, i) => `
-          <div class="faq-item" id="faq-${i}"><button class="faq-question" data-faq="${i}"><span>${item.q}</span><span class="material-symbols-outlined">expand_more</span></button><div class="faq-answer"><p>${item.a}</p></div></div>`).join('')}
+    <div class="page-content">
+      <div class="container section">
+        ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'FAQ' }])}
+      </div>
+      <div class="static-hero">
+        <div class="container">
+          <h1>Frequently Asked Questions</h1>
+          <p>Everything you need to know about our products, ordering, and services.</p>
+        </div>
+      </div>
+      <div class="static-content">
+        ${faqData.map((item, i) => `
+          <div class="faq-item" id="faq-${i}">
+            <button class="faq-question" data-faq="${i}">
+              <span>${item.q}</span>
+              <span class="material-symbols-outlined">expand_more</span>
+            </button>
+            <div class="faq-answer"><p>${item.a}</p></div>
+          </div>
+        `).join('')}
 
-        <div style="text-align:center;margin-top:var(--space-12);padding:var(--space-8);background:var(--color-surface-alt);border-radius:var(--radius-lg);"><h3 class="heading-3" style="margin-bottom:var(--space-3);">Still have questions?</h3><p class="text-body" style="margin-bottom:var(--space-6);">Our team is here to help.</p><a href="/contact" class="btn btn--accent">Contact Us</a></div></div></div>`;
+        <div style="text-align:center;margin-top:var(--space-12);padding:var(--space-8);background:var(--color-surface-alt);border-radius:var(--radius-lg);">
+          <h3 class="heading-3" style="margin-bottom:var(--space-3);">Still have questions?</h3>
+          <p class="text-body" style="margin-bottom:var(--space-6);">Our team is here to help.</p>
+          <a href="/contact" class="btn btn--accent">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  `;
 
   document.querySelectorAll('.faq-question').forEach(btn => {
     btn.addEventListener('click', () => {

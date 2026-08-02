@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase.js';
 import { sendOrderEmail } from '../lib/notify.js';
 import { renderCheckoutSkeleton } from '../components/Skeleton.js';
 
+// Module-level storage for logo uploads (too large for sessionStorage).
 let uploadedLogos = []; // Array of { name, dataUrl (image/jpeg;base64,...) }
 
 function showToast(message, type = 'success') {
@@ -42,6 +43,7 @@ function setCheckoutStep(step) {
   sessionStorage.setItem('checkoutStep', step);
 }
 
+// Module-level cache to keep cart item data and avoid redundant Supabase requests on step change
 let cachedCartItems = null;
 let lastCartJson = '';
 
@@ -57,7 +59,15 @@ export async function renderCheckoutPage() {
     cachedCartItems = null;
     lastCartJson = '';
     app.innerHTML = `
-      <div class="page-content"><div class="container section" style="text-align:center;padding:var(--space-24) 0;"><span class="material-symbols-outlined" style="font-size:64px;color:var(--color-text-tertiary);">shopping_bag</span><h1 class="heading-2" style="margin-top:var(--space-6);">Your cart is empty</h1><p class="text-body" style="margin:var(--space-4) 0;">Add some products before proceeding to checkout.</p><a href="/shop" class="btn btn--accent btn--lg">Browse Collection</a></div></div>`;
+      <div class="page-content">
+        <div class="container section" style="text-align:center;padding:var(--space-24) 0;">
+          <span class="material-symbols-outlined" style="font-size:64px;color:var(--color-text-tertiary);">shopping_bag</span>
+          <h1 class="heading-2" style="margin-top:var(--space-6);">Your cart is empty</h1>
+          <p class="text-body" style="margin:var(--space-4) 0;">Add some products before proceeding to checkout.</p>
+          <a href="/shop" class="btn btn--accent btn--lg">Browse Collection</a>
+        </div>
+      </div>
+    `;
     return;
   }
 
@@ -67,6 +77,7 @@ export async function renderCheckoutPage() {
   if (cachedCartItems && currentCartJson === lastCartJson) {
     cartItems = cachedCartItems;
   } else {
+    // Show a clean skeleton loader instantly while fetching from Supabase
     app.innerHTML = renderCheckoutSkeleton();
 
     cartItems = (await Promise.all(
@@ -80,6 +91,7 @@ export async function renderCheckoutPage() {
     lastCartJson = currentCartJson;
   }
 
+  // Enforce MOQ on existing cart items
   cartItems.forEach(item => {
     const moq = item.product.minBulkOrder || 1;
     if (item.qty < moq) {
@@ -97,28 +109,138 @@ export async function renderCheckoutPage() {
   const shipping = subtotal >= 5000 ? 0 : 250;
   const total = subtotal + gstAmount;
 
+  // Stepper reflects the active step.
   const stepState = (n) => n < (currentStep === 'review' ? 2 : 1) ? 'completed'
     : n === (currentStep === 'review' ? 2 : 1) ? 'active' : '';
   const stepperHtml = `
-    <div class="checkout-stepper"><div class="step ${stepState(1)}"><span class="step-indicator">${stepState(1) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '1'}</span><span class="step-label">Contact Info</span></div><div class="step-connector ${stepState(1) === 'completed' ? 'completed' : ''}"></div><div class="step ${stepState(2)}"><span class="step-indicator">${stepState(2) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '2'}</span><span class="step-label">Review</span></div><div class="step-connector"></div><div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div></div>`;
+    <div class="checkout-stepper">
+      <div class="step ${stepState(1)}"><span class="step-indicator">${stepState(1) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '1'}</span><span class="step-label">Contact Info</span></div>
+      <div class="step-connector ${stepState(1) === 'completed' ? 'completed' : ''}"></div>
+      <div class="step ${stepState(2)}"><span class="step-indicator">${stepState(2) === 'completed' ? '<span class="material-symbols-outlined" style="font-size:16px;">check</span>' : '2'}</span><span class="step-label">Review</span></div>
+      <div class="step-connector"></div>
+      <div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div>
+    </div>
+  `;
 
   const orderSummaryHtml = `
-    <div class="order-summary"><h3>Order Summary</h3><div id="checkout-items">${cartItems.map(item => {
+    <div class="order-summary">
+      <h3>Order Summary</h3>
+      <div id="checkout-items">
+        ${cartItems.map(item => {
           const moq = item.product.minBulkOrder || 1;
           return `
-            <div class="checkout-item" data-product-id="${item.product.id}" style="display:flex;gap:var(--space-3);padding:var(--space-4) 0;border-bottom:1px solid var(--color-border-light);align-items:flex-start;"><div style="width:56px;height:56px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${item.product.image
+            <div class="checkout-item" data-product-id="${item.product.id}" style="display:flex;gap:var(--space-3);padding:var(--space-4) 0;border-bottom:1px solid var(--color-border-light);align-items:flex-start;">
+              <div style="width:56px;height:56px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ${item.product.image
                   ? `<img src="${item.product.image}" alt="${item.product.title}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);">`
                   : `<span class="material-symbols-outlined" style="font-size:18px;color:var(--color-accent);opacity:0.4;">menu_book</span>`}
-              </div><div style="flex:1;min-width:0;"><div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);">${item.product.title}</div><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${item.product.material || ''} ${item.product.size ? '· ' + item.product.size : ''} · Min. ${moq} units</div><div class="qty-stepper checkout-qty-stepper"><button class="qty-step-btn checkout-qty-minus" data-id="${item.product.id}" data-moq="${moq}">âˆ’</button><input type="number" class="qty-step-input checkout-qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}" step="1"><button class="qty-step-btn checkout-qty-plus" data-id="${item.product.id}" data-moq="${moq}">+</button></div></div><div style="font-weight:var(--fw-semibold);font-size:var(--fs-sm);text-align:right;"><div class="checkout-item-subtotal">${formatPrice(item.product.price * item.qty)}</div><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">₹${Number(item.product.price).toLocaleString()} × ${item.qty}</div></div></div>`;
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:var(--fs-sm);font-weight:var(--fw-semibold);">${item.product.title}</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${item.product.material || ''} ${item.product.size ? '• ' + item.product.size : ''} • Min. ${moq} units</div>
+                <div class="qty-stepper checkout-qty-stepper">
+                  <button class="qty-step-btn checkout-qty-minus" data-id="${item.product.id}" data-moq="${moq}">−</button>
+                  <input type="number" class="qty-step-input checkout-qty-input" data-id="${item.product.id}" data-moq="${moq}" value="${item.qty}" min="${moq}" step="1">
+                  <button class="qty-step-btn checkout-qty-plus" data-id="${item.product.id}" data-moq="${moq}">+</button>
+                </div>
+              </div>
+              <div style="font-weight:var(--fw-semibold);font-size:var(--fs-sm);text-align:right;">
+                <div class="checkout-item-subtotal">${formatPrice(item.product.price * item.qty)}</div>
+                <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);">₹${Number(item.product.price).toLocaleString()} × ${item.qty}</div>
+              </div>
+            </div>
+          `;
         }).join('')}
-      </div><div class="order-summary-row"><span>Subtotal</span><span id="checkout-subtotal">${formatPrice(subtotal)}</span></div><div class="order-summary-row gst-row"><span>GST (18%)</span><span id="checkout-gst">${formatPrice(gstAmount)}</span></div><div class="order-summary-total"><span>Total (incl. GST)</span><span id="checkout-total">${formatPrice(total)}</span></div></div>`;
+      </div>
+      <div class="order-summary-row"><span>Subtotal</span><span id="checkout-subtotal">${formatPrice(subtotal)}</span></div>
+      <div class="order-summary-row gst-row"><span>GST (18%)</span><span id="checkout-gst">${formatPrice(gstAmount)}</span></div>
+      <div class="order-summary-total"><span>Total (incl. GST)</span><span id="checkout-total">${formatPrice(total)}</span></div>
+    </div>
+  `;
 
+  // Step 1 — all form fields live here (contact, shipping, tax, branding, files)
   const formHtml = `
-      <div class="checkout-form-section"><div class="checkout-form-group"><h2>Contact Information</h2><div class="input-group"><label>${required('Email Address')}</label><input type="email" id="chk-email" class="input-field" placeholder="your@email.com" value="${checkoutData.email || ''}"></div><div class="input-group"><label>${required('Phone Number')}</label><input type="tel" id="chk-phone" class="input-field" placeholder="+91 98765 43210" value="${checkoutData.phone || ''}"></div></div><div class="checkout-form-group"><h2>Shipping Address</h2><div class="form-row"><div class="input-group"><label>${required('First Name')}</label><input type="text" id="chk-firstname" class="input-field" value="${checkoutData.firstName || ''}"></div><div class="input-group"><label>${required('Last Name')}</label><input type="text" id="chk-lastname" class="input-field" value="${checkoutData.lastName || ''}"></div></div><div class="input-group"><label>Company (Optional)</label><input type="text" id="chk-company" class="input-field" value="${checkoutData.company || ''}"></div><div class="input-group"><label>${required('Address')}</label><input type="text" id="chk-address" class="input-field" value="${checkoutData.address || ''}"></div><div class="form-row"><div class="input-group"><label>${required('City')}</label><input type="text" id="chk-city" class="input-field" value="${checkoutData.city || ''}"></div><div class="input-group"><label>${required('PIN Code')}</label><input type="text" id="chk-pin" class="input-field" value="${checkoutData.pin || ''}"></div></div><div class="input-group"><label>${required('State')}</label><select id="chk-state" class="input-field select-field"><option value="" ${!checkoutData.state ? 'selected' : ''}>Select State</option><option value="Delhi" ${checkoutData.state === 'Delhi' ? 'selected' : ''}>Delhi</option><option value="Maharashtra" ${checkoutData.state === 'Maharashtra' ? 'selected' : ''}>Maharashtra</option><option value="Karnataka" ${checkoutData.state === 'Karnataka' ? 'selected' : ''}>Karnataka</option><option value="Tamil Nadu" ${checkoutData.state === 'Tamil Nadu' ? 'selected' : ''}>Tamil Nadu</option><option value="Telangana" ${checkoutData.state === 'Telangana' ? 'selected' : ''}>Telangana</option><option value="Gujarat" ${checkoutData.state === 'Gujarat' ? 'selected' : ''}>Gujarat</option><option value="Rajasthan" ${checkoutData.state === 'Rajasthan' ? 'selected' : ''}>Rajasthan</option><option value="Uttar Pradesh" ${checkoutData.state === 'Uttar Pradesh' ? 'selected' : ''}>Uttar Pradesh</option><option value="West Bengal" ${checkoutData.state === 'West Bengal' ? 'selected' : ''}>West Bengal</option><option value="Punjab" ${checkoutData.state === 'Punjab' ? 'selected' : ''}>Punjab</option><option value="Haryana" ${checkoutData.state === 'Haryana' ? 'selected' : ''}>Haryana</option><option value="Madhya Pradesh" ${checkoutData.state === 'Madhya Pradesh' ? 'selected' : ''}>Madhya Pradesh</option><option value="Bihar" ${checkoutData.state === 'Bihar' ? 'selected' : ''}>Bihar</option><option value="Odisha" ${checkoutData.state === 'Odisha' ? 'selected' : ''}>Odisha</option><option value="Kerala" ${checkoutData.state === 'Kerala' ? 'selected' : ''}>Kerala</option><option value="Assam" ${checkoutData.state === 'Assam' ? 'selected' : ''}>Assam</option><option value="Jharkhand" ${checkoutData.state === 'Jharkhand' ? 'selected' : ''}>Jharkhand</option><option value="Chhattisgarh" ${checkoutData.state === 'Chhattisgarh' ? 'selected' : ''}>Chhattisgarh</option><option value="Goa" ${checkoutData.state === 'Goa' ? 'selected' : ''}>Goa</option><option value="Uttarakhand" ${checkoutData.state === 'Uttarakhand' ? 'selected' : ''}>Uttarakhand</option><option value="Himachal Pradesh" ${checkoutData.state === 'Himachal Pradesh' ? 'selected' : ''}>Himachal Pradesh</option><option value="Other" ${checkoutData.state === 'Other' ? 'selected' : ''}>Other</option></select></div></div><div class="checkout-form-group"><h2>Tax Information (Optional)</h2><div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div></div><div class="checkout-form-group"><h2>Additional Information</h2><div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div></div><div class="checkout-form-group"><h2>Attach your logo and text / pdf file here</h2><p class="checkout-logo-hint">Upload logo, text, or PDF files for printing on your products. Images are converted to JPG.</p><div class="checkout-logo-upload-area" id="logo-upload-area"><span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span><span class="checkout-logo-upload-text">Drag &amp; drop files here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span><input type="file" id="logo-file-input" accept="image/*,.pdf,.txt,.doc,.docx,application/pdf,text/plain" multiple hidden></div><div id="logo-previews" class="checkout-logo-previews"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);"><a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a><button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button></div></div>`;
+      <div class="checkout-form-section">
+        <div class="checkout-form-group">
+          <h2>Contact Information</h2>
+          <div class="input-group"><label>${required('Email Address')}</label><input type="email" id="chk-email" class="input-field" placeholder="your@email.com" value="${checkoutData.email || ''}"></div>
+          <div class="input-group"><label>${required('Phone Number')}</label><input type="tel" id="chk-phone" class="input-field" placeholder="+91 98765 43210" value="${checkoutData.phone || ''}"></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Shipping Address</h2>
+          <div class="form-row">
+            <div class="input-group"><label>${required('First Name')}</label><input type="text" id="chk-firstname" class="input-field" value="${checkoutData.firstName || ''}"></div>
+            <div class="input-group"><label>${required('Last Name')}</label><input type="text" id="chk-lastname" class="input-field" value="${checkoutData.lastName || ''}"></div>
+          </div>
+          <div class="input-group"><label>Company (Optional)</label><input type="text" id="chk-company" class="input-field" value="${checkoutData.company || ''}"></div>
+          <div class="input-group"><label>${required('Address')}</label><input type="text" id="chk-address" class="input-field" value="${checkoutData.address || ''}"></div>
+          <div class="form-row">
+            <div class="input-group"><label>${required('City')}</label><input type="text" id="chk-city" class="input-field" value="${checkoutData.city || ''}"></div>
+            <div class="input-group"><label>${required('PIN Code')}</label><input type="text" id="chk-pin" class="input-field" value="${checkoutData.pin || ''}"></div>
+          </div>
+          <div class="input-group"><label>${required('State')}</label>
+            <select id="chk-state" class="input-field select-field">
+              <option value="" ${!checkoutData.state ? 'selected' : ''}>Select State</option>
+              <option value="Delhi" ${checkoutData.state === 'Delhi' ? 'selected' : ''}>Delhi</option>
+              <option value="Maharashtra" ${checkoutData.state === 'Maharashtra' ? 'selected' : ''}>Maharashtra</option>
+              <option value="Karnataka" ${checkoutData.state === 'Karnataka' ? 'selected' : ''}>Karnataka</option>
+              <option value="Tamil Nadu" ${checkoutData.state === 'Tamil Nadu' ? 'selected' : ''}>Tamil Nadu</option>
+              <option value="Telangana" ${checkoutData.state === 'Telangana' ? 'selected' : ''}>Telangana</option>
+              <option value="Gujarat" ${checkoutData.state === 'Gujarat' ? 'selected' : ''}>Gujarat</option>
+              <option value="Rajasthan" ${checkoutData.state === 'Rajasthan' ? 'selected' : ''}>Rajasthan</option>
+              <option value="Uttar Pradesh" ${checkoutData.state === 'Uttar Pradesh' ? 'selected' : ''}>Uttar Pradesh</option>
+              <option value="West Bengal" ${checkoutData.state === 'West Bengal' ? 'selected' : ''}>West Bengal</option>
+              <option value="Punjab" ${checkoutData.state === 'Punjab' ? 'selected' : ''}>Punjab</option>
+              <option value="Haryana" ${checkoutData.state === 'Haryana' ? 'selected' : ''}>Haryana</option>
+              <option value="Madhya Pradesh" ${checkoutData.state === 'Madhya Pradesh' ? 'selected' : ''}>Madhya Pradesh</option>
+              <option value="Bihar" ${checkoutData.state === 'Bihar' ? 'selected' : ''}>Bihar</option>
+              <option value="Odisha" ${checkoutData.state === 'Odisha' ? 'selected' : ''}>Odisha</option>
+              <option value="Kerala" ${checkoutData.state === 'Kerala' ? 'selected' : ''}>Kerala</option>
+              <option value="Assam" ${checkoutData.state === 'Assam' ? 'selected' : ''}>Assam</option>
+              <option value="Jharkhand" ${checkoutData.state === 'Jharkhand' ? 'selected' : ''}>Jharkhand</option>
+              <option value="Chhattisgarh" ${checkoutData.state === 'Chhattisgarh' ? 'selected' : ''}>Chhattisgarh</option>
+              <option value="Goa" ${checkoutData.state === 'Goa' ? 'selected' : ''}>Goa</option>
+              <option value="Uttarakhand" ${checkoutData.state === 'Uttarakhand' ? 'selected' : ''}>Uttarakhand</option>
+              <option value="Himachal Pradesh" ${checkoutData.state === 'Himachal Pradesh' ? 'selected' : ''}>Himachal Pradesh</option>
+              <option value="Other" ${checkoutData.state === 'Other' ? 'selected' : ''}>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Tax Information (Optional)</h2>
+          <div class="input-group"><label>GST Number</label><input type="text" id="chk-gst" class="input-field" placeholder="22AAAAA0000A1Z5" value="${checkoutData.gst || ''}"></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Additional Information</h2>
+          <div class="input-group"><textarea id="chk-additional-info" class="input-field textarea-field" rows="3" placeholder="Any special requests, delivery preferences, or notes for our team...">${checkoutData.additionalInfo || ''}</textarea></div>
+        </div>
+        <div class="checkout-form-group">
+          <h2>Attach your logo and text / pdf file here</h2>
+          <p class="checkout-logo-hint">Upload logo, text, or PDF files for printing on your products. Images are converted to JPG.</p>
+          <div class="checkout-logo-upload-area" id="logo-upload-area">
+            <span class="material-symbols-outlined checkout-logo-upload-icon">cloud_upload</span>
+            <span class="checkout-logo-upload-text">Drag &amp; drop files here or <label for="logo-file-input" class="checkout-logo-browse-link">browse files</label></span>
+            <input type="file" id="logo-file-input" accept="image/*,.pdf,.txt,.doc,.docx,application/pdf,text/plain" multiple hidden>
+          </div>
+          <div id="logo-previews" class="checkout-logo-previews"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);">
+          <a href="/cart" class="btn btn--ghost"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Return to cart</a>
+          <button class="btn btn--accent btn--lg" id="btn-save-proceed">Save and Proceed</button>
+        </div>
+      </div>
+    `;
 
+  // Step 2 — review box only (read-only) + payment notices + place order
   const reviewHtml = `
-    <div class="checkout-form-section"><div class="checkout-form-group"><h2>Review Your Information</h2><p style="color:var(--color-text-secondary);font-size:var(--fs-sm);margin-bottom:var(--space-4);">Please confirm your details below before placing the order.
-        </p><div class="checkout-review-card">${[
+    <div class="checkout-form-section">
+      <div class="checkout-form-group">
+        <h2>Review Your Information</h2>
+        <p style="color:var(--color-text-secondary);font-size:var(--fs-sm);margin-bottom:var(--space-4);">
+          Please confirm your details below before placing the order.
+        </p>
+        <div class="checkout-review-card">
+          ${[
             ['Name', `${checkoutData.firstName || ''} ${checkoutData.lastName || ''}`.trim()],
             ['Email', checkoutData.email],
             ['Phone', checkoutData.phone],
@@ -131,17 +253,65 @@ export async function renderCheckoutPage() {
             ['Additional Info', checkoutData.additionalInfo],
             ['Attachments', uploadedLogos.length ? uploadedLogos.map(l => l.name).join(', ') : ''],
           ].filter(([, v]) => v).map(([k, v]) => `
-            <div class="checkout-review-field"><span class="checkout-review-field__label">${k}</span><span class="checkout-review-field__value">${v}</span></div>`).join('')}
-        </div></div><!-- PDF copy inside colored cards (shipping / payment / no-pay) --><div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);"><span class="material-symbols-outlined checkout-notice__icon">campaign</span><div class="checkout-notice__body"><div class="checkout-notice__title">Please Note:</div><p>We are delivering goods PAN India by following options :</p><p class="checkout-notice__methods" style="color:#1a56db;">ROAD TRANSPORT / BUS CARGO / RAIL CARGO / AIR COURIER / PORTER IN DELHI NCR</p><p>You may mention any of them as per your choice.</p><p style="margin-top:var(--space-3);"><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by mentioning your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p><p class="checkout-notice__highlight">Cash on Delivery (COD) is not available on this order.</p></div></div><div class="checkout-notice checkout-notice--info" style="margin-top:var(--space-4);"><span class="material-symbols-outlined checkout-notice__icon">payments</span><div class="checkout-notice__body"><div class="checkout-notice__title">Payment Options:</div><p>You can use any following payment option to make advance or full payment for this order:</p><p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p><p class="checkout-notice__highlight">Please Note : Your order will not be shipped until we receive your payment.</p></div></div><div class="checkout-notice checkout-notice--important" style="margin-top:var(--space-4); margin-bottom:var(--space-6);"><span class="material-symbols-outlined checkout-notice__icon">block</span><div class="checkout-notice__body"><div class="checkout-notice__title">No need to make payment at this step !</div><p>No payment will be collected at checkout. Placing this order does not require any payment for now.</p><p>Our team will contact you shortly with the final total estimate (including packing &amp; shipping) and payment instructions.</p></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);"><button class="btn btn--ghost btn--lg" id="btn-edit-info"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Edit Info</button><button class="btn btn--accent btn--lg" id="btn-place-order">Place Order</button></div></div>`;
+            <div class="checkout-review-field">
+              <span class="checkout-review-field__label">${k}</span>
+              <span class="checkout-review-field__value">${v}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <!-- PDF copy inside colored cards (shipping / payment / no-pay) -->
+      <div class="checkout-notice checkout-notice--warning" style="margin-top:var(--space-6);">
+        <span class="material-symbols-outlined checkout-notice__icon">campaign</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">Please Note:</div>
+          <p>We are delivering goods PAN India by following options :</p>
+          <p class="checkout-notice__methods" style="color:#1a56db;">ROAD TRANSPORT / BUS CARGO / RAIL CARGO / AIR COURIER / PORTER IN DELHI NCR</p>
+          <p>You may mention any of them as per your choice.</p>
+          <p style="margin-top:var(--space-3);"><strong>SHIPPING IS NOT FREE.</strong> Please continue with your order by mentioning your preferred shipping choice, we will get back to you soon to give you the exact amount for shipping according to your location and shipping choice.</p>
+          <p class="checkout-notice__highlight">Cash on Delivery (COD) is not available on this order.</p>
+        </div>
+      </div>
+      <div class="checkout-notice checkout-notice--info" style="margin-top:var(--space-4);">
+        <span class="material-symbols-outlined checkout-notice__icon">payments</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">Payment Options:</div>
+          <p>You can use any following payment option to make advance or full payment for this order:</p>
+          <p class="checkout-notice__methods">Debit Card / Credit Card / Online Bank Transfer / NEFT / RTGS / IMPS / Cheque</p>
+          <p class="checkout-notice__highlight">Please Note : Your order will not be shipped until we receive your payment.</p>
+        </div>
+      </div>
+      <div class="checkout-notice checkout-notice--important" style="margin-top:var(--space-4); margin-bottom:var(--space-6);">
+        <span class="material-symbols-outlined checkout-notice__icon">block</span>
+        <div class="checkout-notice__body">
+          <div class="checkout-notice__title">No need to make payment at this step !</div>
+          <p>No payment will be collected at checkout. Placing this order does not require any payment for now.</p>
+          <p>Our team will contact you shortly with the final total estimate (including packing &amp; shipping) and payment instructions.</p>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-4);gap:var(--space-3);">
+        <button class="btn btn--ghost btn--lg" id="btn-edit-info"><span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span> Edit Info</button>
+        <button class="btn btn--accent btn--lg" id="btn-place-order">Place Order</button>
+      </div>
+    </div>
+  `;
 
   const mainContent = currentStep === 'review' ? reviewHtml : formHtml;
 
   app.innerHTML = `
-    <div class="page-content"><div class="container section"><a href="/" style="font-family:var(--font-family-heading);font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--color-text-primary);display:block;margin-bottom:var(--space-6);">New Year Diaries</a>${stepperHtml}
-        <div class="checkout-layout">${mainContent}
+    <div class="page-content">
+      <div class="container section">
+        <a href="/" style="font-family:var(--font-family-heading);font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--color-text-primary);display:block;margin-bottom:var(--space-6);">New Year Diaries</a>
+        ${stepperHtml}
+        <div class="checkout-layout">
+          ${mainContent}
           ${orderSummaryHtml}
-        </div></div></div>`;
+        </div>
+      </div>
+    </div>
+  `;
 
+  // Quantity handlers
   function recalcCheckout() {
     const cart = getCart();
     let newSub = 0;
@@ -200,6 +370,7 @@ export async function renderCheckoutPage() {
     });
   });
 
+  // ---- Logo upload handling ----
   function convertToJpg(file, maxWidth = 1200) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -233,8 +404,13 @@ export async function renderCheckoutPage() {
         ? `<img src="${logo.dataUrl}" alt="${logo.name}">`
         : `<span class="material-symbols-outlined" style="font-size:28px;color:var(--color-primary);">description</span>`;
       return `
-      <div class="checkout-logo-thumb" data-index="${i}">${preview}
-        <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove"><span class="material-symbols-outlined" style="font-size:14px;">close</span></button><span class="checkout-logo-filename">${logo.name}</span></div>`;
+      <div class="checkout-logo-thumb" data-index="${i}">
+        ${preview}
+        <button type="button" class="checkout-logo-remove" data-index="${i}" title="Remove">
+          <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+        </button>
+        <span class="checkout-logo-filename">${logo.name}</span>
+      </div>`;
     }).join('');
     container.querySelectorAll('.checkout-logo-remove').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -253,6 +429,8 @@ export async function renderCheckoutPage() {
     });
   }
 
+  // H2.5 fix: max 10 MB per file, 20 MB total — prevents tab crash on
+  // 500MB uploads and the resulting 20MB JSONB row from choking Supabase.
   const MAX_FILE_BYTES = 10 * 1024 * 1024;
   const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
   async function handleLogoFiles(files) {
@@ -298,11 +476,14 @@ export async function renderCheckoutPage() {
     persistLogos();
   }
 
+  // M1 fix: persist uploaded logos in sessionStorage so a refresh or
+  // accidental F5 doesn't wipe 5 minutes of work.
   const LOGO_STORAGE_KEY = '__nyd_checkout_logos';
   function persistLogos() {
     try { sessionStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(uploadedLogos)); } catch { /* quota */ }
   }
   function restoreLogos() {
+    // Only restore when module list is empty — re-renders must not double-append
     if (uploadedLogos.length) return false;
     try {
       const raw = sessionStorage.getItem(LOGO_STORAGE_KEY);
@@ -342,11 +523,15 @@ export async function renderCheckoutPage() {
     });
   }
 
+  // Render any previously uploaded logos (when step 1 is re-rendered, or
+  // when logos were persisted from a previous session/page load).
   renderLogoPreviews();
   if (restored && uploadedLogos.length) {
     showToast(`Restored ${uploadedLogos.length} previously uploaded file(s)`);
   }
 
+  // Step 1 → Step 2: validate the form, persist the data, advance to review.
+  // ponytail: validation + collection shared with submit via collectCheckoutData().
   function collectCheckoutData() {
     const email = document.getElementById('chk-email')?.value.trim();
     const phone = document.getElementById('chk-phone')?.value.trim();
@@ -388,12 +573,14 @@ export async function renderCheckoutPage() {
     window.scrollTo(0, 0);
   });
 
+  // Step 2 → Step 1: edit (all fields already in sessionStorage)
   document.getElementById('btn-edit-info')?.addEventListener('click', () => {
     setCheckoutStep('shipping');
     renderCheckoutPage();
     window.scrollTo(0, 0);
   });
 
+  // Place Order (step 2) — uses data saved on Save and Proceed
   document.getElementById('btn-place-order')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-place-order');
     const data = getCheckoutData();
@@ -410,8 +597,11 @@ export async function renderCheckoutPage() {
       return;
     }
 
+    // ponytail: no payment UI now → default to bank transfer (offline confirmation).
     const paymentMethod = 'bank';
 
+    // Email/preview line items use client display prices; DB totals come from
+    // place_order RPC (server-side product prices — H2.3).
     const displayItems = cartItems.map(item => {
       const rawImg = item.product.image || item.product.images?.[0] || null;
       return {
@@ -430,6 +620,8 @@ export async function renderCheckoutPage() {
     if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
     showToast('Processing your order…', 'success');
 
+    // H2.1: single atomic RPC (order + items). H2.3: server recomputes prices.
+    // Fallback: dual insert if RPC not deployed yet.
     let orderNumber = null;
     let orderId = null;
     let serverSubtotal = Number(subtotal.toFixed(2));
@@ -437,6 +629,8 @@ export async function renderCheckoutPage() {
     let serverShipping = Number(shipping.toFixed(2));
     let serverTotal = Number((subtotal + subtotal * gstRate + (shipping > 0 ? shipping : 0)).toFixed(2));
 
+    // M3 mitigation: store only file names + sizes in DB (not multi-MB base64).
+    // Full binaries still go out on the order email attachments.
     const logoPayload = uploadedLogos.length
       ? uploadedLogos.map(l => ({
           name: l.name,
@@ -482,6 +676,7 @@ export async function renderCheckoutPage() {
       serverShipping = Number(rpcData.shipping);
       serverTotal = Number(rpcData.total);
     } else {
+      // RPC missing / failed → legacy dual insert (still better than failing hard)
       console.warn('[checkout] place_order RPC unavailable, using fallback insert', rpcErr);
 
       const _now = new Date();
@@ -580,6 +775,7 @@ export async function renderCheckoutPage() {
         }))
       );
       if (itemsErr) {
+        // H2.1 partial: order without items — surface error, keep order for support
         console.error('Order items insert failed:', itemsErr);
         showToast('Order saved but items failed to save. Contact support with your order number.', 'error');
       }
@@ -624,6 +820,7 @@ export async function renderCheckoutPage() {
       tAndCAgreed: true,
     };
 
+    // H2.2: wait for email before navigating (with soft timeout so user isn't stuck)
     if (btn) btn.textContent = 'Sending confirmation…';
     let emailOk = false;
     let emailWarn = '';
@@ -641,6 +838,7 @@ export async function renderCheckoutPage() {
       emailOk = false;
     }
 
+    // H2.4: success page uses session snapshot only — no anon order SELECT by number
     const orderSnapshot = {
       ...emailPayload,
       orderId,

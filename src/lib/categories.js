@@ -1,5 +1,8 @@
 import { supabase } from './supabase.js';
 
+// Fallback map — used ONLY if the category_groups table doesn't exist yet
+// (i.e. before the user applies the migration). Once the migration is in,
+// this map is ignored and groups come from the database.
 const CATEGORY_GROUPS_FALLBACK = {
   'Corporate Gift Sets': [
     'corporate-gift-sets', 'bottles-gift-sets', 'diary-with-pen-gift-set',
@@ -30,6 +33,9 @@ const CATEGORY_GROUPS_FALLBACK = {
   ],
 };
 
+// ============== CACHE ==============
+// Cached categories (with embedded group) + cached group list. Both invalidate
+// together when bustCategoriesCache() is called.
 let _catCache = null;
 let _catCacheAt = 0;
 const CACHE_TTL_MS = 60_000; // 60s — admin changes propagate within a minute
@@ -41,6 +47,8 @@ export function bustCategoriesCache() {
   try {
     localStorage.removeItem(CAT_STORAGE_KEY);
   } catch (e) {}
+  // H1.9 / HIGH-2 fix: dispatch the event + clear page cache so the
+  // header mega-menu and any cached page re-render with the new categories.
   try {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('nyd-categories-updated'));
@@ -49,6 +57,9 @@ export function bustCategoriesCache() {
   } catch (e) { /* ignore */ }
 }
 
+// Fetch all categories WITH their group resolved. Falls back to the hardcoded
+// map if the category_groups table doesn't exist yet (e.g. before the
+// migration is applied).
 export async function fetchCategories() {
   if (_catCache && Date.now() - _catCacheAt < CACHE_TTL_MS) return _catCache;
 
@@ -85,6 +96,8 @@ async function fetchCategoriesFresh() {
     if (error) throw error;
 
     let groups = null;
+    // Best-effort fetch of the groups table. If it doesn't exist (pre-migration),
+    // silently fall back to the hardcoded map.
     try {
       const { data: g, error: gErr } = await supabase
         .from('category_groups')
@@ -138,7 +151,8 @@ async function fetchCategoriesFresh() {
 
     if (missingGroupIdUpdates.length > 0) {
       Promise.all(
-        missingGroupIdUpdates.map(u =>supabase.from('categories').update({ group_id: u.group_id }).eq('id', u.id)
+        missingGroupIdUpdates.map(u =>
+          supabase.from('categories').update({ group_id: u.group_id }).eq('id', u.id)
         )
       ).catch(() => {});
     }
@@ -179,7 +193,9 @@ async function fetchCategoriesBackground() {
   }
 }
 
+// Fetch just the groups list (DB-backed with fallback).
 export async function fetchCategoryGroups() {
+  // Reuse the same cache as fetchCategories by calling it (cheap on cache hit)
   await fetchCategories();
 
   try {
@@ -190,6 +206,7 @@ export async function fetchCategoryGroups() {
     if (!error && data) return data;
   } catch (_) { /* table may not exist yet */ }
 
+  // Fallback: derive from the hardcoded map
   return Object.keys(CATEGORY_GROUPS_FALLBACK).map((name, i) => ({
     id: null,
     name,
@@ -197,6 +214,7 @@ export async function fetchCategoryGroups() {
   }));
 }
 
+// Group categories by their group_name. Returns {groupName: [cats]}.
 export function getCategoriesByGroup(categories) {
   const grouped = {};
   for (const c of categories || []) {
@@ -207,6 +225,8 @@ export function getCategoriesByGroup(categories) {
   return grouped;
 }
 
+// Legacy export — kept for ShopPage + any other consumer that needs the
+// groupName -> [slug] map. Returns a plain object.
 export function getGroupSlugsMap(categories) {
   const grouped = getCategoriesByGroup(categories);
   const out = {};
@@ -216,11 +236,15 @@ export function getGroupSlugsMap(categories) {
   return out;
 }
 
+// For ShopPage's `/shop?group=<name>` filter — synchronous, returns the slugs
+// for a given group from the cached category list. The ShopPage awaits a
+// loadHeaderCategories() call first so the cache is warm.
 export function getCategorySlugsByGroupName(groupName, categories) {
   const grouped = getCategoriesByGroup(categories || []);
   return (grouped[groupName] || []).map(c => c.slug);
 }
 
+// Seed categories on first run if the table is empty.
 let _seedingPromise = null;
 export async function seedCategoriesIfEmpty() {
   if (localStorage.getItem('__nyd_categories_seeded') === 'true') return;
@@ -234,6 +258,7 @@ export async function seedCategoriesIfEmpty() {
         return;
       }
 
+      // 1. Seed or retrieve groups
       const { data: dbGroups, error: gError } = await supabase
         .from('category_groups')
         .select('id, name');
@@ -245,6 +270,7 @@ export async function seedCategoriesIfEmpty() {
         }
       }
 
+      // If no groups exist in DB, seed them
       if (groupByName.size === 0) {
         const groupPayload = Object.keys(CATEGORY_GROUPS_FALLBACK).map((name, idx) => ({
           name,
@@ -262,6 +288,7 @@ export async function seedCategoriesIfEmpty() {
         }
       }
 
+      // 2. Build flat list of unique categories, resolving group_id
       const uniqueCategories = new Map();
       let sortOrder = 1;
       for (const [groupName, slugs] of Object.entries(CATEGORY_GROUPS_FALLBACK)) {
@@ -279,6 +306,7 @@ export async function seedCategoriesIfEmpty() {
         }
       }
 
+      // 3. Batch insert unique categories
       if (uniqueCategories.size > 0) {
         const payload = Array.from(uniqueCategories.values());
         const { error } = await supabase.from('categories').insert(payload);
@@ -294,8 +322,13 @@ export async function seedCategoriesIfEmpty() {
   return _seedingPromise;
 }
 
+// Backwards-compat export so existing imports (e.g. ShopPage's static fallback)
+// don't crash. Returns the hardcoded map directly — for SHOP FILTERING only.
+// Real menu/header code should use getCategorySlugsByGroupName() against a
+// fresh fetch.
 export const CATEGORY_GROUPS = CATEGORY_GROUPS_FALLBACK;
 
+// Look up the group(s) a category slug belongs to. Sync, uses cache if warm.
 export function getCategoryGroupsForSlug(slug, categories) {
   const out = [];
   for (const c of categories || []) {

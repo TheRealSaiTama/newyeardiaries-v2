@@ -49,6 +49,8 @@ export async function renderShopPage() {
   const searchQ = params.get('q');
   const pageParam = parseInt(params.get('page')) || 1;
 
+  // Resolve title/breadcrumb synchronously so the skeleton renders with the
+  // right heading from the very first paint.
   let pageTitle = 'The 2027 Diary Collection';
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
   let breadcrumbLabel = 'All Diaries';
@@ -65,26 +67,68 @@ export async function renderShopPage() {
     breadcrumbLabel = groupName;
   }
 
+  // ===== Step 1: paint the page shell + skeleton grid SYNCHRONOUSLY =====
+  // This prevents the white-screen gap before Supabase returns products.
   const app = document.getElementById('app');
   app.innerHTML = `
-    <div class="page-content"><div class="container section">${renderBreadcrumbs([
+    <div class="page-content">
+      <div class="container section">
+        ${renderBreadcrumbs([
           { label: 'Home', path: '/' },
           { label: 'Collections', path: '/shop' },
           { label: breadcrumbLabel },
         ])}
-        <div class="shop-header"><div><h1>${pageTitle}</h1>${pageDesc ? `<p>${pageDesc}</p>` : ''}
-          </div><div class="shop-controls"><button class="btn btn--secondary btn--sm filter-toggle-mobile" id="filter-toggle"><span class="material-symbols-outlined" style="font-size:16px;">tune</span>Filters
-            </button><select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select" aria-label="Sort products"><option value="featured">Sort by: Featured</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="newest">Newest First</option></select></div></div><div class="shop-layout">${renderFilterSidebar()}
-          <div class="shop-main"><div class="product-grid" id="product-grid">${renderProductCardSkeleton(8)}
-            </div></div></div></div></div><button id="go-top-btn" class="go-top-btn" aria-label="Go to top"><span class="material-symbols-outlined">keyboard_arrow_up</span></button>`;
+        <div class="shop-header">
+          <div>
+            <h1>${pageTitle}</h1>
+            ${pageDesc ? `<p>${pageDesc}</p>` : ''}
+          </div>
+          <div class="shop-controls">
+            <button class="btn btn--secondary btn--sm filter-toggle-mobile" id="filter-toggle">
+              <span class="material-symbols-outlined" style="font-size:16px;">tune</span>
+              Filters
+            </button>
+            <select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select" aria-label="Sort products">
+              <option value="featured">Sort by: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="newest">Newest First</option>
+            </select>
+          </div>
+        </div>
+        <div class="shop-layout">
+          ${renderFilterSidebar()}
+          <div class="shop-main">
+            <div class="product-grid" id="product-grid">
+              ${renderProductCardSkeleton(8)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button id="go-top-btn" class="go-top-btn" aria-label="Go to top">
+      <span class="material-symbols-outlined">keyboard_arrow_up</span>
+    </button>
+  `;
   initFilterEvents();
   initGoTopButton();
 
+  // ===== Step 2: fetch products and re-render the grid in place =====
+  // Warm the categories cache so the group filter can resolve slugs from
+  // the DB (admin changes propagate within the cache TTL).
   const allCategories = await fetchCategories();
+  // Expose for downstream consumers (mega menu in Header re-uses the same).
   window.__cachedCategories = allCategories;
 
+  // H3.5 fix: use the 30s product cache instead of bypassing it on every
+  // render. The cache is invalidated on `nyd-products-updated` after admin
+  // edits, so deleted products still drop out within a few seconds.
   const allProducts = await getProducts();
 
+  // A product matches a category slug if it's the primary category OR it appears
+  // in the product_categories junction for that slug. The junction lets us
+  // correctly surface products tagged in subcategories when a parent group is
+  // selected from the navbar.
   function productInCategory(p, slug) {
     if (!slug) return false;
     const s = slug.toLowerCase();
@@ -100,7 +144,8 @@ export async function renderShopPage() {
   let products;
   if (searchQ) {
     const q = searchQ.toLowerCase();
-    products = allProducts.filter(p =>p.name.toLowerCase().includes(q) ||
+    products = allProducts.filter(p =>
+      p.name.toLowerCase().includes(q) ||
       (p.description || '').toLowerCase().includes(q) ||
       (p.shortDescription || '').toLowerCase().includes(q) ||
       (p.category || '').toLowerCase().includes(q) ||
@@ -111,6 +156,9 @@ export async function renderShopPage() {
   } else if (catSlug) {
     products = allProducts.filter(p => productInCategory(p, catSlug));
   } else if (groupName) {
+    // Resolve the group's slugs from the DB cache (warmed by Header on boot,
+    // refreshed by the post-load background fetcher). Falls back to the
+    // hardcoded map only if the cache is empty AND the group is known.
     let slugs = getCategorySlugsByGroupName(groupName);
     if (!slugs.length && CATEGORY_GROUPS[groupName]) slugs = CATEGORY_GROUPS[groupName];
     products = slugs.length
@@ -120,9 +168,12 @@ export async function renderShopPage() {
     products = allProducts;
   }
 
+  // Compute per-category featured slugs once, used for both initial render
+  // and the sort/filter event handlers.
   const featuredSlugs = resolveFeaturedSlugs(products, { cat: catSlug, group: groupName, _groupSlugs: (groupName ? (getCategorySlugsByGroupName(groupName).length ? getCategorySlugsByGroupName(groupName) : (CATEGORY_GROUPS[groupName] || [])) : []) });
   const usePerCategoryFeatured = featuredSlugs.length > 0;
 
+  // Apply default sorting (Featured is the default option) before slicing
   if (usePerCategoryFeatured) {
     products = products.slice().sort(categoryFeaturedSort(featuredSlugs));
   } else {
@@ -134,15 +185,21 @@ export async function renderShopPage() {
   const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
 
+  // In-place update: replace skeleton with real grid, refresh pagination.
   const grid = document.getElementById('product-grid');
   if (grid) {
     grid.innerHTML = pageProducts.length > 0
       ? pageProducts.map(p => renderProductCard(p)).join('')
       : `
-        <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p></div>`;
+        <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
+          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
+          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
+        </div>
+      `;
     initProductCardSlideshows(grid);
   }
 
+  // Replace pagination block (or insert it if it doesn't exist yet).
   const mainEl = document.querySelector('.shop-main');
   const existingPag = mainEl?.querySelector('.shop-pagination');
   if (existingPag) existingPag.remove();
@@ -150,14 +207,22 @@ export async function renderShopPage() {
     const pagDiv = document.createElement('div');
     pagDiv.className = 'shop-pagination';
     pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page"><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page"><span class="material-symbols-outlined">chevron_right</span></button>`;
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      ${renderPaginationButtons(currentPage, totalPages)}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    `;
     mainEl.appendChild(pagDiv);
   }
 
   initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs);
   initGoTopButton();
 
+  // Cache the rendered HTML for this filter state so re-navigating to
+  // the same /shop URL is instant. The router re-runs __reinitPage.
   try {
     const appEl = document.getElementById('app');
     const html = appEl ? appEl.innerHTML : '';
@@ -170,12 +235,15 @@ export async function renderShopPage() {
   } catch { /* quota or disabled — ignore */ }
 }
 
+// Re-initialise the shop page's interactive bits after a cache-paint.
 function reinitShopPage() {
   try { initFilterEvents(); } catch (e) { console.warn('[shop] filter events init failed:', e); }
   try { initGoTopButton(); } catch (e) { console.warn('[shop] go-top init failed:', e); }
   try { initProductCardSlideshows(); } catch (e) { console.warn('[shop] slideshow init failed:', e); }
 }
 
+// Hook for the router: dispatch by pathname so the homepage and shop can
+// each provide their own reinit without clobbering each other.
 const existingReinit = window.__reinitPage;
 window.__reinitPage = function reinitPageDispatch() {
   const path = window.location.pathname || '/';
@@ -187,6 +255,9 @@ window.__reinitPage = function reinitPageDispatch() {
 };
 window.__reinitShopPage = reinitShopPage;
 
+// In-place data refresh for cache-paint navigations. Re-fetches products and
+// swaps the grid + pagination in place — never re-paints the shell, so the
+// user never sees a skeleton flash after the instant cache paint.
 window.__nydCacheRefresh = async function nydCacheRefreshShop() {
   if (!window.location.pathname.startsWith('/shop')) return;
   const grid = document.getElementById('product-grid');
@@ -221,6 +292,7 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
     } else {
       products = allProducts;
     }
+    // Apply sorting before pagination
     const sortSelect = document.getElementById('sort-select');
     const sortVal = sortSelect ? sortSelect.value : 'Sort by: Featured';
 
@@ -258,13 +330,17 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
       const pagDiv = document.createElement('div');
       pagDiv.className = 'shop-pagination';
       pagDiv.innerHTML = `
-        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
-        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
+        ${renderPaginationButtons(currentPage, totalPages)}
+        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
+      `;
       mainEl.appendChild(pagDiv);
     }
   } catch (e) { console.warn('[shop] in-place refresh failed:', e); }
 };
 
+// Go-to-top button wiring, factored out so the page works whether the button
+// is in the initial skeleton render or only added after products resolve.
 function initGoTopButton() {
   const goTopBtn = document.getElementById('go-top-btn');
   if (!goTopBtn || goTopBtn.dataset.bound === '1') return;
@@ -284,6 +360,12 @@ function buildPageUrl(page) {
   return `/shop?${params.toString()}`;
 }
 
+
+/**
+ * Per-category "Featured" sort. The first matching slug (from the page's
+ * category param or the active group) wins. A to Z diary collection always
+ * sorts alphabetically regardless of sort_order.
+ */
 function categoryFeaturedSort(slugs) {
   const isAZ = (slugs || []).some(s => s === 'a-to-z-diary-collection');
   if (isAZ) {
@@ -326,6 +408,7 @@ function getActiveFilters() {
 }
 
 function keywordMatch(product, keyword, field) {
+  // Prefer exact field match for material/size filters (avoids "A5" matching random text)
   const kw = keyword.toLowerCase();
   if (field === 'material') {
     return String(product.material || '').toLowerCase().includes(kw)
@@ -348,11 +431,16 @@ function keywordMatch(product, keyword, field) {
   return searchable.includes(kw);
 }
 
+
 function resolveFeaturedSlugs(products, params) {
+  // Picks the slugs to use for per-category featured sort.
+  // Priority: ?cat= override > ?group= override > first product's categorySlugs.
   if (params && params.cat) return [params.cat];
   if (params && params.group) {
+    // The page may already have the slugs from the group lookup
     return (params._groupSlugs) || [];
   }
+  // Fallback: use any product's primary categorySlugs (rare)
   return [];
 }
 function applyFilters(allProducts) {
@@ -402,6 +490,9 @@ function initShopEvents(products, currentPage, totalPages, searchQ, usePerCatego
     });
   });
 
+  // H2.10 fix: use in-app navigation (navigateTo) instead of full page reload
+  // (window.location.href) so the user doesn't lose scroll position and the
+  // loader doesn't flash on every page change.
   document.getElementById('pag-prev')?.addEventListener('click', () => {
     if (currentPage > 1) navigateTo(buildPageUrl(currentPage - 1));
   });
@@ -433,7 +524,11 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
 
   if (pageProducts.length === 0) {
     grid.innerHTML = `
-      <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p></div>`;
+      <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
+        <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
+        <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p>
+      </div>
+    `;
     return;
   }
 
@@ -448,8 +543,10 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
     const pagDiv = document.createElement('div');
     pagDiv.className = 'shop-pagination';
     pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
+      ${renderPaginationButtons(currentPage, totalPages)}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
+    `;
     grid.after(pagDiv);
 
     document.getElementById('pag-prev')?.addEventListener('click', () => {
