@@ -3253,16 +3253,26 @@ async function renderHomepageSection(container) {
 
   document.querySelectorAll('.edit-slider-section-btn').forEach(btn => {
     btn.onclick = () => {
-      const id = btn.dataset.id;
-      openSliderSectionModal(container, sliderSections.find(s => s.id === id));
+      try {
+        const id = btn.dataset.id;
+        openSliderSectionModal(container, sliderSections.find(s => s.id === id), primaryCats);
+      } catch (err) {
+        console.error('Edit slider failed:', err);
+        showToast('Edit failed: ' + (err.message || 'unknown'), 'error');
+      }
     };
   });
   document.querySelectorAll('.pick-slider-products-btn').forEach(btn => {
     btn.onclick = () => {
-      const id = btn.dataset.id;
-      const sec = sliderSections.find(s => s.id === id);
-      const currentIds = (sliderItems || []).filter(it => it.section_id === id).map(it => it.product_id);
-      openSliderPickerModal(container, sec, currentIds);
+      try {
+        const id = btn.dataset.id;
+        const sec = sliderSections.find(s => s.id === id);
+        const currentIds = (sliderItems || []).filter(it => it.section_id === id).map(it => it.product_id);
+        openSliderPickerModal(container, sec, currentIds);
+      } catch (err) {
+        console.error('Open picker failed:', err);
+        showToast('Open failed: ' + (err.message || 'unknown'), 'error');
+      }
     };
   });
 
@@ -3369,7 +3379,7 @@ function openTrustBadgeModal(container, badge, allBadges) {
   };
 }
 
-function openSliderSectionModal(container, section) {
+function openSliderSectionModal(container, section, primaryCats) {
   const isEdit = !!section;
   // Build category <option>s from the same primaryCats list the page already
   // fetched. Sorted by name for stable order.
