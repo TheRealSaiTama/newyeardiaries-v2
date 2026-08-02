@@ -80,28 +80,8 @@ export function initFaqChatbot() {
   const el = document.createElement('div');
   el.id = 'faq-chatbot';
   el.innerHTML = `
-    <button class="faq-chatbot-toggle" id="faq-chatbot-toggle" aria-label="Chat with us">
-      <span class="material-symbols-outlined">chat</span>
-    </button>
-    <div class="faq-chatbot-window" id="faq-chatbot-window">
-      <div class="faq-chatbot-header">
-        <span>NYD Support</span>
-        <button class="faq-chatbot-close" id="faq-chatbot-close" aria-label="Close">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      <div class="faq-chatbot-body" id="faq-chatbot-body">
-        <div class="faq-chatbot-msg bot">Hi! Ask me anything or pick a question below:</div>
-        ${FAQS.map((f, i) => `<button class="faq-chatbot-q" data-idx="${i}">${f.q}</button>`).join('')}
-      </div>
-      <form class="faq-chatbot-input" id="faq-chatbot-form">
-        <input type="text" id="faq-chatbot-text" placeholder="Type your question..." autocomplete="off" />
-        <button type="submit" aria-label="Send">
-          <span class="material-symbols-outlined">send</span>
-        </button>
-      </form>
-    </div>
-  `;
+    <button class="faq-chatbot-toggle" id="faq-chatbot-toggle" aria-label="Chat with us"><span class="material-symbols-outlined">chat</span></button><div class="faq-chatbot-window" id="faq-chatbot-window"><div class="faq-chatbot-header"><span>NYD Support</span><button class="faq-chatbot-close" id="faq-chatbot-close" aria-label="Close"><span class="material-symbols-outlined">close</span></button></div><div class="faq-chatbot-body" id="faq-chatbot-body"><div class="faq-chatbot-msg bot">Hi! Ask me anything or pick a question below:</div>${FAQS.map((f, i) => `<button class="faq-chatbot-q" data-idx="${i}">${f.q}</button>`).join('')}
+      </div><form class="faq-chatbot-input" id="faq-chatbot-form"><input type="text" id="faq-chatbot-text" placeholder="Type your question..." autocomplete="off" /><button type="submit" aria-label="Send"><span class="material-symbols-outlined">send</span></button></form></div>`;
   document.body.appendChild(el);
 
   const toggle = document.getElementById('faq-chatbot-toggle');

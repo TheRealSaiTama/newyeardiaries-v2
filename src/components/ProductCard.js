@@ -33,23 +33,13 @@ export function renderProductCard(product) {
   const outOfStock = !product.inStock;
 
   return `
-    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''} draggable="false">
-      <div class="ap-product-image-wrapper">
-        ${badge}
+    <a href="/${product.slug || product.id}" class="ap-product-card" data-product-id="${product.id}" ${hasMultiple ? 'data-has-slideshow="true"' : ''} draggable="false"><div class="ap-product-image-wrapper">${badge}
         ${img}
         ${outOfStock ? '<div class="ap-sold-out-overlay"><span>Sold Out</span></div>' : ''}
-      </div>
-      <div class="ap-product-body">
-        <div class="ap-product-price">
-          ${product.originalPrice && product.originalPrice > product.price
-            ? `<span class="ap-price-sale">â‚¹${product.originalPrice}</span>`
+      </div><div class="ap-product-body"><div class="ap-product-price">${product.originalPrice && product.originalPrice > product.price
+            ? `<span class="ap-price-sale">₹${product.originalPrice}</span>`
             : ''}
-          <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">â‚¹${product.price}</span>
-        </div>
-        <h3 class="ap-product-title">${product.name || product.title}</h3>
-      </div>
-    </a>
-  `;
+          <span class="ap-price-current ${product.originalPrice && product.originalPrice > product.price ? 'ap-price--discounted' : ''}">₹${product.price}</span></div><h3 class="ap-product-title">${product.name || product.title}</h3></div></a>`;
 }
 
 export function renderProductGrid(products) {

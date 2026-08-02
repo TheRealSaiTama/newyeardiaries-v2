@@ -18,7 +18,7 @@ function normalize(p) {
     pages: p.pages,
     price: Number(p.price) || 0,
     originalPrice: Number(p.original_price) || 0,
-    currency: 'â‚¹',
+    currency: '₹',
     sku: p.sku || '',
     badge: p.badge || '',
     description: p.description || '',
@@ -167,8 +167,7 @@ async function fetchProductsBackground() {
   if (_isFetchingProductsBackground) return;
   _isFetchingProductsBackground = true;
   try {
-    const fingerprint = (list) => (list || []).map(p =>
-      `${p.id}|${p.slug}|${p.price}|${p.inStock}|${(p.images || []).length}`
+    const fingerprint = (list) => (list || []).map(p =>`${p.id}|${p.slug}|${p.price}|${p.inStock}|${(p.images || []).length}`
     ).join(';');
     const oldFp = fingerprint(_cache);
     const fresh = await fetchProductsFresh();
@@ -260,8 +259,7 @@ export async function getProductsByCategory(categorySlug) {
 
   const isAZ = cats.slug === 'a-to-z-diary-collection';
   if (isAZ) {
-    normalized.sort((a, b) =>
-      (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())
+    normalized.sort((a, b) =>(a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())
     );
   } else {
     normalized.sort((a, b) => {
@@ -277,7 +275,7 @@ export async function getProductsByCategory(categorySlug) {
   return normalized;
 }
 
-export function formatPrice(price, currency = 'â‚¹') {
+export function formatPrice(price, currency = '₹') {
   return `${currency}${price.toLocaleString('en-IN')}`;
 }
 
@@ -311,10 +309,10 @@ export const filters = {
   material: ['Leather', 'PU Leather', 'Vegan Leather', 'Linen', 'Hardbound'],
   size: ['A4', 'A5', 'B5'],
   priceRange: [
-    { label: 'Under â‚¹100', min: 0, max: 100 },
-    { label: 'â‚¹100 â€“ â‚¹300', min: 100, max: 300 },
-    { label: 'â‚¹300 â€“ â‚¹500', min: 300, max: 500 },
-    { label: 'â‚¹500 â€“ â‚¹1,000', min: 500, max: 1000 },
-    { label: 'â‚¹1,000 â€“ â‚¹2,000', min: 1000, max: 2000 },
+    { label: 'Under ₹100', min: 0, max: 100 },
+    { label: '₹100 – ₹300', min: 100, max: 300 },
+    { label: '₹300 – ₹500', min: 300, max: 500 },
+    { label: '₹500 – ₹1,000', min: 500, max: 1000 },
+    { label: '₹1,000 – ₹2,000', min: 1000, max: 2000 },
   ],
 };

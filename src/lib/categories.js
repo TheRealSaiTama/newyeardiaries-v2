@@ -32,7 +32,7 @@ const CATEGORY_GROUPS_FALLBACK = {
 
 let _catCache = null;
 let _catCacheAt = 0;
-const CACHE_TTL_MS = 60_000; // 60s â€” admin changes propagate within a minute
+const CACHE_TTL_MS = 60_000; // 60s — admin changes propagate within a minute
 const CAT_STORAGE_KEY = '__nyd_categories_cache';
 
 export function bustCategoriesCache() {
@@ -138,8 +138,7 @@ async function fetchCategoriesFresh() {
 
     if (missingGroupIdUpdates.length > 0) {
       Promise.all(
-        missingGroupIdUpdates.map(u =>
-          supabase.from('categories').update({ group_id: u.group_id }).eq('id', u.id)
+        missingGroupIdUpdates.map(u =>supabase.from('categories').update({ group_id: u.group_id }).eq('id', u.id)
         )
       ).catch(() => {});
     }

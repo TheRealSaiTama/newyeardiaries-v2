@@ -47,114 +47,45 @@ export function renderHeader(content) {
   const firstCats = groupedCats[firstGroup] || [];
 
   return `
-    <div class="announcement-bar" id="announcement-bar">
-      ${annItems.map(item => item.link
+    <div class="announcement-bar" id="announcement-bar">${annItems.map(item => item.link
         ? `<a href="${item.link}">${item.text}</a>`
         : `<span>${item.text}</span>`
       ).join('<span class="ann-divider">|</span>')}
-    </div>
-    <header class="site-header" id="site-header">
-      <div class="header-inner">
-        <a href="/" class="header-logo" aria-label="New Year Diaries Home">
-          <img src="/logo-big.jpg" alt="New Year Diaries" class="logo-img" />
-        </a>
-        <nav class="header-nav" aria-label="Main navigation">
-          <div class="nav-explore-wrapper" id="nav-explore-wrapper">
-            <button class="nav-explore-btn" id="nav-explore-btn">
-              All Categories
-              <span class="material-symbols-outlined" style="font-size:16px;">expand_more</span>
-            </button>
-            <div class="explore-mega-menu" id="explore-mega-menu">
-              <div class="explore-mega-inner">
-                <div class="explore-mega-sidebar">
-                  ${exploreGroups.map((groupName, i) => {
+    </div><header class="site-header" id="site-header"><div class="header-inner"><a href="/" class="header-logo" aria-label="New Year Diaries Home"><img src="/logo-big.jpg" alt="New Year Diaries" class="logo-img" /></a><nav class="header-nav" aria-label="Main navigation"><div class="nav-explore-wrapper" id="nav-explore-wrapper"><button class="nav-explore-btn" id="nav-explore-btn">All Categories
+              <span class="material-symbols-outlined" style="font-size:16px;">expand_more</span></button><div class="explore-mega-menu" id="explore-mega-menu"><div class="explore-mega-inner"><div class="explore-mega-sidebar">${exploreGroups.map((groupName, i) => {
                     const cats = groupedCats[groupName] || [];
                     return `
                       <a href="/shop?group=${encodeURIComponent(groupName)}"
                          class="explore-mega-cat-btn ${i === 0 ? 'active' : ''}"
-                         data-group="${groupName}">
-                        ${groupName}
+                         data-group="${groupName}">${groupName}
                         ${cats.length > 0 ? '<span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>' : ''}
-                      </a>
-                    `;
+                      </a>`;
                   }).join('')}
-                </div>
-                <div class="explore-mega-panels">
-                  ${exploreGroups.map((groupName, i) => {
+                </div><div class="explore-mega-panels">${exploreGroups.map((groupName, i) => {
                     const cats = groupedCats[groupName] || [];
                     return `
-                      <div class="explore-mega-panel ${i === 0 ? 'active' : ''}" data-panel="${groupName}">
-                        <div class="explore-mega-panel-title">
-                          ${groupName}
-                          <a href="/shop?group=${encodeURIComponent(groupName)}" class="explore-mega-viewall">View all</a>
-                        </div>
-                        <div class="explore-mega-panel-grid">
-                          ${cats.map(cat => `
-                            <a href="/shop?cat=${cat.slug}" class="explore-mega-link">${cat.name}</a>
-                          `).join('')}
-                        </div>
-                      </div>
-                    `;
+                      <div class="explore-mega-panel ${i === 0 ? 'active' : ''}" data-panel="${groupName}"><div class="explore-mega-panel-title">${groupName}
+                          <a href="/shop?group=${encodeURIComponent(groupName)}" class="explore-mega-viewall">View all</a></div><div class="explore-mega-panel-grid">${cats.map(cat => `
+                            <a href="/shop?cat=${cat.slug}" class="explore-mega-link">${cat.name}</a>`).join('')}
+                        </div></div>`;
                   }).join('')}
-                </div>
-              </div>
-            </div>
-          </div>
-          ${mainNavItems.map(link => {
+                </div></div></div></div>${mainNavItems.map(link => {
             const isActive = currentPath === link.path;
             return `
-              <div class="nav-item-wrapper">
-                <a href="${link.path}" class="${isActive ? 'active' : ''}">${link.label}</a>
-              </div>
-            `;
+              <div class="nav-item-wrapper"><a href="${link.path}" class="${isActive ? 'active' : ''}">${link.label}</a></div>`;
           }).join('')}
-        </nav>
-        <div class="header-actions">
-          <button class="header-action-btn" aria-label="Search" id="search-btn" title="Search">
-            <span class="material-symbols-outlined">search</span>
-          </button>
-          <a href="/cart" class="header-action-btn" aria-label="Cart" title="Cart">
-            <span class="material-symbols-outlined">shopping_bag</span>
-            <span class="badge-count" id="cart-count">0</span>
-          </a>
-          <button class="mobile-menu-toggle" aria-label="Open menu" id="mobile-menu-btn">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-        </div>
-      </div>
-    </header>
-    <div class="mobile-nav-overlay" id="mobile-overlay"></div>
-    <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
-      <button class="mobile-nav-close header-action-btn" id="mobile-nav-close" aria-label="Close menu">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-      <div class="mobile-explore-section" id="mobile-explore-section">
-        <button class="mobile-explore-toggle" id="mobile-explore-toggle">
-          Explore Categories
-          <span class="material-symbols-outlined">expand_more</span>
-        </button>
-        <div class="mobile-explore-groups" id="mobile-explore-groups">
-          ${exploreGroups.map(groupName => {
+        </nav><div class="header-actions"><button class="header-action-btn" aria-label="Search" id="search-btn" title="Search"><span class="material-symbols-outlined">search</span></button><a href="/cart" class="header-action-btn" aria-label="Cart" title="Cart"><span class="material-symbols-outlined">shopping_bag</span><span class="badge-count" id="cart-count">0</span></a><button class="mobile-menu-toggle" aria-label="Open menu" id="mobile-menu-btn"><span class="material-symbols-outlined">menu</span></button></div></div></header><div class="mobile-nav-overlay" id="mobile-overlay"></div><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation"><button class="mobile-nav-close header-action-btn" id="mobile-nav-close" aria-label="Close menu"><span class="material-symbols-outlined">close</span></button><div class="mobile-explore-section" id="mobile-explore-section"><button class="mobile-explore-toggle" id="mobile-explore-toggle">Explore Categories
+          <span class="material-symbols-outlined">expand_more</span></button><div class="mobile-explore-groups" id="mobile-explore-groups">${exploreGroups.map(groupName => {
             const cats = groupedCats[groupName] || [];
             if (!cats.length) return '';
             return `
-              <div class="mobile-explore-group">
-                <div class="mobile-explore-group-title">${groupName}</div>
-                ${cats.map(cat => `
-                  <a href="/shop?cat=${cat.slug}" class="mobile-explore-link">${cat.name}</a>
-                `).join('')}
-              </div>
-            `;
+              <div class="mobile-explore-group"><div class="mobile-explore-group-title">${groupName}</div>${cats.map(cat => `
+                  <a href="/shop?cat=${cat.slug}" class="mobile-explore-link">${cat.name}</a>`).join('')}
+              </div>`;
           }).join('')}
-        </div>
-      </div>
-      ${mainNavItems.map(link => `
-        <a href="${link.path}" class="${currentPath === link.path ? 'active' : ''}">${link.label}</a>
-      `).join('')}
-      <hr class="divider">
-      <a href="/cart">Cart</a>
-    </nav>
-  `;
+        </div></div>${mainNavItems.map(link => `
+        <a href="${link.path}" class="${currentPath === link.path ? 'active' : ''}">${link.label}</a>`).join('')}
+      <hr class="divider"><a href="/cart">Cart</a></nav>`;
 }
 
 let _headerDocWired = false;
@@ -293,21 +224,7 @@ export function updateHeaderCounts() {
 
 export function renderSearchModal() {
   return `
-    <div class="search-overlay" id="search-overlay">
-      <div class="search-modal">
-        <div class="search-input-wrap">
-          <span class="material-symbols-outlined search-icon">search</span>
-          <input type="search" id="search-input" class="search-input" placeholder="Search for diaries, planners, gifts..." autocomplete="off" autofocus aria-label="Search products">
-          <button class="search-close" id="search-close" aria-label="Close search">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div class="search-results" id="search-results">
-          <p class="search-hint">Start typing to search...</p>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="search-overlay" id="search-overlay"><div class="search-modal"><div class="search-input-wrap"><span class="material-symbols-outlined search-icon">search</span><input type="search" id="search-input" class="search-input" placeholder="Search for diaries, planners, gifts..." autocomplete="off" autofocus aria-label="Search products"><button class="search-close" id="search-close" aria-label="Close search"><span class="material-symbols-outlined">close</span></button></div><div class="search-results" id="search-results"><p class="search-hint">Start typing to search...</p></div></div></div>`;
 }
 
 export function initSearchModal() {
@@ -405,41 +322,18 @@ export function initSearchModal() {
 
       if (!matched.length) {
         resultsEl.innerHTML = `
-          <div class="search-empty">
-            <span class="material-symbols-outlined">search_off</span>
-            <p>No results for "<strong>${q}</strong>"</p>
-            <a href="/shop" class="btn btn--secondary btn--sm" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">Browse All Products</a>
-          </div>
-        `;
+          <div class="search-empty"><span class="material-symbols-outlined">search_off</span><p>No results for "<strong>${q}</strong>"</p><a href="/shop" class="btn btn--secondary btn--sm" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">Browse All Products</a></div>`;
         return;
       }
 
       resultsEl.innerHTML = `
-        <div class="search-result-header">${matched.length} result${matched.length > 1 ? 's' : ''}</div>
-        <div class="search-result-list">
-          ${matched.map(p => `
-            <a href="/${p.slug}" class="search-result-item" data-slug="${p.slug}">
-              <div class="search-result-img">
-                ${p.image ? `<img src="${p.image}" alt="${p.name}">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
-              </div>
-              <div class="search-result-info">
-                <div class="search-result-name">${p.name || p.title || ''}</div>
-                <div class="search-result-meta">
-                  ${(p.category || p.categoryName) ? `<span>${p.category || p.categoryName}</span>` : ''}
-                  <span class="search-result-price">â‚¹${Number(p.price).toLocaleString()}</span>
-                  ${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
-                </div>
-              </div>
-            </a>
-          `).join('')}
-        </div>
-        <div class="search-result-footer">
-          <a href="/shop" class="search-view-all" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">
-            View all results for "${q}"
-            <span class="material-symbols-outlined">arrow_forward</span>
-          </a>
-        </div>
-      `;
+        <div class="search-result-header">${matched.length} result${matched.length > 1 ? 's' : ''}</div><div class="search-result-list">${matched.map(p => `
+            <a href="/${p.slug}" class="search-result-item" data-slug="${p.slug}"><div class="search-result-img">${p.image ? `<img src="${p.image}" alt="${p.name}">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
+              </div><div class="search-result-info"><div class="search-result-name">${p.name || p.title || ''}</div><div class="search-result-meta">${(p.category || p.categoryName) ? `<span>${p.category || p.categoryName}</span>` : ''}
+                  <span class="search-result-price">₹${Number(p.price).toLocaleString()}</span>${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
+                </div></div></a>`).join('')}
+        </div><div class="search-result-footer"><a href="/shop" class="search-view-all" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">View all results for "${q}"
+            <span class="material-symbols-outlined">arrow_forward</span></a></div>`;
 
       resultsEl.querySelectorAll('.search-result-item').forEach(item => {
         item.addEventListener('click', (e) => {

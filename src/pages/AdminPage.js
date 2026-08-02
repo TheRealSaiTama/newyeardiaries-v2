@@ -37,39 +37,7 @@ export function renderAdminPage() {
 
   if (!hasSession) {
     return `
-      <div class="admin-login-wrap">
-        <div class="admin-login-brand">
-          <img src="/logo-big-transparent.png" alt="New Year Diaries" class="admin-login-brand-logo" />
-          <h1 class="admin-login-brand-name">New Year Diaries</h1>
-          <p class="admin-login-brand-tag">Admin Dashboard</p>
-          <div class="admin-login-brand-features">
-            <div class="admin-login-feature"><span class="material-symbols-outlined">edit_note</span> Manage products &amp; sliders</div>
-            <div class="admin-login-feature"><span class="material-symbols-outlined">category</span> Organize categories &amp; groups</div>
-            <div class="admin-login-feature"><span class="material-symbols-outlined">inbox</span> Read customer enquiries</div>
-            <div class="admin-login-feature"><span class="material-symbols-outlined">search</span> Edit SEO &amp; meta tags</div>
-          </div>
-        </div>
-        <div class="admin-login-card">
-          <div class="admin-login-card-header">
-            <span class="material-symbols-outlined admin-login-icon">lock_open</span>
-            <h2>Welcome back</h2>
-            <p>Sign in to manage the storefront.</p>
-          </div>
-          <form class="admin-login-form" id="admin-login-form">
-            <div class="form-group">
-              <label for="admin-pass">Admin Password</label>
-              <input type="password" id="admin-pass" placeholder="Enter the shared password" required autofocus autocomplete="current-password">
-            </div>
-            <button type="submit" class="admin-btn admin-btn-primary admin-login-submit">
-              <span class="material-symbols-outlined">login</span>
-              <span>Sign In</span>
-            </button>
-          </form>
-          <p class="admin-login-hint">Forgot the password? Ask the family group admin.</p>
-        </div>
-      </div>
-      <style>
-      .admin-login-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; background: var(--color-surface-alt); }
+      <div class="admin-login-wrap"><div class="admin-login-brand"><img src="/logo-big-transparent.png" alt="New Year Diaries" class="admin-login-brand-logo" /><h1 class="admin-login-brand-name">New Year Diaries</h1><p class="admin-login-brand-tag">Admin Dashboard</p><div class="admin-login-brand-features"><div class="admin-login-feature"><span class="material-symbols-outlined">edit_note</span> Manage products &amp; sliders</div><div class="admin-login-feature"><span class="material-symbols-outlined">category</span> Organize categories &amp; groups</div><div class="admin-login-feature"><span class="material-symbols-outlined">inbox</span> Read customer enquiries</div><div class="admin-login-feature"><span class="material-symbols-outlined">search</span> Edit SEO &amp; meta tags</div></div></div><div class="admin-login-card"><div class="admin-login-card-header"><span class="material-symbols-outlined admin-login-icon">lock_open</span><h2>Welcome back</h2><p>Sign in to manage the storefront.</p></div><form class="admin-login-form" id="admin-login-form"><div class="form-group"><label for="admin-pass">Admin Password</label><input type="password" id="admin-pass" placeholder="Enter the shared password" required autofocus autocomplete="current-password"></div><button type="submit" class="admin-btn admin-btn-primary admin-login-submit"><span class="material-symbols-outlined">login</span><span>Sign In</span></button></form><p class="admin-login-hint">Forgot the password? Ask the family group admin.</p></div></div><style>.admin-login-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; background: var(--color-surface-alt); }
       .admin-login-wrap::before { content: ''; display: none; }
       .admin-login-brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); padding: var(--space-12) var(--space-8); background: linear-gradient(135deg, #7b2f2a 0%, #b9653d 55%, #c8915f 100%); color: #fffaf2; text-align: center; position: relative; overflow: hidden; min-height: 100%; }
       .admin-login-brand::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 5px), repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 6px); pointer-events: none; opacity: 0.4; }
@@ -96,63 +64,21 @@ export function renderAdminPage() {
         .admin-login-brand-features { display: none; }
         .admin-login-card { padding: var(--space-8) var(--space-5); }
       }
-      </style>
-    `;
+      </style>`;
   }
 
   return `
-    <div class="admin-shell">
-      <aside class="admin-sidebar">
-        <div class="admin-logo">
-          <a href="/" class="admin-back">
-            <span class="material-symbols-outlined">arrow_back</span>
-            Back to Site
-          </a>
-        </div>
-        <nav class="admin-nav">
-          <button class="admin-nav-item ${currentTab === 'homepage' ? 'active' : ''}" data-tab="homepage">
-            <span class="material-symbols-outlined">home</span>
-            Homepage
-          </button>
-          <button class="admin-nav-item ${currentTab === 'header' ? 'active' : ''}" data-tab="header">
-            <span class="material-symbols-outlined">campaign</span>
-            Header
-          </button>
-          <button class="admin-nav-item ${currentTab === 'products' ? 'active' : ''}" data-tab="products">
-            <span class="material-symbols-outlined">inventory_2</span>
-            Products
-          </button>
-          <button class="admin-nav-item ${currentTab === 'categories' ? 'active' : ''}" data-tab="categories">
-            <span class="material-symbols-outlined">category</span>
-            Categories
-          </button>
-          <button class="admin-nav-item ${currentTab === 'banners' ? 'active' : ''}" data-tab="banners">
-            <span class="material-symbols-outlined">perm_media</span>
-            Banners
-          </button>
-          <button class="admin-nav-item ${currentTab === 'footer' ? 'active' : ''}" data-tab="footer">
-            <span class="material-symbols-outlined">web_asset</span>
-            Footer
-          </button>
-          <button class="admin-nav-item ${currentTab === 'settings' ? 'active' : ''}" data-tab="settings">
-            <span class="material-symbols-outlined">settings</span>
-            Settings
-          </button>
-          <button class="admin-nav-item ${currentTab === 'enquiries' ? 'active' : ''}" data-tab="enquiries">
-            <span class="material-symbols-outlined">inbox</span>
-            Enquiries
-          </button>
-        </nav>
-      </aside>
-      <main class="admin-main" id="admin-content">
-        <div class="admin-loading">
-          <span class="material-symbols-outlined spin">progress_activity</span>
-          Loading...
-        </div>
-      </main>
-    </div>
-    <style>
-    .admin-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - var(--header-height)); }
+    <div class="admin-shell"><aside class="admin-sidebar"><div class="admin-logo"><a href="/" class="admin-back"><span class="material-symbols-outlined">arrow_back</span>Back to Site
+          </a></div><nav class="admin-nav"><button class="admin-nav-item ${currentTab === 'homepage' ? 'active' : ''}" data-tab="homepage"><span class="material-symbols-outlined">home</span>Homepage
+          </button><button class="admin-nav-item ${currentTab === 'header' ? 'active' : ''}" data-tab="header"><span class="material-symbols-outlined">campaign</span>Header
+          </button><button class="admin-nav-item ${currentTab === 'products' ? 'active' : ''}" data-tab="products"><span class="material-symbols-outlined">inventory_2</span>Products
+          </button><button class="admin-nav-item ${currentTab === 'categories' ? 'active' : ''}" data-tab="categories"><span class="material-symbols-outlined">category</span>Categories
+          </button><button class="admin-nav-item ${currentTab === 'banners' ? 'active' : ''}" data-tab="banners"><span class="material-symbols-outlined">perm_media</span>Banners
+          </button><button class="admin-nav-item ${currentTab === 'footer' ? 'active' : ''}" data-tab="footer"><span class="material-symbols-outlined">web_asset</span>Footer
+          </button><button class="admin-nav-item ${currentTab === 'settings' ? 'active' : ''}" data-tab="settings"><span class="material-symbols-outlined">settings</span>Settings
+          </button><button class="admin-nav-item ${currentTab === 'enquiries' ? 'active' : ''}" data-tab="enquiries"><span class="material-symbols-outlined">inbox</span>Enquiries
+          </button></nav></aside><main class="admin-main" id="admin-content"><div class="admin-loading"><span class="material-symbols-outlined spin">progress_activity</span>Loading...
+        </div></main></div><style>.admin-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - var(--header-height)); }
     .admin-sidebar { background: linear-gradient(180deg, #fffaf2 0%, #f7e9d8 100%); color: var(--color-text-primary); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); border-right: 1px solid var(--color-border-light); }
     .admin-back { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); text-decoration: none; font-size: var(--fs-sm); padding: var(--space-2); border-radius: var(--radius-md); transition: var(--transition-fast); }
     .admin-back:hover { color: var(--color-primary); background: rgba(160, 82, 45, 0.06); }
@@ -314,8 +240,7 @@ export function renderAdminPage() {
     .fs-folder__count { position: absolute; top: var(--space-3); right: var(--space-3); min-width: 24px; height: 24px; padding: 0 var(--space-2); display: inline-flex; align-items: center; justify-content: center; background: var(--color-surface-alt); border: 1px solid var(--color-border-light); border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--color-text-secondary); }
     .fs-empty { text-align: center; padding: var(--space-12) var(--space-6); color: var(--color-text-tertiary); }
     .fs-empty .material-symbols-outlined { font-size: 48px; opacity: .4; margin-bottom: var(--space-3); }
-    </style>
-  `;
+    </style>`;
 }
 
 function showToast(message, type = 'success') {
@@ -348,7 +273,7 @@ export async function initAdminPage() {
       const origLabel = submitBtn?.innerHTML;
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Signing inâ€¦';
+        submitBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Signing in…';
       }
 
       try {
@@ -489,20 +414,7 @@ function showConfirmDialog(message, onConfirm) {
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal confirm-dialog">
-      <div class="admin-modal-header">
-        <h2>Confirm</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div class="admin-form">
-        <p>${message}</p>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="button" class="admin-btn admin-btn-danger" id="confirm-yes">Delete</button>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="admin-modal confirm-dialog"><div class="admin-modal-header"><h2>Confirm</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><div class="admin-form"><p>${message}</p><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="button" class="admin-btn admin-btn-danger" id="confirm-yes">Delete</button></div></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
@@ -526,31 +438,12 @@ async function renderProducts(container, page = 1, search = '', filterActive = '
   container.dataset.fsNav = JSON.stringify(nav);
 
   const toolbar = `
-    <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;justify-content:flex-end">
-      <div class="admin-search-wrap">
-        <span class="material-symbols-outlined">search</span>
-        <input type="text" class="admin-search" id="product-search" placeholder="Search all products by name, slug, SKU..." value="${search}">
-      </div>
-      <select class="admin-filter-select" id="filter-active">
-        <option value="" ${filterActive === '' ? 'selected' : ''}>All Status</option>
-        <option value="true" ${filterActive === 'true' ? 'selected' : ''}>Active</option>
-        <option value="false" ${filterActive === 'false' ? 'selected' : ''}>Inactive</option>
-      </select>
-      <button class="admin-btn admin-btn-primary" id="add-product-btn">
-        <span class="material-symbols-outlined">add</span> Add Product
-      </button>
-    </div>
-  `;
+    <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;justify-content:flex-end"><div class="admin-search-wrap"><span class="material-symbols-outlined">search</span><input type="text" class="admin-search" id="product-search" placeholder="Search all products by name, slug, SKU..." value="${search}"></div><select class="admin-filter-select" id="filter-active"><option value="" ${filterActive === '' ? 'selected' : ''}>All Status</option><option value="true" ${filterActive === 'true' ? 'selected' : ''}>Active</option><option value="false" ${filterActive === 'false' ? 'selected' : ''}>Inactive</option></select><button class="admin-btn admin-btn-primary" id="add-product-btn"><span class="material-symbols-outlined">add</span> Add Product
+      </button></div>`;
 
   const header = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Products</h1>
-        <span class="admin-header-stats">Browse by category folder</span>
-      </div>
-      ${toolbar}
-    </div>
-  `;
+    <div class="admin-header"><div class="admin-header-left"><h1>Products</h1><span class="admin-header-stats">Browse by category folder</span></div>${toolbar}
+    </div>`;
 
   if (search && search.trim()) {
     await renderProductRows(container, header, { search, filterActive, page });
@@ -585,18 +478,11 @@ function renderFsBreadcrumb(nav) {
     crumbs.push({ label: nav.categoryName, nav });
   }
   return `
-    <div class="fs-breadcrumb">
-      <button class="fs-back" ${nav.level === 'root' ? 'disabled' : ''} id="fs-back">
-        <span class="material-symbols-outlined">arrow_back</span> Back
-      </button>
-      <div class="fs-path">
-        ${crumbs.map((c, i) => `
-          <button class="fs-crumb" data-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''}>${c.label}</button>
-          ${i < crumbs.length - 1 ? '<span class="material-symbols-outlined fs-crumb-sep">chevron_right</span>' : ''}
+    <div class="fs-breadcrumb"><button class="fs-back" ${nav.level === 'root' ? 'disabled' : ''} id="fs-back"><span class="material-symbols-outlined">arrow_back</span> Back
+      </button><div class="fs-path">${crumbs.map((c, i) => `
+          <button class="fs-crumb" data-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''}>${c.label}</button>${i < crumbs.length - 1 ? '<span class="material-symbols-outlined fs-crumb-sep">chevron_right</span>' : ''}
         `).join('')}
-      </div>
-    </div>
-  `;
+      </div></div>`;
 }
 
 async function renderFolderGrid(container, header, breadcrumb, opts) {
@@ -768,22 +654,10 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   }
 
   const body = folders.length ? `
-    <div class="fs-grid">
-      ${folders.map(f => `
-        <button class="fs-folder${f.system ? ' fs-folder--system' : ''}" data-nav='${JSON.stringify(f.nav)}'>
-          <span class="material-symbols-outlined fs-folder__icon">${f.icon}</span>
-          <span class="fs-folder__name">${f.name}</span>
-          <span class="fs-folder__meta">${f.meta}</span>
-          <span class="fs-folder__count">${f.count}</span>
-        </button>
-      `).join('')}
-    </div>
-  ` : `
-    <div class="fs-empty">
-      <span class="material-symbols-outlined">folder_off</span>
-      <p>No folders here yet.</p>
-    </div>
-  `;
+    <div class="fs-grid">${folders.map(f => `
+        <button class="fs-folder${f.system ? ' fs-folder--system' : ''}" data-nav='${JSON.stringify(f.nav)}'><span class="material-symbols-outlined fs-folder__icon">${f.icon}</span><span class="fs-folder__name">${f.name}</span><span class="fs-folder__meta">${f.meta}</span><span class="fs-folder__count">${f.count}</span></button>`).join('')}
+    </div>` : `
+    <div class="fs-empty"><span class="material-symbols-outlined">folder_off</span><p>No folders here yet.</p></div>`;
 
   container.innerHTML = header + breadcrumb + body;
 
@@ -900,58 +774,24 @@ const catMapByProduct = {};
   const showSortColumn = !!filterCategory && categorySlug !== 'a-to-z-diary-collection';
 
   const searchBanner = search ? `
-    <div class="fs-breadcrumb">
-      <span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">search</span>
-      <span style="color:var(--color-text-secondary)">${count || 0} result${count === 1 ? '' : 's'} for "<strong>${search}</strong>"</span>
-      <button class="fs-back" id="fs-search-clear" style="margin-left:auto"><span class="material-symbols-outlined">close</span> Clear</button>
-    </div>
-  ` : '';
+    <div class="fs-breadcrumb"><span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">search</span><span style="color:var(--color-text-secondary)">${count || 0} result${count === 1 ? '' : 's'} for "<strong>${search}</strong>"</span><button class="fs-back" id="fs-search-clear" style="margin-left:auto"><span class="material-symbols-outlined">close</span> Clear</button></div>` : '';
 
   container.innerHTML = header + searchBanner + breadcrumb + `
-    <div class="admin-card">
-      ${(products?.length && !error) ? `<div class="admin-table-wrap"><table class="admin-table">
-        <thead><tr>
-          <th>Image</th><th>Name</th>${showSortColumn ? '<th style="width:120px">Sort</th>' : ''}<th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th>
-        </tr></thead>
-        <tbody id="products-tbody">
-          ${products.map(p => {
+    <div class="admin-card">${(products?.length && !error) ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Name</th>${showSortColumn ? '<th style="width:120px">Sort</th>' : ''}<th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody id="products-tbody">${products.map(p => {
             return `
-            <tr class="product-row" data-id="${p.id}" data-product-id="${p.id}">
-              <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
-              <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
-              ${showSortColumn ? `<td><input class="category-sort-input" data-product-id="${p.id}" data-category-id="${filterCategory}" type="number" min="1" max="100" value="${sortByProduct?.get(p.id) || ''}" style="width:82px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm)"></td>` : ''}
-              <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || 'â€”'}</td>
-              <td><strong>â‚¹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">â‚¹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
-              <td>
-                <button type="button" class="stock-toggle-btn" data-id="${p.id}" data-in-stock="${p.in_stock !== false ? '1' : '0'}"
+            <tr class="product-row" data-id="${p.id}" data-product-id="${p.id}"><td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td><td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>${showSortColumn ? `<td><input class="category-sort-input" data-product-id="${p.id}" data-category-id="${filterCategory}" type="number" min="1" max="100" value="${sortByProduct?.get(p.id) || ''}" style="width:82px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm)"></td>` : ''}
+              <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td><td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td><td><button type="button" class="stock-toggle-btn" data-id="${p.id}" data-in-stock="${p.in_stock !== false ? '1' : '0'}"
                   title="Click to toggle stock"
-                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit;color:inherit">
-                  ${p.in_stock !== false
+                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit;color:inherit">${p.in_stock !== false
                     ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>`
                     : `<span style="color:var(--color-error)">Out of stock</span>`}
-                </button>
-              </td>
-              <td>
-                <button type="button" class="active-toggle-btn" data-id="${p.id}" data-active="${p.active !== false ? '1' : '0'}"
+                </button></td><td><button type="button" class="active-toggle-btn" data-id="${p.id}" data-active="${p.active !== false ? '1' : '0'}"
                   title="Click to toggle active"
-                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit">
-                  <span class="badge ${p.active !== false ? 'badge-active' : 'badge-inactive'}">${p.active !== false ? 'Active' : 'Inactive'}</span>
-                </button>
-              </td>
-              <td class="col-actions">
-                <button class="edit-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
-                <button class="duplicate-btn" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
-                <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
-              </td>
-            </tr>`;
+                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit"><span class="badge ${p.active !== false ? 'badge-active' : 'badge-inactive'}">${p.active !== false ? 'Active' : 'Inactive'}</span></button></td><td class="col-actions"><button class="edit-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button><button class="duplicate-btn" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button><button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button></td></tr>`;
           }).join('')}
-        </tbody>
-      </table></div>` : `<div class="fs-empty"><span class="material-symbols-outlined">inventory_2</span><p>${error ? 'Error loading products' : 'No products in this folder'}</p></div>`}
-    </div>
-    ${totalPages > 1 ? `
-    <div class="admin-pagination">
-      <button ${page <= 1 ? 'disabled' : ''} id="page-prev"><span class="material-symbols-outlined">chevron_left</span></button>
-      ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+        </tbody></table></div>` : `<div class="fs-empty"><span class="material-symbols-outlined">inventory_2</span><p>${error ? 'Error loading products' : 'No products in this folder'}</p></div>`}
+    </div>${totalPages > 1 ? `
+    <div class="admin-pagination"><button ${page <= 1 ? 'disabled' : ''} id="page-prev"><span class="material-symbols-outlined">chevron_left</span></button>${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
         let pNum;
         if (totalPages <= 5) pNum = i + 1;
         else if (page <= 3) pNum = i + 1;
@@ -959,9 +799,7 @@ const catMapByProduct = {};
         else pNum = page - 2 + i;
         return `<button class="${pNum === page ? 'active' : ''}" data-page="${pNum}">${pNum}</button>`;
       }).join('')}
-      <button ${page >= totalPages ? 'disabled' : ''} id="page-next"><span class="material-symbols-outlined">chevron_right</span></button>
-      <span class="page-info">${count} total</span>
-    </div>` : ''}
+      <button ${page >= totalPages ? 'disabled' : ''} id="page-next"><span class="material-symbols-outlined">chevron_right</span></button><span class="page-info">${count} total</span></div>` : ''}
   `;
   acSet(cacheKey, { html: container.innerHTML, products });
 
@@ -1197,7 +1035,7 @@ async function validateBannerImage(file) {
       const minW = 1920;
       const minH = 720;
       if (img.width < minW || img.height < minH) {
-        reject(new Error(`Banner image must be at least ${minW}Ã—${minH} pixels (16:6 ratio). Current: ${img.width}Ã—${img.height}`));
+        reject(new Error(`Banner image must be at least ${minW}×${minH} pixels (16:6 ratio). Current: ${img.width}×${img.height}`));
       } else if (Math.abs((img.width / img.height) - (16 / 6)) > 0.05) {
         reject(new Error(`Banner image must match the 16:6 aspect ratio. Current aspect ratio is ${(img.width / img.height).toFixed(2)}:1`));
       } else {
@@ -1346,92 +1184,14 @@ async function openProductModal(container, product = null) {
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal" style="max-width:860px">
-      <div class="admin-modal-header">
-        <h2>${isEdit ? 'Edit Product' : 'Add Product'}</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <form class="admin-form" id="product-form">
-        <div class="form-row">
-          <div class="form-group"><label>Name *</label><input name="name" value="${product?.name || ''}" required id="p-name"></div>
-          <div class="form-group"><label>Slug *</label><input name="slug" value="${product?.slug || ''}" required id="p-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
-        </div>
-        <div class="form-group"><label>Categories</label>
-          <div class="admin-cat-groups-container">
-            ${ordered.map(g => `
-              <div class="admin-cat-group">
-                <div class="admin-cat-group-label">${g.name}</div>
-                <div class="admin-cat-group-items">
-                  ${g.items.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Price *</label><input name="price" type="number" step="0.01" value="${product?.price || ''}" required></div>
-          <div class="form-group"><label>Original Price</label><input name="original_price" type="number" step="0.01" value="${product?.original_price || ''}"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>SKU</label><input name="sku" value="${product?.sku || ''}"></div>
-          <div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div>
-          <div class="form-group">
-            <label>Product Highlights</label>
-            <div style="display:flex;gap:var(--space-6);align-items:center;height:48px;padding:0 var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);">
-              <label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">moq restriction</span></label>
-              <label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">no COD</span></label>
-            </div>
-          </div>
-        </div>
-        <div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div>
-        <div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description" id="rte-short-description" class="nyd-rte">${product?.short_description || ''}</textarea></div>
-        <div class="form-group"><label>Description</label><textarea name="description" id="rte-description" class="nyd-rte">${product?.description || ''}</textarea></div>
-        <div class="form-group">
-          <label>SEO / Meta Tags <small style="color:var(--color-text-tertiary)">(for product detail page & social)</small></label>
-          <input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (â‰¤60 chars)">
-          <textarea name="meta_description" placeholder="Meta description (150-160 chars)" style="min-height:60px">${product?.meta_description || ''}</textarea>
-          <input name="meta_keywords" value="${product?.meta_keywords || ''}" placeholder="Keywords (comma separated)">
-          <input name="og_image_url" value="${product?.og_image_url || ''}" placeholder="OG image URL (optional)">
-        </div>
-         <div class="form-group">
-           <label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label>
-           <input name="primary_image_url" value="${primaryImage && primaryImage.startsWith('http') ? primaryImage : ''}" placeholder="https://example.com/product.jpg">
-           <input name="primary_image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-           ${primaryImage ? `<input type="hidden" name="existing_primary_image" value="${primaryImage}">` : ''}
+    <div class="admin-modal" style="max-width:860px"><div class="admin-modal-header"><h2>${isEdit ? 'Edit Product' : 'Add Product'}</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="product-form"><div class="form-row"><div class="form-group"><label>Name *</label><input name="name" value="${product?.name || ''}" required id="p-name"></div><div class="form-group"><label>Slug *</label><input name="slug" value="${product?.slug || ''}" required id="p-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div></div><div class="form-group"><label>Categories</label><div class="admin-cat-groups-container">${ordered.map(g => `
+              <div class="admin-cat-group"><div class="admin-cat-group-label">${g.name}</div><div class="admin-cat-group-items">${g.items.map(c => `<label class="admin-cat-checkbox"><input type="checkbox" name="category_ids" value="${c.id}" ${selectedCatIds.has(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('')}
+                </div></div>`).join('')}
+          </div></div><div class="form-row"><div class="form-group"><label>Price *</label><input name="price" type="number" step="0.01" value="${product?.price || ''}" required></div><div class="form-group"><label>Original Price</label><input name="original_price" type="number" step="0.01" value="${product?.original_price || ''}"></div></div><div class="form-row"><div class="form-group"><label>SKU</label><input name="sku" value="${product?.sku || ''}"></div><div class="form-group"><label>Badge (e.g. "New", "Bestseller")</label><input name="badge" value="${product?.badge || ''}"></div></div><div class="form-row"><div class="form-group"><label>Min Bulk Order</label><input name="min_bulk_order" type="number" value="${product ? product.min_bulk_order : 100}" placeholder="100"></div><div class="form-group"><label>Product Highlights</label><div style="display:flex;gap:var(--space-6);align-items:center;height:48px;padding:0 var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-alt);"><label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_shipping_badge" id="has_shipping_badge" ${product?.hasShippingBadge !== false ? 'checked' : ''}><span style="color:#e53935;font-weight:var(--fw-medium)">moq restriction</span></label><label class="admin-cat-checkbox" style="margin:0;"><input type="checkbox" name="has_warranty_badge" id="has_warranty_badge" ${product?.hasWarrantyBadge !== false ? 'checked' : ''}><span style="color:#1565c0;font-weight:var(--fw-medium)">no COD</span></label></div></div></div><div class="form-group"><label>Tags / Keywords <small style="color:var(--color-text-tertiary)">(comma-separated)</small></label><input name="tags" value="${product?.tags || ''}" placeholder="leather, diary, premium, corporate gift"></div><div class="form-group"><label>Short Description <small style="color:var(--color-text-tertiary)">(product highlights)</small></label><textarea name="short_description" id="rte-short-description" class="nyd-rte">${product?.short_description || ''}</textarea></div><div class="form-group"><label>Description</label><textarea name="description" id="rte-description" class="nyd-rte">${product?.description || ''}</textarea></div><div class="form-group"><label>SEO / Meta Tags <small style="color:var(--color-text-tertiary)">(for product detail page & social)</small></label><input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (≤60 chars)"><textarea name="meta_description" placeholder="Meta description (150-160 chars)" style="min-height:60px">${product?.meta_description || ''}</textarea><input name="meta_keywords" value="${product?.meta_keywords || ''}" placeholder="Keywords (comma separated)"><input name="og_image_url" value="${product?.og_image_url || ''}" placeholder="OG image URL (optional)"></div><div class="form-group"><label>Primary Image <small style="color:var(--color-text-tertiary)">(display image)</small></label><input name="primary_image_url" value="${primaryImage && primaryImage.startsWith('http') ? primaryImage : ''}" placeholder="https://example.com/product.jpg"><input name="primary_image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">${primaryImage ? `<input type="hidden" name="existing_primary_image" value="${primaryImage}">` : ''}
            ${primaryImage ? `<img src="${primaryImage}" style="max-width:120px;max-height:120px;object-fit:cover;border-radius:4px;border:1px solid var(--color-border-light);margin-top:4px;">` : ''}
            ${primaryImage ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave URL/file empty to keep current image</small>' : ''}
-         </div>
-        <div class="form-group">
-          <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(jpg/png/webp/mp4)</small></label>
-          <div class="admin-media-picker">
-            <div class="admin-media-grid" id="secondary-media-grid"></div>
-            <div class="admin-media-actions">
-              <label class="admin-media-add">
-                <span class="material-symbols-outlined">add_photo_alternate</span>
-                Add images
-                <input class="admin-media-input" name="secondary_image_files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,image/jpeg,image/png,image/webp,video/mp4">
-              </label>
-              <small>Select multiple local files. Remove unwanted items from the tiles before saving.</small>
-            </div>
-          </div>
-          <!-- Hidden storage for existing secondary media (URLs/base64). UI is tiles only. -->
-          <textarea name="secondary_images" class="sr-only" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;white-space:nowrap">${secondaryImages.join('\n')}</textarea>
-        </div>
-        <div class="form-row">
-          <div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div>
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="active" ${product?.active !== false ? 'checked' : ''}><label for="active">Active</label></div>
-        </div>
-        <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${product?.sort_order || 0}"></div>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Product'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+         </div><div class="form-group"><label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(jpg/png/webp/mp4)</small></label><div class="admin-media-picker"><div class="admin-media-grid" id="secondary-media-grid"></div><div class="admin-media-actions"><label class="admin-media-add"><span class="material-symbols-outlined">add_photo_alternate</span>Add images
+                <input class="admin-media-input" name="secondary_image_files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,image/jpeg,image/png,image/webp,video/mp4"></label><small>Select multiple local files. Remove unwanted items from the tiles before saving.</small></div></div><!-- Hidden storage for existing secondary media (URLs/base64). UI is tiles only. --><textarea name="secondary_images" class="sr-only" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;white-space:nowrap">${secondaryImages.join('\n')}</textarea></div><div class="form-row"><div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div><div class="form-group checkbox"><input name="active" type="checkbox" id="active" ${product?.active !== false ? 'checked' : ''}><label for="active">Active</label></div></div><div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${product?.sort_order || 0}"></div><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Product'}</button></div></form></div>`;
   document.body.appendChild(overlay);
 
   const TINYMCE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/tinymce.min.js';
@@ -1670,8 +1430,7 @@ async function openProductModal(container, product = null) {
     }
 
     incoming.forEach(file => {
-      const alreadySelected = selectedSecondaryFiles.some(selected =>
-        selected.name === file.name &&
+      const alreadySelected = selectedSecondaryFiles.some(selected =>selected.name === file.name &&
         selected.size === file.size &&
         selected.lastModified === file.lastModified
       );
@@ -1727,7 +1486,7 @@ async function openProductModal(container, product = null) {
         slug = candidate;
         const slugField = e.target.querySelector('[name="slug"]');
         if (slugField) slugField.value = slug;
-        showToast(`Slug was taken â€” using "${slug}" instead. To change stock/active on the original, use the list toggles or Edit.`, 'error');
+        showToast(`Slug was taken — using "${slug}" instead. To change stock/active on the original, use the list toggles or Edit.`, 'error');
       }
     } catch (err) {
       console.warn('[admin] slug pre-check failed', err);
@@ -1795,7 +1554,7 @@ async function openProductModal(container, product = null) {
     if (submitBtn) {
       submitBtn.dataset.busy = '1';
       submitBtn.disabled = true;
-      submitBtn.textContent = isEdit ? 'Savingâ€¦' : 'Addingâ€¦';
+      submitBtn.textContent = isEdit ? 'Saving…' : 'Adding…';
     }
 
     const friendlyDbError = (err) => {
@@ -1828,7 +1587,7 @@ async function openProductModal(container, product = null) {
           return;
         }
         if (!updated?.id) {
-          showToast('Update failed â€” product not found or no permission. Try logging into admin again.', 'error');
+          showToast('Update failed — product not found or no permission. Try logging into admin again.', 'error');
           return;
         }
         savedProduct = { ...product, id: updated.id };
@@ -1891,53 +1650,10 @@ function renderCategoryTable(cats, group, opts = {}) {
   const collapsed = opts.collapsed || false;
   const hasCategories = (cats?.length || 0) > 0;
   return `
-    <div class="admin-card admin-cat-group" style="margin-bottom:var(--space-4);" data-group-id="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}">
-      <div class="admin-cat-group-header" style="padding:var(--space-4) var(--space-6);border-bottom:${hasCategories ? '1px solid var(--color-border-light)' : 'none'};background:var(--color-surface-alt);border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;align-items:center;gap:var(--space-3);">
-        <button class="admin-cat-toggle" data-group="${groupName.replace(/"/g, '&quot;')}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} group" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);">
-          <span class="material-symbols-outlined admin-cat-toggle-icon" style="transition:transform 0.2s ease;${collapsed ? 'transform:rotate(-90deg);' : ''}">expand_more</span>
-        </button>
-        <div style="flex:1;min-width:0;">
-          <h3 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin:0;">${groupName}</h3>
-          <span style="font-size:var(--fs-sm);color:var(--color-text-tertiary);">${cats?.length || 0} item${(cats?.length || 0) !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="admin-cat-group-actions" style="display:flex;gap:var(--space-2);flex-shrink:0;">
-          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" title="Add subcategory to ${groupName}">
-            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-            <span>Add</span>
-          </button>
-          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-rename-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Edit group & SEO">
-            <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
-          </button>
-          <button class="admin-btn admin-btn-ghost admin-btn-sm" data-delete-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Delete group (subcategories move to Uncategorized)" style="color:var(--color-error, #c0392b);">
-            <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
-          </button>
-        </div>
-      </div>
-      ${hasCategories ? `
-      <div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};">
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>Name</th><th>Slug</th><th>Group</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-            <tbody>
-              ${cats.map(c => `<tr class="cat-row" data-id="${c.id}">
-                <td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td>
-                <td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td>
-                <td><span class="badge badge-new">${groupName}</span></td>
-                <td>${c.sort_order || 0}</td>
-                <td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td>
-                <td class="col-actions">
-                  <button class="edit-btn" title="Edit category"><span class="material-symbols-outlined">edit</span></button>
-                  <button class="delete delete-btn" title="Delete category"><span class="material-symbols-outlined">delete</span></button>
-                </td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : `<div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};padding:var(--space-6);text-align:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);">
-        No subcategories yet. <button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" style="margin-left:var(--space-2);"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">add</span> Add one</button>
-      </div>`}
-    </div>
-  `;
+    <div class="admin-card admin-cat-group" style="margin-bottom:var(--space-4);" data-group-id="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}"><div class="admin-cat-group-header" style="padding:var(--space-4) var(--space-6);border-bottom:${hasCategories ? '1px solid var(--color-border-light)' : 'none'};background:var(--color-surface-alt);border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;align-items:center;gap:var(--space-3);"><button class="admin-cat-toggle" data-group="${groupName.replace(/"/g, '&quot;')}" aria-expanded="${!collapsed}" aria-label="${collapsed ? 'Expand' : 'Collapse'} group" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--color-text-secondary);"><span class="material-symbols-outlined admin-cat-toggle-icon" style="transition:transform 0.2s ease;${collapsed ? 'transform:rotate(-90deg);' : ''}">expand_more</span></button><div style="flex:1;min-width:0;"><h3 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin:0;">${groupName}</h3><span style="font-size:var(--fs-sm);color:var(--color-text-tertiary);">${cats?.length || 0} item${(cats?.length || 0) !== 1 ? 's' : ''}</span></div><div class="admin-cat-group-actions" style="display:flex;gap:var(--space-2);flex-shrink:0;"><button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" title="Add subcategory to ${groupName}"><span class="material-symbols-outlined" style="font-size:18px;">add</span><span>Add</span></button><button class="admin-btn admin-btn-ghost admin-btn-sm" data-rename-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Edit group & SEO"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button><button class="admin-btn admin-btn-ghost admin-btn-sm" data-delete-group="${groupId}" data-group-name="${groupName.replace(/"/g, '&quot;')}" title="Delete group (subcategories move to Uncategorized)" style="color:var(--color-error, #c0392b);"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button></div></div>${hasCategories ? `
+      <div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Slug</th><th>Group</th><th>Sort Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${cats.map(c => `<tr class="cat-row" data-id="${c.id}"><td class="col-name"><strong>${c.name}</strong><span>${c.slug}</span></td><td><span style="color:var(--color-text-tertiary)">${c.slug}</span></td><td><span class="badge badge-new">${groupName}</span></td><td>${c.sort_order || 0}</td><td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td><td class="col-actions"><button class="edit-btn" title="Edit category"><span class="material-symbols-outlined">edit</span></button><button class="delete delete-btn" title="Delete category"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+            </tbody></table></div></div>` : `<div class="admin-cat-group-body" style="display:${collapsed ? 'none' : 'block'};padding:var(--space-6);text-align:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);">No subcategories yet. <button class="admin-btn admin-btn-ghost admin-btn-sm" data-add-to-group="${groupName.replace(/"/g, '&quot;')}" style="margin-left:var(--space-2);"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">add</span> Add one</button></div>`}
+    </div>`;
 }
 
 async function renderCategories(container) {
@@ -1961,28 +1677,9 @@ async function renderCategories(container) {
   }
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Categories</h1>
-        <span class="admin-header-stats">${categories?.length || 0} items in ${groups.length} group${groups.length !== 1 ? 's' : ''}</span>
-      </div>
-      <div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end;flex-wrap:wrap;">
-        <div class="admin-search-wrap">
-          <span class="material-symbols-outlined">search</span>
-          <input type="text" class="admin-search" id="cat-search" placeholder="Search categories...">
-        </div>
-        <button class="admin-btn admin-btn-ghost" id="add-group-btn" title="Create a new category group">
-          <span class="material-symbols-outlined">create_new_folder</span>
-          New Group
-        </button>
-        <button class="admin-btn admin-btn-primary" id="add-cat-btn">
-          <span class="material-symbols-outlined">add</span>
-          Add Category
-        </button>
-      </div>
-    </div>
-    <div id="cats-container">
-      ${groups.map(g => renderCategoryTable(grouped[g.name], g, {
+    <div class="admin-header"><div class="admin-header-left"><h1>Categories</h1><span class="admin-header-stats">${categories?.length || 0} items in ${groups.length} group${groups.length !== 1 ? 's' : ''}</span></div><div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end;flex-wrap:wrap;"><div class="admin-search-wrap"><span class="material-symbols-outlined">search</span><input type="text" class="admin-search" id="cat-search" placeholder="Search categories..."></div><button class="admin-btn admin-btn-ghost" id="add-group-btn" title="Create a new category group"><span class="material-symbols-outlined">create_new_folder</span>New Group
+        </button><button class="admin-btn admin-btn-primary" id="add-cat-btn"><span class="material-symbols-outlined">add</span>Add Category
+        </button></div></div><div id="cats-container">${groups.map(g => renderCategoryTable(grouped[g.name], g, {
         collapsed: collapsedSet.has(g.name),
         fallbackName: g.name,
       })).join('')}
@@ -1990,17 +1687,9 @@ async function renderCategories(container) {
         collapsed: collapsedSet.has('Uncategorized'),
       }) : ''}
       ${groups.length === 0 && uncategorized.length === 0 ? `
-        <div class="admin-card" style="padding:var(--space-12);text-align:center;">
-          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">category</span>
-          <h3 style="margin-top:var(--space-4);">No categories yet</h3>
-          <p style="color:var(--color-text-tertiary);">Create your first group to organize the navigation menu.</p>
-          <button class="admin-btn admin-btn-primary" id="add-group-btn-empty" style="margin-top:var(--space-4);">
-            <span class="material-symbols-outlined">create_new_folder</span> Create First Group
-          </button>
-        </div>
-      ` : ''}
-    </div>
-  `;
+        <div class="admin-card" style="padding:var(--space-12);text-align:center;"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">category</span><h3 style="margin-top:var(--space-4);">No categories yet</h3><p style="color:var(--color-text-tertiary);">Create your first group to organize the navigation menu.</p><button class="admin-btn admin-btn-primary" id="add-group-btn-empty" style="margin-top:var(--space-4);"><span class="material-symbols-outlined">create_new_folder</span> Create First Group
+          </button></div>` : ''}
+    </div>`;
 
   const persistCollapsed = () => {
     sessionStorage.setItem('admin_cat_collapsed', JSON.stringify([...collapsedSet]));
@@ -2115,65 +1804,7 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal" style="max-width: 680px;">
-      <div class="admin-modal-header">
-        <h2>${isEdit ? 'Edit Category Group' : 'Add Category Group'}</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <form class="admin-form" id="cat-group-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Group Name *</label>
-            <input name="name" value="${group?.name || ''}" required id="group-name">
-          </div>
-          <div class="form-group">
-            <label>Slug *</label>
-            <input name="slug" value="${group?.slug || (group?.name ? generateSlug(group.name) : '')}" required id="group-slug">
-            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Sort Order</label>
-          <input name="sort_order" type="number" value="${group?.sort_order || 0}">
-        </div>
-
-        <div class="form-group">
-          <label>Category Overview / Description</label>
-          <textarea name="description" placeholder="Description for category page overview & SEO...">${group?.description || ''}</textarea>
-        </div>
-
-        <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
-          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)">
-            <span class="material-symbols-outlined">search</span>
-            <strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong>
-          </div>
-
-          <div class="form-group">
-            <label>Meta Title</label>
-            <input name="meta_title" value="${group?.meta_title || ''}" placeholder="e.g. Note Books & Pads | Corporate Gifts & Stationery">
-            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browser title tag (50-60 characters)</small>
-          </div>
-
-          <div class="form-group">
-            <label>Meta Description</label>
-            <textarea name="meta_description" placeholder="e.g. Discover our premium range of custom notebooks, eco pads, and leather planners...">${group?.meta_description || ''}</textarea>
-            <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Search result snippet (150-160 characters)</small>
-          </div>
-
-          <div class="form-group">
-            <label>Meta Keywords</label>
-            <input name="meta_keywords" value="${group?.meta_keywords || ''}" placeholder="e.g. notebooks, memo pads, personalized notebooks, corporate gifts delhi">
-          </div>
-        </div>
-
-        <div class="admin-modal-actions" style="margin-top:var(--space-6);">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Create Group'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal" style="max-width: 680px;"><div class="admin-modal-header"><h2>${isEdit ? 'Edit Category Group' : 'Add Category Group'}</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="cat-group-form"><div class="form-row"><div class="form-group"><label>Group Name *</label><input name="name" value="${group?.name || ''}" required id="group-name"></div><div class="form-group"><label>Slug *</label><input name="slug" value="${group?.slug || (group?.name ? generateSlug(group.name) : '')}" required id="group-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div></div><div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${group?.sort_order || 0}"></div><div class="form-group"><label>Category Overview / Description</label><textarea name="description" placeholder="Description for category page overview & SEO...">${group?.description || ''}</textarea></div><div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)"><div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)"><span class="material-symbols-outlined">search</span><strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong></div><div class="form-group"><label>Meta Title</label><input name="meta_title" value="${group?.meta_title || ''}" placeholder="e.g. Note Books & Pads | Corporate Gifts & Stationery"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browser title tag (50-60 characters)</small></div><div class="form-group"><label>Meta Description</label><textarea name="meta_description" placeholder="e.g. Discover our premium range of custom notebooks, eco pads, and leather planners...">${group?.meta_description || ''}</textarea><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Search result snippet (150-160 characters)</small></div><div class="form-group"><label>Meta Keywords</label><input name="meta_keywords" value="${group?.meta_keywords || ''}" placeholder="e.g. notebooks, memo pads, personalized notebooks, corporate gifts delhi"></div></div><div class="admin-modal-actions" style="margin-top:var(--space-6);"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Create Group'}</button></div></form></div>`;
   document.body.appendChild(overlay);
 
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
@@ -2271,65 +1902,8 @@ async function openCategoryModal(container, category = null, presetGroupName = n
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal" style="max-width: 680px;">
-      <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Subcategory</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
-      <form class="admin-form" id="cat-form">
-        <div class="form-row">
-          <div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div>
-          <div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div>
-        </div>
-        <div class="form-group">
-          <label>Parent Group</label>
-          <select name="group_id" id="cat-group-select">
-            <option value="">â€” Uncategorized â€”</option>
-            ${groups.map(g => `<option value="${g.id}" ${g.name === currentGroup ? 'selected' : ''}>${g.name}</option>`).join('')}
-          </select>
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which main group menu this subcategory appears under.</small>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div>
-          <div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div>
-        </div>
-        <div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div>
-        <div class="form-row">
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="cat_active" ${category?.active !== false ? 'checked' : ''}><label for="cat_active">Active</label></div>
-          <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${category?.sort_order || 0}"></div>
-        </div>
-
-        <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
-          <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)">
-            <span class="material-symbols-outlined">search</span>
-            <strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong>
-          </div>
-
-          <div class="form-group">
-            <label>Meta Title</label>
-            <input name="meta_title" value="${category?.meta_title || ''}" placeholder="e.g. Custom Printed Notebooks | Premium Stationery">
-          </div>
-
-          <div class="form-group">
-            <label>Meta Description</label>
-            <textarea name="meta_description" placeholder="e.g. Order custom notebooks with logo embossing...">${category?.meta_description || ''}</textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Meta Keywords</label>
-            <input name="meta_keywords" value="${category?.meta_keywords || ''}" placeholder="e.g. notebook with pen, custom notebook, diary printing">
-          </div>
-
-          <div class="form-group">
-            <label>OG Image URL</label>
-            <input name="og_image_url" value="${category?.og_image_url || ''}" placeholder="https://...">
-          </div>
-        </div>
-
-        <div class="admin-modal-actions" style="margin-top:var(--space-6);">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal" style="max-width: 680px;"><div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Subcategory</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="cat-form"><div class="form-row"><div class="form-group"><label>Name *</label><input name="name" value="${category?.name || ''}" required id="cat-name"></div><div class="form-group"><label>Slug *</label><input name="slug" value="${category?.slug || ''}" required id="cat-slug"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Auto-generated from name if blank</small></div></div><div class="form-group"><label>Parent Group</label><select name="group_id" id="cat-group-select"><option value="">— Uncategorized —</option>${groups.map(g => `<option value="${g.id}" ${g.name === currentGroup ? 'selected' : ''}>${g.name}</option>`).join('')}
+          </select><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which main group menu this subcategory appears under.</small></div><div class="form-row"><div class="form-group"><label>Icon (material symbol name)</label><input name="icon" value="${category?.icon || ''}" placeholder="auto_stories"></div><div class="form-group"><label>Image URL</label><input name="image_url" value="${category?.image_url || ''}"></div></div><div class="form-group"><label>Description</label><textarea name="description">${category?.description || ''}</textarea></div><div class="form-row"><div class="form-group checkbox"><input name="active" type="checkbox" id="cat_active" ${category?.active !== false ? 'checked' : ''}><label for="cat_active">Active</label></div><div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${category?.sort_order || 0}"></div></div><div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)"><div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4);color:var(--color-primary)"><span class="material-symbols-outlined">search</span><strong style="font-size:var(--fs-base)">SEO & Search Meta Settings</strong></div><div class="form-group"><label>Meta Title</label><input name="meta_title" value="${category?.meta_title || ''}" placeholder="e.g. Custom Printed Notebooks | Premium Stationery"></div><div class="form-group"><label>Meta Description</label><textarea name="meta_description" placeholder="e.g. Order custom notebooks with logo embossing...">${category?.meta_description || ''}</textarea></div><div class="form-group"><label>Meta Keywords</label><input name="meta_keywords" value="${category?.meta_keywords || ''}" placeholder="e.g. notebook with pen, custom notebook, diary printing"></div><div class="form-group"><label>OG Image URL</label><input name="og_image_url" value="${category?.og_image_url || ''}" placeholder="https://..."></div></div><div class="admin-modal-actions" style="margin-top:var(--space-6);"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button></div></form></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
@@ -2399,37 +1973,10 @@ async function renderBanners(container) {
   const { data: banners } = await supabase.from('banners').select('*').order('order_index');
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Banners</h1>
-        <span class="admin-header-stats">${banners?.length || 0} items</span>
-      </div>
-      <div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end">
-        <button class="admin-btn admin-btn-primary" id="add-banner-btn">
-          <span class="material-symbols-outlined">add</span> Add Banner
-        </button>
-      </div>
-    </div>
-    <div class="admin-card">
-      ${banners?.length ? `<div class="admin-table-wrap"><table class="admin-table">
-        <thead><tr><th>Image</th><th>Title</th><th>Subtitle</th><th>CTA</th><th>Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-        <tbody id="banners-tbody">
-          ${banners.map(b => `<tr class="banner-row" data-id="${b.id}">
-            <td class="col-image">${b.image_url ? `<img src="${b.image_url}" alt="${b.title}" data-src="${b.image_url}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
-            <td class="col-name"><strong>${b.title}</strong><span>${b.subtitle || ''}</span></td>
-            <td style="color:var(--color-text-secondary);font-size:var(--fs-sm)">${b.subtitle || 'â€”'}</td>
-            <td>${b.cta_text ? `<span style="font-size:var(--fs-sm)">${b.cta_text}</span><br><span style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">${b.cta_link || 'â€”'}</span>` : 'â€”'}</td>
-            <td>${b.order_index || 0}</td>
-            <td><span class="badge ${b.active ? 'badge-active' : 'badge-inactive'}">${b.active ? 'Active' : 'Inactive'}</span></td>
-            <td class="col-actions">
-              <button class="edit-btn"><span class="material-symbols-outlined">edit</span></button>
-              <button class="delete delete-btn"><span class="material-symbols-outlined">delete</span></button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>` : `<div class="empty-state"><span class="material-symbols-outlined">perm_media</span><p>No banners found</p></div>`}
-    </div>
-  `;
+    <div class="admin-header"><div class="admin-header-left"><h1>Banners</h1><span class="admin-header-stats">${banners?.length || 0} items</span></div><div style="display:flex;gap:var(--space-3);align-items:center;flex:1;justify-content:flex-end"><button class="admin-btn admin-btn-primary" id="add-banner-btn"><span class="material-symbols-outlined">add</span> Add Banner
+        </button></div></div><div class="admin-card">${banners?.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Title</th><th>Subtitle</th><th>CTA</th><th>Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody id="banners-tbody">${banners.map(b => `<tr class="banner-row" data-id="${b.id}"><td class="col-image">${b.image_url ? `<img src="${b.image_url}" alt="${b.title}" data-src="${b.image_url}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td><td class="col-name"><strong>${b.title}</strong><span>${b.subtitle || ''}</span></td><td style="color:var(--color-text-secondary);font-size:var(--fs-sm)">${b.subtitle || '—'}</td><td>${b.cta_text ? `<span style="font-size:var(--fs-sm)">${b.cta_text}</span><br><span style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">${b.cta_link || '—'}</span>` : '—'}</td><td>${b.order_index || 0}</td><td><span class="badge ${b.active ? 'badge-active' : 'badge-inactive'}">${b.active ? 'Active' : 'Inactive'}</span></td><td class="col-actions"><button class="edit-btn"><span class="material-symbols-outlined">edit</span></button><button class="delete delete-btn"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+        </tbody></table></div>` : `<div class="empty-state"><span class="material-symbols-outlined">perm_media</span><p>No banners found</p></div>`}
+    </div>`;
 
   document.querySelectorAll('.banner-row .col-image img').forEach(img => {
     img.addEventListener('click', () => {
@@ -2483,40 +2030,13 @@ function openBannerModal(container, banner = null) {
   };
 
   overlay.innerHTML = `
-    <div class="admin-modal" style="max-width:540px">
-      <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Banner</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
-      <form class="admin-form" id="banner-form">
-        <div class="form-group"><label>Title *</label><input name="title" value="${banner?.title || ''}" required></div>
-        <div class="form-group"><label>Subtitle</label><input name="subtitle" value="${banner?.subtitle || ''}"></div>
-        <div class="form-row">
-          <div class="form-group"><label>CTA Text</label><input name="cta_text" value="${banner?.cta_text || ''}"></div>
-          <div class="form-group"><label>CTA Link</label><input name="cta_link" value="${banner?.cta_link || ''}"></div>
-        </div>
-        <div class="form-group">
-          <label>Banner Image *</label>
-          <div id="banner-preview">
-            ${banner?.image_url
+    <div class="admin-modal" style="max-width:540px"><div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Banner</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="banner-form"><div class="form-group"><label>Title *</label><input name="title" value="${banner?.title || ''}" required></div><div class="form-group"><label>Subtitle</label><input name="subtitle" value="${banner?.subtitle || ''}"></div><div class="form-row"><div class="form-group"><label>CTA Text</label><input name="cta_text" value="${banner?.cta_text || ''}"></div><div class="form-group"><label>CTA Link</label><input name="cta_link" value="${banner?.cta_link || ''}"></div></div><div class="form-group"><label>Banner Image *</label><div id="banner-preview">${banner?.image_url
               ? `<img src="${banner.image_url}" style="max-width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--color-border-light);">`
               : `<div style="height:120px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--color-text-tertiary);font-size:var(--fs-sm);border:1px dashed var(--color-border)">No image selected</div>`
             }
-          </div>
-          <input name="image_file" type="file" id="banner-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="margin-top:var(--space-3)">
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">
-            Accepted: JPG, PNG, WebP &middot; Required size: ${BANNER_MIN_W}&times;${BANNER_MIN_H}px (16:6 ratio)
-          </small>
-          ${banner?.image_url ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave file empty to keep current image</small>' : ''}
-        </div>
-        <div class="form-row">
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="banner_active" ${banner?.active !== false ? 'checked' : ''}><label for="banner_active">Active</label></div>
-          <div class="form-group"><label>Sort Order</label><input name="order_index" type="number" value="${banner?.order_index || 0}"></div>
-        </div>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Banner'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+          </div><input name="image_file" type="file" id="banner-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="margin-top:var(--space-3)"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Accepted: JPG, PNG, WebP &middot; Required size: ${BANNER_MIN_W}&times;${BANNER_MIN_H}px (16:6 ratio)
+          </small>${banner?.image_url ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave file empty to keep current image</small>' : ''}
+        </div><div class="form-row"><div class="form-group checkbox"><input name="active" type="checkbox" id="banner_active" ${banner?.active !== false ? 'checked' : ''}><label for="banner_active">Active</label></div><div class="form-group"><label>Sort Order</label><input name="order_index" type="number" value="${banner?.order_index || 0}"></div></div><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Banner'}</button></div></form></div>`;
   document.body.appendChild(overlay);
 
   const fileInput = overlay.querySelector('#banner-file-input');
@@ -2623,84 +2143,8 @@ async function renderSettings(container) {
   const ogDescCount = (getSetting('og_description') || '').length;
 
   container.innerHTML = `
-    <div class="admin-header">
-      <h1>Site Settings</h1>
-    </div>
-    <form id="settings-form">
-      <div class="settings-grid">
-        <div class="settings-section">
-          <h3>General</h3>
-          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group"><label>Site Name</label><input name="site_name" value="${escHtml(getSetting('site_name'))}"></div>
-            <div class="form-group"><label>Tagline</label><input name="tagline" value="${escHtml(getSetting('tagline'))}"></div>
-            <div class="form-group"><label>Site Title (browser tab)</label><input name="site_title" value="${escHtml(getSetting('site_title'))}" placeholder="New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct"></div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3>Contact Information</h3>
-          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group"><label>Contact Email</label><input name="contact_email" type="email" value="${escHtml(getSetting('contact_email'))}"></div>
-            <div class="form-group"><label>Contact Phone</label><input name="contact_phone" value="${escHtml(getSetting('contact_phone'))}"></div>
-            <div class="form-group"><label>Contact Address</label><textarea name="contact_address" rows="3">${escHtml(getSetting('contact_address'))}</textarea></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-section" style="margin-top:var(--space-6)">
-        <h3>ðŸ” SEO &amp; Meta Tags <small style="font-weight:400;color:var(--color-text-tertiary);font-size:var(--fs-sm)">â€” shown in Google results and when sharing on WhatsApp / Facebook / Twitter</small></h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
-          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group">
-              <label>Meta Title <small style="color:var(--color-text-tertiary)">(60 chars max â€” Google cuts off around 580px)</small></label>
-              <input name="meta_title" maxlength="80" value="${escHtml(getSetting('meta_title'))}" placeholder="Auto-falls-back to Site Title if empty">
-            </div>
-            <div class="form-group">
-              <label>Meta Description <small style="color:var(--color-text-tertiary)">(150â€“160 chars ideal)</small></label>
-              <textarea name="meta_description" rows="3" maxlength="320" oninput="document.getElementById('meta-desc-count').textContent=this.value.length">${escHtml(getSetting('meta_description'))}</textarea>
-              <small id="meta-desc-count" style="color:var(--color-text-tertiary)">${descCount} chars</small>
-            </div>
-            <div class="form-group">
-              <label>Meta Keywords <small style="color:var(--color-text-tertiary)">(comma separated, optional)</small></label>
-              <input name="meta_keywords" value="${escHtml(getSetting('meta_keywords'))}" placeholder="e.g. corporate diaries, custom planners, delhi manufacturer">
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-            <div class="form-group">
-              <label>OG Title <small style="color:var(--color-text-tertiary)">(Facebook / WhatsApp / LinkedIn share title)</small></label>
-              <input name="og_title" value="${escHtml(getSetting('og_title'))}" placeholder="Auto-falls-back to Meta Title">
-            </div>
-            <div class="form-group">
-              <label>OG Description <small style="color:var(--color-text-tertiary)">(social share description)</small></label>
-              <textarea name="og_description" rows="3" maxlength="320" oninput="document.getElementById('og-desc-count').textContent=this.value.length">${escHtml(getSetting('og_description'))}</textarea>
-              <small id="og-desc-count" style="color:var(--color-text-tertiary)">${ogDescCount} chars</small>
-            </div>
-            <div class="form-group">
-              <label>OG Image URL <small style="color:var(--color-text-tertiary)">(1200Ã—630 px recommended for social cards)</small></label>
-              <input name="og_image" value="${escHtml(getSetting('og_image'))}" placeholder="https://... or paste a Supabase storage URL">
-            </div>
-            <div class="form-group">
-              <label>OG URL <small style="color:var(--color-text-tertiary)">(canonical share URL)</small></label>
-              <input name="og_url" value="${escHtml(getSetting('og_url'))}" placeholder="https://newyeardiaries.in">
-            </div>
-            <div class="form-group">
-              <label>Twitter Card <small style="color:var(--color-text-tertiary)">(summary | summary_large_image)</small></label>
-              <select name="twitter_card">
-                <option value="summary_large_image" ${getSetting('twitter_card') === 'summary_large_image' ? 'selected' : ''}>summary_large_image (recommended)</option>
-                <option value="summary" ${getSetting('twitter_card') === 'summary' ? 'selected' : ''}>summary</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);font-size:var(--fs-xs);color:var(--color-text-tertiary)">
-          ðŸ’¡ Tip: After saving, refresh your homepage in a new tab to verify. Test social previews at <a href="https://www.opengraph.xyz/" target="_blank" rel="noopener">opengraph.xyz</a>.
-        </div>
-      </div>
-
-      <div style="margin-top:var(--space-6);display:flex;justify-content:flex-end">
-        <button type="submit" class="admin-btn admin-btn-primary"><span class="material-symbols-outlined">save</span> Save Settings</button>
-      </div>
-    </form>
-  `;
+    <div class="admin-header"><h1>Site Settings</h1></div><form id="settings-form"><div class="settings-grid"><div class="settings-section"><h3>General</h3><div style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Site Name</label><input name="site_name" value="${escHtml(getSetting('site_name'))}"></div><div class="form-group"><label>Tagline</label><input name="tagline" value="${escHtml(getSetting('tagline'))}"></div><div class="form-group"><label>Site Title (browser tab)</label><input name="site_title" value="${escHtml(getSetting('site_title'))}" placeholder="New Year Diaries | Premium Diaries & Corporate Planners | Manufacturer Direct"></div></div></div><div class="settings-section"><h3>Contact Information</h3><div style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Contact Email</label><input name="contact_email" type="email" value="${escHtml(getSetting('contact_email'))}"></div><div class="form-group"><label>Contact Phone</label><input name="contact_phone" value="${escHtml(getSetting('contact_phone'))}"></div><div class="form-group"><label>Contact Address</label><textarea name="contact_address" rows="3">${escHtml(getSetting('contact_address'))}</textarea></div></div></div></div><div class="settings-section" style="margin-top:var(--space-6)"><h3> SEO &amp; Meta Tags <small style="font-weight:400;color:var(--color-text-tertiary);font-size:var(--fs-sm)">— shown in Google results and when sharing on WhatsApp / Facebook / Twitter</small></h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)"><div style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Meta Title <small style="color:var(--color-text-tertiary)">(60 chars max — Google cuts off around 580px)</small></label><input name="meta_title" maxlength="80" value="${escHtml(getSetting('meta_title'))}" placeholder="Auto-falls-back to Site Title if empty"></div><div class="form-group"><label>Meta Description <small style="color:var(--color-text-tertiary)">(150–160 chars ideal)</small></label><textarea name="meta_description" rows="3" maxlength="320" oninput="document.getElementById('meta-desc-count').textContent=this.value.length">${escHtml(getSetting('meta_description'))}</textarea><small id="meta-desc-count" style="color:var(--color-text-tertiary)">${descCount} chars</small></div><div class="form-group"><label>Meta Keywords <small style="color:var(--color-text-tertiary)">(comma separated, optional)</small></label><input name="meta_keywords" value="${escHtml(getSetting('meta_keywords'))}" placeholder="e.g. corporate diaries, custom planners, delhi manufacturer"></div></div><div style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>OG Title <small style="color:var(--color-text-tertiary)">(Facebook / WhatsApp / LinkedIn share title)</small></label><input name="og_title" value="${escHtml(getSetting('og_title'))}" placeholder="Auto-falls-back to Meta Title"></div><div class="form-group"><label>OG Description <small style="color:var(--color-text-tertiary)">(social share description)</small></label><textarea name="og_description" rows="3" maxlength="320" oninput="document.getElementById('og-desc-count').textContent=this.value.length">${escHtml(getSetting('og_description'))}</textarea><small id="og-desc-count" style="color:var(--color-text-tertiary)">${ogDescCount} chars</small></div><div class="form-group"><label>OG Image URL <small style="color:var(--color-text-tertiary)">(1200×630 px recommended for social cards)</small></label><input name="og_image" value="${escHtml(getSetting('og_image'))}" placeholder="https://... or paste a Supabase storage URL"></div><div class="form-group"><label>OG URL <small style="color:var(--color-text-tertiary)">(canonical share URL)</small></label><input name="og_url" value="${escHtml(getSetting('og_url'))}" placeholder="https://newyeardiaries.in"></div><div class="form-group"><label>Twitter Card <small style="color:var(--color-text-tertiary)">(summary | summary_large_image)</small></label><select name="twitter_card"><option value="summary_large_image" ${getSetting('twitter_card') === 'summary_large_image' ? 'selected' : ''}>summary_large_image (recommended)</option><option value="summary" ${getSetting('twitter_card') === 'summary' ? 'selected' : ''}>summary</option></select></div></div></div><div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);font-size:var(--fs-xs);color:var(--color-text-tertiary)">Tip: After saving, refresh your homepage in a new tab to verify. Test social previews at <a href="https://www.opengraph.xyz/" target="_blank" rel="noopener">opengraph.xyz</a>.
+        </div></div><div style="margin-top:var(--space-6);display:flex;justify-content:flex-end"><button type="submit" class="admin-btn admin-btn-primary"><span class="material-symbols-outlined">save</span> Save Settings</button></div></form>`;
 
   document.getElementById('settings-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -2727,7 +2171,7 @@ async function renderSettings(container) {
       return;
     }
     bustContentCache();
-    showToast('Settings + meta tags saved! Refreshingâ€¦');
+    showToast('Settings + meta tags saved! Refreshing…');
     setTimeout(() => window.location.reload(), 800);
   };
 }
@@ -2751,104 +2195,20 @@ async function renderEnquiries(container, tab = 'contact') {
     .order('created_at', { ascending: false });
 
   const renderContactTable = () => (contacts?.length ? `
-    <table class="admin-table">
-      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>
-        ${contacts.map(c => `<tr data-id="${c.id}" class="${c.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(c.enquiry_code || 'â€”')}</code></td>
-          <td>${escHtml(c.name)}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(c.address)}</span>` : ''}</td>
-          <td><a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a></td>
-          <td>${c.mobile ? `<a href="tel:${escHtml(c.mobile)}">${escHtml(c.mobile)}</a>` : 'â€”'}</td>
-          <td>${escHtml(c.state || 'â€”')}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.message || '')}">${escHtml(c.message || 'â€”')}</td>
-          <td>${new Date(c.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
-          <td class="col-actions">
-            <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${c.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${c.status === 'reviewed' ? 'undo' : 'check'}</span></button>
-            <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
-          </td>
-        </tr>`).join('')}
-      </tbody>
-    </table>` : '<div class="empty-state"><p>No contact submissions</p></div>');
+    <table class="admin-table"><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${contacts.map(c => `<tr data-id="${c.id}" class="${c.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}"><td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(c.enquiry_code || '—')}</code></td><td>${escHtml(c.name)}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(c.address)}</span>` : ''}</td><td><a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a></td><td>${c.mobile ? `<a href="tel:${escHtml(c.mobile)}">${escHtml(c.mobile)}</a>` : '—'}</td><td>${escHtml(c.state || '—')}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.message || '')}">${escHtml(c.message || '—')}</td><td>${new Date(c.created_at).toLocaleDateString()}</td><td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td><td class="col-actions"><button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button><button class="review-btn" title="${c.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${c.status === 'reviewed' ? 'undo' : 'check'}</span></button><button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty-state"><p>No contact submissions</p></div>');
 
   const renderEnquiryTable = () => (enquiries?.length ? `
-    <table class="admin-table">
-      <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>
-        ${enquiries.map(e => `<tr data-id="${e.id}" class="${e.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(e.enquiry_code || 'â€”')}</code></td>
-          <td>${escHtml(e.name)}</td>
-          <td><a href="mailto:${escHtml(e.email)}">${escHtml(e.email)}</a></td>
-          <td>${escHtml(e.company || 'â€”')}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.product_names || e.products || 'â€”')}</td>
-          <td>${new Date(e.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${e.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${e.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
-          <td class="col-actions">
-            <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-            <button class="review-btn" title="${e.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${e.status === 'reviewed' ? 'undo' : 'check'}</span></button>
-            <button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
-          </td>
-        </tr>`).join('')}
-      </tbody>
-    </table>` : '<div class="empty-state"><p>No bulk enquiries</p></div>');
+    <table class="admin-table"><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${enquiries.map(e => `<tr data-id="${e.id}" class="${e.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}"><td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(e.enquiry_code || '—')}</code></td><td>${escHtml(e.name)}</td><td><a href="mailto:${escHtml(e.email)}">${escHtml(e.email)}</a></td><td>${escHtml(e.company || '—')}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.product_names || e.products || '—')}</td><td>${new Date(e.created_at).toLocaleDateString()}</td><td><span class="badge ${e.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${e.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td><td class="col-actions"><button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button><button class="review-btn" title="${e.status === 'reviewed' ? 'Mark pending' : 'Mark reviewed'}"><span class="material-symbols-outlined">${e.status === 'reviewed' ? 'undo' : 'check'}</span></button><button class="delete delete-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty-state"><p>No bulk enquiries</p></div>');
 
   const renderOrdersTable = () => (orders?.length ? `
-    <table class="admin-table">
-      <thead><tr><th>Order #</th><th>Name</th><th>Email</th><th>Phone</th><th>Total</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>
-        ${orders.map(o => `<tr data-id="${o.id}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(o.order_number || 'â€”')}</code></td>
-          <td>${escHtml(o.first_name)} ${escHtml(o.last_name)}</td>
-          <td><a href="mailto:${escHtml(o.email)}">${escHtml(o.email)}</a></td>
-          <td>${escHtml(o.phone || 'â€”')}</td>
-          <td>â‚¹${Number(o.total).toLocaleString()}</td>
-          <td>${new Date(o.created_at).toLocaleDateString()}</td>
-          <td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${escHtml(o.status || 'Pending')}</span></td>
-          <td class="col-actions">
-            <button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button>
-          </td>
-        </tr>`).join('')}
-      </tbody>
-    </table>` : '<div class="empty-state"><p>No orders yet</p></div>');
+    <table class="admin-table"><thead><tr><th>Order #</th><th>Name</th><th>Email</th><th>Phone</th><th>Total</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${orders.map(o => `<tr data-id="${o.id}"><td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(o.order_number || '—')}</code></td><td>${escHtml(o.first_name)} ${escHtml(o.last_name)}</td><td><a href="mailto:${escHtml(o.email)}">${escHtml(o.email)}</a></td><td>${escHtml(o.phone || '—')}</td><td>₹${Number(o.total).toLocaleString()}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${escHtml(o.status || 'Pending')}</span></td><td class="col-actions"><button class="view-btn" title="View"><span class="material-symbols-outlined">visibility</span></button></td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty-state"><p>No orders yet</p></div>');
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Enquiries & Submissions</h1>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-8)">
-      <div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-contacts">
-        <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Contact Messages</div>
-        <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${contactCount || contacts?.length || 0}</div>
-      </div>
-      <div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-enquiries">
-        <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Bulk Enquiries</div>
-        <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${enquiryCount || enquiries?.length || 0}</div>
-      </div>
-      <div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-orders">
-        <div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Orders</div>
-        <div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${orderCount || orders?.length || 0}</div>
-      </div>
-    </div>
-
-    <div class="enquiry-tabs">
-      <button class="enquiry-tab ${tab === 'contact' ? 'active' : ''}" data-etab="contact">
-        Contact Messages <span class="count-badge">${contactCount || contacts?.length || 0}</span>
-      </button>
-      <button class="enquiry-tab ${tab === 'enquiry' ? 'active' : ''}" data-etab="enquiry">
-        Bulk Enquiries <span class="count-badge">${enquiryCount || enquiries?.length || 0}</span>
-      </button>
-      <button class="enquiry-tab ${tab === 'orders' ? 'active' : ''}" data-etab="orders">
-        Orders <span class="count-badge">${orderCount || orders?.length || 0}</span>
-      </button>
-    </div>
-
-    <div class="admin-card">
-      ${tab === 'contact' ? renderContactTable() : tab === 'enquiry' ? renderEnquiryTable() : renderOrdersTable()}
-    </div>
-  `;
+    <div class="admin-header"><div class="admin-header-left"><h1>Enquiries & Submissions</h1></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-8)"><div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-contacts"><div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Contact Messages</div><div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${contactCount || contacts?.length || 0}</div></div><div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-enquiries"><div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Bulk Enquiries</div><div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${enquiryCount || enquiries?.length || 0}</div></div><div class="admin-card" style="padding:var(--space-6);cursor:pointer" id="stat-orders"><div style="font-size:var(--fs-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:var(--ls-wider);margin-bottom:var(--space-2)">Orders</div><div style="font-size:var(--fs-3xl);font-weight:var(--fw-bold)">${orderCount || orders?.length || 0}</div></div></div><div class="enquiry-tabs"><button class="enquiry-tab ${tab === 'contact' ? 'active' : ''}" data-etab="contact">Contact Messages <span class="count-badge">${contactCount || contacts?.length || 0}</span></button><button class="enquiry-tab ${tab === 'enquiry' ? 'active' : ''}" data-etab="enquiry">Bulk Enquiries <span class="count-badge">${enquiryCount || enquiries?.length || 0}</span></button><button class="enquiry-tab ${tab === 'orders' ? 'active' : ''}" data-etab="orders">Orders <span class="count-badge">${orderCount || orders?.length || 0}</span></button></div><div class="admin-card">${tab === 'contact' ? renderContactTable() : tab === 'enquiry' ? renderEnquiryTable() : renderOrdersTable()}
+    </div>`;
 
   document.getElementById('stat-contacts')?.addEventListener('click', () => renderEnquiries(container, 'contact'));
   document.getElementById('stat-enquiries')?.addEventListener('click', () => renderEnquiries(container, 'enquiry'));
@@ -2916,75 +2276,60 @@ function openEnquiryDetailModal(item, type) {
 
   const fields = type === 'contact'
     ? [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
-        { label: 'Subject', value: escHtml(item.subject || 'â€”') },
-        { label: 'Message', value: escHtml(item.message || 'â€”') },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Subject', value: escHtml(item.subject || '—') },
+        { label: 'Message', value: escHtml(item.message || '—') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'enquiry'
     ? [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Company', value: escHtml(item.company || 'â€”') },
-        { label: 'Products', value: escHtml(item.product_names || item.products || 'â€”') },
-        { label: 'Message', value: escHtml(item.message || 'â€”') },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'Products', value: escHtml(item.product_names || item.products || '—') },
+        { label: 'Message', value: escHtml(item.message || '—') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'orders' || type === 'order'
     ? [
-        { label: 'Order Number', value: escHtml(item.order_number || 'â€”') },
+        { label: 'Order Number', value: escHtml(item.order_number || '—') },
         { label: 'Customer Name', value: escHtml(`${item.first_name || ''} ${item.last_name || ''}`.trim()) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
-        { label: 'Company', value: escHtml(item.company || 'â€”') },
-        { label: 'GST Number', value: escHtml(item.gst || 'â€”') },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'GST Number', value: escHtml(item.gst || '—') },
         { label: 'Shipping Address', value: escHtml(`${item.address_line_1 || ''}${item.address_line_2 ? ', ' + item.address_line_2 : ''}, ${item.city || ''}, ${item.state || ''} - ${item.postcode || ''}, ${item.country || 'India'}`) },
-        { label: 'Payment Method', value: escHtml(item.payment_method || 'â€”') },
-        { label: 'Financial Summary', value: `Subtotal: â‚¹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): â‚¹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: â‚¹${Number(item.shipping || 0).toLocaleString()} | Total: â‚¹${Number(item.total || 0).toLocaleString()}` },
-        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${escHtml(item.special_instructions)}</div>` : 'â€”' },
+        { label: 'Payment Method', value: escHtml(item.payment_method || '—') },
+        { label: 'Financial Summary', value: `Subtotal: ₹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): ₹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: ₹${Number(item.shipping || 0).toLocaleString()} | Total: ₹${Number(item.total || 0).toLocaleString()}` },
+        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${escHtml(item.special_instructions)}</div>` : '—' },
         { label: 'Order Items', value: '<div id="modal-order-items">Loading order items...</div>' },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Order Date', value: new Date(item.created_at).toLocaleString() },
       ]
     : [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
-        { label: 'Company', value: escHtml(item.company || 'â€”') },
-        { label: 'Product Interest', value: escHtml(item.product_type || 'â€”') },
-        { label: 'Products', value: escHtml(item.product_names || 'â€”') },
-        { label: 'Quantity', value: escHtml(item.quantity || 'â€”') },
-        { label: 'Requirements', value: escHtml(item.custom_requirements || 'â€”') },
+        { label: 'Phone', value: escHtml(item.phone || '—') },
+        { label: 'Company', value: escHtml(item.company || '—') },
+        { label: 'Product Interest', value: escHtml(item.product_type || '—') },
+        { label: 'Products', value: escHtml(item.product_names || '—') },
+        { label: 'Quantity', value: escHtml(item.quantity || '—') },
+        { label: 'Requirements', value: escHtml(item.custom_requirements || '—') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ];
 
   overlay.innerHTML = `
-    <div class="admin-modal enquiry-detail-modal">
-      <div class="admin-modal-header">
-        <h2>${type === 'contact' ? 'Contact Message' : type === 'enquiry' ? 'Bulk Enquiry' : type === 'orders' || type === 'order' ? 'Order' : 'Quote Request'} Details</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div class="admin-form">
-        ${fields.map(f => `
-          <div class="enquiry-field">
-            <label>${f.label}</label>
-            <div class="value">${f.value}</div>
-          </div>
-        `).join('')}
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Close</button>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="admin-modal enquiry-detail-modal"><div class="admin-modal-header"><h2>${type === 'contact' ? 'Contact Message' : type === 'enquiry' ? 'Bulk Enquiry' : type === 'orders' || type === 'order' ? 'Order' : 'Quote Request'} Details</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><div class="admin-form">${fields.map(f => `
+          <div class="enquiry-field"><label>${f.label}</label><div class="value">${f.value}</div></div>`).join('')}
+        <div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Close</button></div></div></div>`;
   document.body.appendChild(overlay);
 
   if (type === 'orders' || type === 'order') {
@@ -3002,30 +2347,10 @@ function openEnquiryDetailModal(item, type) {
         itemsContainer.innerHTML = '<div>No items in this order.</div>';
       } else {
         itemsContainer.innerHTML = `
-          <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:var(--fs-sm);">
-            <thead>
-              <tr style="border-bottom:2px solid var(--color-border); text-align:left; font-weight:600;">
-                <th style="padding:8px 0;">Product</th>
-                <th style="padding:8px 0; text-align:center;">Qty</th>
-                <th style="padding:8px 0; text-align:right;">Price</th>
-                <th style="padding:8px 0; text-align:right;">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${orderItems.map(it => `
-                <tr style="border-bottom:1px solid var(--color-border-light);">
-                  <td style="padding:8px 0;">
-                    <div style="font-weight:600;">${escHtml(it.product_name)}</div>
-                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).map(escHtml).join(' â€¢ ')}</div>` : ''}
-                  </td>
-                  <td style="padding:8px 0; text-align:center;">${it.quantity}</td>
-                  <td style="padding:8px 0; text-align:right;">â‚¹${Number(it.unit_price).toLocaleString()}</td>
-                  <td style="padding:8px 0; text-align:right; font-weight:600;">â‚¹${Number(it.line_total).toLocaleString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+          <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:var(--fs-sm);"><thead><tr style="border-bottom:2px solid var(--color-border); text-align:left; font-weight:600;"><th style="padding:8px 0;">Product</th><th style="padding:8px 0; text-align:center;">Qty</th><th style="padding:8px 0; text-align:right;">Price</th><th style="padding:8px 0; text-align:right;">Subtotal</th></tr></thead><tbody>${orderItems.map(it => `
+                <tr style="border-bottom:1px solid var(--color-border-light);"><td style="padding:8px 0;"><div style="font-weight:600;">${escHtml(it.product_name)}</div>${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).map(escHtml).join(' · ')}</div>` : ''}
+                  </td><td style="padding:8px 0; text-align:center;">${it.quantity}</td><td style="padding:8px 0; text-align:right;">₹${Number(it.unit_price).toLocaleString()}</td><td style="padding:8px 0; text-align:right; font-weight:600;">₹${Number(it.line_total).toLocaleString()}</td></tr>`).join('')}
+            </tbody></table>`;
       }
     }, 0);
   }
@@ -3047,49 +2372,11 @@ async function renderHeaderSection(container) {
   const { data: contentRows } = await supabase.from('site_content').select('*').eq('section', 'header');
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Header</h1>
-        <span class="admin-header-stats">Announcement bar</span>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)">
-      <div class="admin-card">
-        <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6)">
-          <h2 style="font-size:var(--fs-lg)">Announcement Items</h2>
-          <button class="admin-btn admin-btn-primary" id="add-ann-btn" style="padding:var(--space-1) var(--space-3)">
-            <span class="material-symbols-outlined" style="font-size:16px">add</span> Add
-          </button>
-        </div>
-        <div id="ann-list" style="padding:var(--space-4) var(--space-6);display:flex;flex-direction:column;gap:var(--space-3)">
-          ${(ann || []).map((a, i) => `
-            <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
-              <div style="flex:1">
-                <div style="font-weight:var(--fw-medium)">${a.text}</div>
-                ${a.link ? `<div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">â†’ ${a.link}</div>` : ''}
-              </div>
-              <button class="ann-edit-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
-              <button class="ann-del-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-error);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-
-      <div class="admin-card" style="padding:var(--space-6)">
-        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-6)">Header Settings</h2>
-        <form id="header-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <div class="form-group"><label>Announcement Bar Text</label>
-            <textarea name="announcement_text" rows="3" placeholder="Use | to separate items">${contentRows?.find(c => c.key === 'announcement_text')?.value || ''}</textarea>
-          </div>
-          <div class="form-group"><label>Announcement Link (last item)</label>
-            <input name="announcement_link" value="${contentRows?.find(c => c.key === 'announcement_link')?.value || '/bulk-quote'}">
-          </div>
-          <button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save Header</button>
-        </form>
-      </div>
-    </div>
-  `;
+    <div class="admin-header"><div class="admin-header-left"><h1>Header</h1><span class="admin-header-stats">Announcement bar</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)"><div class="admin-card"><div class="admin-modal-header" style="padding:var(--space-4) var(--space-6)"><h2 style="font-size:var(--fs-lg)">Announcement Items</h2><button class="admin-btn admin-btn-primary" id="add-ann-btn" style="padding:var(--space-1) var(--space-3)"><span class="material-symbols-outlined" style="font-size:16px">add</span> Add
+          </button></div><div id="ann-list" style="padding:var(--space-4) var(--space-6);display:flex;flex-direction:column;gap:var(--space-3)">${(ann || []).map((a, i) => `
+            <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)"><div style="flex:1"><div style="font-weight:var(--fw-medium)">${a.text}</div>${a.link ? `<div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">→ ${a.link}</div>` : ''}
+              </div><button class="ann-edit-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button><button class="ann-del-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-error);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button></div>`).join('')}
+        </div></div><div class="admin-card" style="padding:var(--space-6)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-6)">Header Settings</h2><form id="header-form" style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Announcement Bar Text</label><textarea name="announcement_text" rows="3" placeholder="Use | to separate items">${contentRows?.find(c => c.key === 'announcement_text')?.value || ''}</textarea></div><div class="form-group"><label>Announcement Link (last item)</label><input name="announcement_link" value="${contentRows?.find(c => c.key === 'announcement_link')?.value || '/bulk-quote'}"></div><button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save Header</button></form></div></div>`;
 
   document.getElementById('add-ann-btn').onclick = () => openAnnModal(container);
   document.querySelectorAll('.ann-edit-btn').forEach(btn => {
@@ -3136,22 +2423,7 @@ function openAnnModal(container, ann = null) {
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
-      <div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Announcement</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div>
-      <form class="admin-form" id="ann-form">
-        <div class="form-group"><label>Text *</label><input name="text" value="${ann?.text || ''}" required placeholder="e.g. Free Shipping on Orders 500+"></div>
-        <div class="form-group"><label>Link (optional)</label><input name="link" value="${ann?.link || ''}" placeholder="/bulk-quote"></div>
-        <div class="form-row">
-          <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${ann?.sort_order || 0}"></div>
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="ann_active" ${ann?.active !== false ? 'checked' : ''}><label for="ann_active">Active</label></div>
-        </div>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save' : 'Add'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal"><div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Announcement</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="ann-form"><div class="form-group"><label>Text *</label><input name="text" value="${ann?.text || ''}" required placeholder="e.g. Free Shipping on Orders 500+"></div><div class="form-group"><label>Link (optional)</label><input name="link" value="${ann?.link || ''}" placeholder="/bulk-quote"></div><div class="form-row"><div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${ann?.sort_order || 0}"></div><div class="form-group checkbox"><input name="active" type="checkbox" id="ann_active" ${ann?.active !== false ? 'checked' : ''}><label for="ann_active">Active</label></div></div><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save' : 'Add'}</button></div></form></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
@@ -3198,130 +2470,19 @@ async function renderHomepageSection(container) {
   const { data: sliderItems } = await supabase.from('homepage_slider_items').select('*').order('position');
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Homepage</h1>
-        <span class="admin-header-stats">Hero, Trust Badges, Sliders, CTA & Shop by Category</span>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)">
-      <div class="admin-card" style="padding:var(--space-6)">
-        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">ðŸ  Hero Banner</h2>
-        <form id="hero-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <div class="form-group"><label>Title</label><input name="title" value="${hero?.title || ''}"></div>
-          <div class="form-group"><label>Subtitle</label><input name="subtitle" value="${hero?.subtitle || ''}"></div>
-          <div class="form-row">
-            <div class="form-group"><label>CTA Text</label><input name="cta_text" value="${hero?.cta_text || ''}"></div>
-            <div class="form-group"><label>CTA Link</label><input name="cta_link" value="${hero?.cta_link || ''}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>2nd CTA Text</label><input name="second_cta_text" value="${hero?.second_cta_text || ''}"></div>
-            <div class="form-group"><label>2nd CTA Link</label><input name="second_cta_link" value="${hero?.second_cta_link || ''}"></div>
-          </div>
-          <button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save Hero</button>
-        </form>
-      </div>
-
-      <div class="admin-card" style="padding:var(--space-6)">
-        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">ðŸ“£ CTA Section</h2>
-        <form id="cta-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <div class="form-group"><label>Title</label><input name="title" value="${cta?.title || ''}"></div>
-          <div class="form-group"><label>Subtitle</label><textarea name="subtitle" rows="3">${cta?.subtitle || ''}</textarea></div>
-          <div class="form-row">
-            <div class="form-group"><label>CTA Text</label><input name="cta_text" value="${cta?.cta_text || ''}"></div>
-            <div class="form-group"><label>CTA Link</label><input name="cta_link" value="${cta?.cta_link || ''}"></div>
-          </div>
-          <button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save CTA</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
-      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">â­ Trust Badges</h2>
-          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 4 USP cards shown above the "Ready for Corporate Orders?" section (icon, title, description)</p>
-        </div>
-        <button class="admin-btn admin-btn-primary" id="add-trust-badge-btn">
-          <span class="material-symbols-outlined">add</span> Add Badge
-        </button>
-      </div>
-      ${trustBadges?.length ? `<div class="admin-table-wrap"><table class="admin-table">
-        <thead><tr><th style="width:60px">Icon</th><th>Title</th><th>Description</th><th style="width:60px">Position</th><th style="width:80px">Status</th><th style="width:90px;text-align:right">Actions</th></tr></thead>
-        <tbody>
-          ${trustBadges.map(b => `<tr data-id="${b.id}">
-            <td><span class="material-symbols-outlined" style="color:var(--color-accent)">${b.icon || 'verified'}</span></td>
-            <td><strong>${b.title || ''}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${b.icon || ''}</div></td>
-            <td style="font-size:var(--fs-sm);color:var(--color-text-secondary)">${b.description || ''}</td>
-            <td>${b.position || 0}</td>
-            <td><span class="badge ${b.active !== false ? 'badge-active' : 'badge-inactive'}">${b.active !== false ? 'Active' : 'Inactive'}</span></td>
-            <td class="col-actions">
-              <button class="edit-trust-badge-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
-              <button class="delete-trust-badge-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">verified</span><p>No trust badges added yet</p></div>`}
-    </div>
-
-        <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
-      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">ðŸŽ  Slider Sections</h2>
-          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 5 product carousels on the homepage â€” edit title, "View All" link, background, and the products shown (up to 10 each).</p>
-        </div>
-      </div>
-      ${sliderSections?.length ? `<div style="padding:var(--space-2)">
-        ${sliderSections.map(sec => {
+    <div class="admin-header"><div class="admin-header-left"><h1>Homepage</h1><span class="admin-header-stats">Hero, Trust Badges, Sliders, CTA & Shop by Category</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)"><div class="admin-card" style="padding:var(--space-6)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">Hero Banner</h2><form id="hero-form" style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Title</label><input name="title" value="${hero?.title || ''}"></div><div class="form-group"><label>Subtitle</label><input name="subtitle" value="${hero?.subtitle || ''}"></div><div class="form-row"><div class="form-group"><label>CTA Text</label><input name="cta_text" value="${hero?.cta_text || ''}"></div><div class="form-group"><label>CTA Link</label><input name="cta_link" value="${hero?.cta_link || ''}"></div></div><div class="form-row"><div class="form-group"><label>2nd CTA Text</label><input name="second_cta_text" value="${hero?.second_cta_text || ''}"></div><div class="form-group"><label>2nd CTA Link</label><input name="second_cta_link" value="${hero?.second_cta_link || ''}"></div></div><button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save Hero</button></form></div><div class="admin-card" style="padding:var(--space-6)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">CTA Section</h2><form id="cta-form" style="display:flex;flex-direction:column;gap:var(--space-4)"><div class="form-group"><label>Title</label><input name="title" value="${cta?.title || ''}"></div><div class="form-group"><label>Subtitle</label><textarea name="subtitle" rows="3">${cta?.subtitle || ''}</textarea></div><div class="form-row"><div class="form-group"><label>CTA Text</label><input name="cta_text" value="${cta?.cta_text || ''}"></div><div class="form-group"><label>CTA Link</label><input name="cta_link" value="${cta?.cta_link || ''}"></div></div><button type="submit" class="admin-btn admin-btn-primary" style="align-self:flex-start">Save CTA</button></form></div></div><div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)"><div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:var(--fs-lg);margin:0">Trust Badges</h2><p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 4 USP cards shown above the "Ready for Corporate Orders?" section (icon, title, description)</p></div><button class="admin-btn admin-btn-primary" id="add-trust-badge-btn"><span class="material-symbols-outlined">add</span> Add Badge
+        </button></div>${trustBadges?.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th style="width:60px">Icon</th><th>Title</th><th>Description</th><th style="width:60px">Position</th><th style="width:80px">Status</th><th style="width:90px;text-align:right">Actions</th></tr></thead><tbody>${trustBadges.map(b => `<tr data-id="${b.id}"><td><span class="material-symbols-outlined" style="color:var(--color-accent)">${b.icon || 'verified'}</span></td><td><strong>${b.title || ''}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${b.icon || ''}</div></td><td style="font-size:var(--fs-sm);color:var(--color-text-secondary)">${b.description || ''}</td><td>${b.position || 0}</td><td><span class="badge ${b.active !== false ? 'badge-active' : 'badge-inactive'}">${b.active !== false ? 'Active' : 'Inactive'}</span></td><td class="col-actions"><button class="edit-trust-badge-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button><button class="delete-trust-badge-btn" title="Delete"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+        </tbody></table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">verified</span><p>No trust badges added yet</p></div>`}
+    </div><div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)"><div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:var(--fs-lg);margin:0">Ž  Slider Sections</h2><p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 5 product carousels on the homepage — edit title, "View All" link, background, and the products shown (up to 10 each).</p></div></div>${sliderSections?.length ? `<div style="padding:var(--space-2)">${sliderSections.map(sec => {
           const secItems = (sliderItems || []).filter(it => it.section_id === sec.id);
           return `
-          <div style="display:grid;grid-template-columns:1fr 80px 70px 90px 130px;gap:var(--space-3);align-items:center;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-light)">
-            <div>
-              <strong style="font-size:var(--fs-md)">${sec.title}</strong>
-              <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:2px">${sec.view_all_link || 'â€” no view all â€”'} Â· <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sec.bg_color || '#FAF8F5'};border:1px solid var(--color-border-light);vertical-align:middle"></span> ${sec.bg_color || '#FAF8F5'}</div>
-            </div>
-            <div style="text-align:center"><span class="badge ${sec.active !== false ? 'badge-active' : 'badge-inactive'}">${sec.active !== false ? 'Active' : 'Inactive'}</span></div>
-            <div style="text-align:center;font-weight:var(--fw-semibold)">${secItems.length}/10</div>
-            <div style="text-align:right">
-              <button class="admin-btn admin-btn-ghost edit-slider-section-btn" data-id="${sec.id}" title="Edit section"><span class="material-symbols-outlined">edit</span> Edit</button>
-            </div>
-            <div style="text-align:right;display:flex;gap:var(--space-2);justify-content:flex-end">
-              <button class="admin-btn admin-btn-primary pick-slider-products-btn" data-id="${sec.id}" title="Choose products"><span class="material-symbols-outlined">add_photo_alternate</span> Products</button>
-            </div>
-          </div>`;
+          <div style="display:grid;grid-template-columns:1fr 80px 70px 90px 130px;gap:var(--space-3);align-items:center;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-light)"><div><strong style="font-size:var(--fs-md)">${sec.title}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:2px">${sec.view_all_link || '— no view all —'} Â· <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sec.bg_color || '#FAF8F5'};border:1px solid var(--color-border-light);vertical-align:middle"></span> ${sec.bg_color || '#FAF8F5'}</div></div><div style="text-align:center"><span class="badge ${sec.active !== false ? 'badge-active' : 'badge-inactive'}">${sec.active !== false ? 'Active' : 'Inactive'}</span></div><div style="text-align:center;font-weight:var(--fw-semibold)">${secItems.length}/10</div><div style="text-align:right"><button class="admin-btn admin-btn-ghost edit-slider-section-btn" data-id="${sec.id}" title="Edit section"><span class="material-symbols-outlined">edit</span> Edit</button></div><div style="text-align:right;display:flex;gap:var(--space-2);justify-content:flex-end"><button class="admin-btn admin-btn-primary pick-slider-products-btn" data-id="${sec.id}" title="Choose products"><span class="material-symbols-outlined">add_photo_alternate</span> Products</button></div></div>`;
         }).join('')}
       </div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">view_carousel</span><p>No slider sections yet. Run migration 20260620002 to seed the 5 default sections.</p></div>`}
-    </div>
-
-        <div class="admin-card" style="padding:0;overflow:hidden">
-      <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">ðŸ—‚ï¸ Shop by Category</h2>
-          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Categories displayed in the homepage "SHOP BY CATEGORY" section</p>
-        </div>
-        <button class="admin-btn admin-btn-primary" id="add-shop-cat-btn">
-          <span class="material-symbols-outlined">add</span> Add Category
-        </button>
-      </div>
-      ${shopCats?.length ? `<div class="admin-table-wrap"><table class="admin-table">
-        <thead><tr><th>Image</th><th>Title</th><th>Link</th><th>Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-        <tbody>
-          ${shopCats.map(c => `<tr data-id="${c.id}">
-            <td><img src="${c.image_url || '/images/placeholder.jpg'}" style="width:48px;height:48px;object-fit:cover;border-radius:4px" /></td>
-            <td><strong>${c.title}</strong></td>
-            <td style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">${c.link}</td>
-            <td>${c.sort_order || 0}</td>
-            <td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td>
-            <td class="col-actions">
-              <button class="edit-shop-cat-btn"><span class="material-symbols-outlined">edit</span></button>
-              <button class="delete-shop-cat-btn"><span class="material-symbols-outlined">delete</span></button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">category</span><p>No shop categories added yet</p></div>`}
-    </div>
-  `;
+    </div><div class="admin-card" style="padding:0;overflow:hidden"><div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between"><div><h2 style="font-size:var(--fs-lg);margin:0">Shop by Category</h2><p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Categories displayed in the homepage "SHOP BY CATEGORY" section</p></div><button class="admin-btn admin-btn-primary" id="add-shop-cat-btn"><span class="material-symbols-outlined">add</span> Add Category
+        </button></div>${shopCats?.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Title</th><th>Link</th><th>Order</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${shopCats.map(c => `<tr data-id="${c.id}"><td><img src="${c.image_url || '/images/placeholder.jpg'}" style="width:48px;height:48px;object-fit:cover;border-radius:4px" /></td><td><strong>${c.title}</strong></td><td style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">${c.link}</td><td>${c.sort_order || 0}</td><td><span class="badge ${c.active !== false ? 'badge-active' : 'badge-inactive'}">${c.active !== false ? 'Active' : 'Inactive'}</span></td><td class="col-actions"><button class="edit-shop-cat-btn"><span class="material-symbols-outlined">edit</span></button><button class="delete-shop-cat-btn"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('')}
+        </tbody></table></div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">category</span><p>No shop categories added yet</p></div>`}
+    </div>`;
 
   document.getElementById('hero-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -3421,30 +2582,7 @@ function openTrustBadgeModal(container, badge, allBadges) {
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <h2>${isEdit ? 'Edit' : 'Add'} Trust Badge</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <form class="admin-form" id="trust-badge-form">
-        <div class="form-group">
-          <label>Material Symbol Icon *</label>
-          <input name="icon" required value="${badge?.icon || 'verified'}" placeholder="e.g. draw, factory, workspace_premium, local_shipping">
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browse icons at <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">fonts.google.com/icons</a> (use the exact name, lowercase, underscores).</small>
-        </div>
-        <div class="form-group"><label>Title *</label><input name="title" required value="${badge?.title || ''}" placeholder="e.g. Customized Diaries"></div>
-        <div class="form-group"><label>Description</label><input name="description" value="${badge?.description || ''}" placeholder="e.g. Your Brand Logo Embossed"></div>
-        <div class="form-row">
-          <div class="form-group"><label>Position</label><input name="position" type="number" value="${nextPosition}"></div>
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="trust-badge-active" ${badge?.active !== false ? 'checked' : ''}><label for="trust-badge-active">Active</label></div>
-        </div>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Badge'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal"><div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Trust Badge</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="trust-badge-form"><div class="form-group"><label>Material Symbol Icon *</label><input name="icon" required value="${badge?.icon || 'verified'}" placeholder="e.g. draw, factory, workspace_premium, local_shipping"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Browse icons at <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">fonts.google.com/icons</a> (use the exact name, lowercase, underscores).</small></div><div class="form-group"><label>Title *</label><input name="title" required value="${badge?.title || ''}" placeholder="e.g. Customized Diaries"></div><div class="form-group"><label>Description</label><input name="description" value="${badge?.description || ''}" placeholder="e.g. Your Brand Logo Embossed"></div><div class="form-row"><div class="form-group"><label>Position</label><input name="position" type="number" value="${nextPosition}"></div><div class="form-group checkbox"><input name="active" type="checkbox" id="trust-badge-active" ${badge?.active !== false ? 'checked' : ''}><label for="trust-badge-active">Active</label></div></div><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Badge'}</button></div></form></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
@@ -3500,36 +2638,8 @@ function openSliderSectionModal(container, section, primaryCats) {
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <h2>Edit Slider Section</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <form class="admin-form" id="slider-section-form">
-        <div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2027"></div>
-        <div class="form-group"><label>View All Link</label><input name="view_all_link" value="${section?.view_all_link || ''}" placeholder="e.g. /shop?cat=leather-diaries"></div>
-        <div class="form-group">
-          <label>Auto-fill from Category <small style="color:var(--color-text-tertiary)">(recommended)</small></label>
-          <select name="category_slug">
-            <option value="">â€” Manual: use product picker below â€”</option>
-            ${catOptions}
-          </select>
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">When set, the slider automatically shows up to 10 products in this category. When you change a product's category in the admin, the slider updates with it. Leave empty to use the manually-picked products instead.</small>
-        </div>
-        <div class="form-group"><label>Background Color</label>
-          <div style="display:flex;gap:var(--space-2);align-items:center">
-            <input type="color" name="bg_color_picker" value="${section?.bg_color || '#FAF8F5'}" style="width:50px;height:36px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer">
-            <input name="bg_color" value="${section?.bg_color || '#FAF8F5'}" placeholder="#FAF8F5" style="flex:1">
-          </div>
-        </div>
-        <div class="form-group checkbox"><input name="active" type="checkbox" id="slider-active" ${section?.active !== false ? 'checked' : ''}><label for="slider-active">Active</label></div>
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal"><div class="admin-modal-header"><h2>Edit Slider Section</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="slider-section-form"><div class="form-group"><label>Title *</label><input name="title" required value="${section?.title || ''}" placeholder="e.g. Leather Diary 2027"></div><div class="form-group"><label>View All Link</label><input name="view_all_link" value="${section?.view_all_link || ''}" placeholder="e.g. /shop?cat=leather-diaries"></div><div class="form-group"><label>Auto-fill from Category <small style="color:var(--color-text-tertiary)">(recommended)</small></label><select name="category_slug"><option value="">— Manual: use product picker below —</option>${catOptions}
+          </select><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">When set, the slider automatically shows up to 10 products in this category. When you change a product's category in the admin, the slider updates with it. Leave empty to use the manually-picked products instead.</small></div><div class="form-group"><label>Background Color</label><div style="display:flex;gap:var(--space-2);align-items:center"><input type="color" name="bg_color_picker" value="${section?.bg_color || '#FAF8F5'}" style="width:50px;height:36px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer"><input name="bg_color" value="${section?.bg_color || '#FAF8F5'}" placeholder="#FAF8F5" style="flex:1"></div></div><div class="form-group checkbox"><input name="active" type="checkbox" id="slider-active" ${section?.active !== false ? 'checked' : ''}><label for="slider-active">Active</label></div><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">Save Changes</button></div></form></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
@@ -3591,29 +2701,8 @@ async function openSliderPickerModal(container, section, currentProductIds) {
   overlay.className = 'admin-modal-overlay';
   overlay.id = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal" style="max-width:880px;width:90vw">
-      <div class="admin-modal-header">
-        <div>
-          <h2>Choose products for "${escHtml(section.title)}"</h2>
-          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Pick up to ${SLIDER_PICKER_LIMIT} products. Selected products appear at the bottom of the modal.</p>
-        </div>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div id="slider-picker-body" style="padding:var(--space-4) var(--space-6);min-height:300px;max-height:60vh;overflow-y:auto">
-        ${renderSliderPickerLoading()}
-      </div>
-      <div class="admin-modal-actions" style="flex-direction:column;align-items:stretch;gap:var(--space-3)">
-        <div id="slider-picker-chips" style="display:flex;flex-wrap:wrap;gap:var(--space-2);min-height:38px;padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md)"></div>
-        <div style="display:flex;gap:var(--space-3);justify-content:space-between;align-items:center">
-          <span id="slider-picker-count" style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">0/${SLIDER_PICKER_LIMIT} selected</span>
-          <div style="display:flex;gap:var(--space-2)">
-            <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-            <button type="button" class="admin-btn admin-btn-primary" id="slider-picker-save">Save Selection</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="admin-modal" style="max-width:880px;width:90vw"><div class="admin-modal-header"><div><h2>Choose products for "${escHtml(section.title)}"</h2><p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Pick up to ${SLIDER_PICKER_LIMIT} products. Selected products appear at the bottom of the modal.</p></div><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><div id="slider-picker-body" style="padding:var(--space-4) var(--space-6);min-height:300px;max-height:60vh;overflow-y:auto">${renderSliderPickerLoading()}
+      </div><div class="admin-modal-actions" style="flex-direction:column;align-items:stretch;gap:var(--space-3)"><div id="slider-picker-chips" style="display:flex;flex-wrap:wrap;gap:var(--space-2);min-height:38px;padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md)"></div><div style="display:flex;gap:var(--space-3);justify-content:space-between;align-items:center"><span id="slider-picker-count" style="font-size:var(--fs-sm);color:var(--color-text-tertiary)">0/${SLIDER_PICKER_LIMIT} selected</span><div style="display:flex;gap:var(--space-2)"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="button" class="admin-btn admin-btn-primary" id="slider-picker-save">Save Selection</button></div></div></div></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
@@ -3650,11 +2739,7 @@ async function openSliderPickerModal(container, section, currentProductIds) {
             const p = productMap.get(id);
             if (!p) return '';
             const img = (p.images && p.images[0]) || '/images/placeholder.jpg';
-            return `<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--color-border-light);border-radius:999px;padding:3px 10px 3px 3px;font-size:var(--fs-xs)">
-              <img src="${img}" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover">
-              <span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.name)}</span>
-              <button type="button" class="slider-chip-remove" data-idx="${i}" style="background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:0;line-height:1" title="Remove"><span class="material-symbols-outlined" style="font-size:16px">close</span></button>
-            </span>`;
+            return `<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--color-border-light);border-radius:999px;padding:3px 10px 3px 3px;font-size:var(--fs-xs)"><img src="${img}" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover"><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.name)}</span><button type="button" class="slider-chip-remove" data-idx="${i}" style="background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:0;line-height:1" title="Remove"><span class="material-symbols-outlined" style="font-size:16px">close</span></button></span>`;
           }).join('');
       chipsEl.querySelectorAll('.slider-chip-remove').forEach(b => {
         b.onclick = () => {
@@ -3799,21 +2884,12 @@ function renderSliderPickerBreadcrumb() {
   const backDisabled = s.level === 'root';
   const placeholder = s.level === 'category' ? 'products' : s.level === 'group' ? 'categories' : 'groups';
   const searchHtml = `
-    <div style="position:relative;flex:1;min-width:180px;max-width:280px">
-      <span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-tertiary);font-size:18px;pointer-events:none">search</span>
-      <input id="slider-picker-search" type="text" placeholder="Search ${placeholder}â€¦" value="${escHtml(s.search || '')}" style="width:100%;padding:6px 10px 6px 34px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--fs-sm)">
-    </div>
-  `;
+    <div style="position:relative;flex:1;min-width:180px;max-width:280px"><span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-tertiary);font-size:18px;pointer-events:none">search</span><input id="slider-picker-search" type="text" placeholder="Search ${placeholder}…" value="${escHtml(s.search || '')}" style="width:100%;padding:6px 10px 6px 34px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--fs-sm)"></div>`;
   return `
-    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap">
-      <button class="admin-btn admin-btn-ghost" id="slider-picker-back" ${backDisabled ? 'disabled' : ''} style="padding:4px 10px"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span> Back</button>
-      <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;flex-wrap:wrap">
-        ${crumbs.map((c, i) => `
-          <button class="admin-btn admin-btn-ghost" data-picker-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''} style="padding:4px 10px;text-transform:none">${escHtml(c.label)}</button>
-          ${i < crumbs.length - 1 ? '<span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">chevron_right</span>' : ''}
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap"><button class="admin-btn admin-btn-ghost" id="slider-picker-back" ${backDisabled ? 'disabled' : ''} style="padding:4px 10px"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span> Back</button><div style="display:flex;align-items:center;gap:var(--space-2);flex:1;flex-wrap:wrap">${crumbs.map((c, i) => `
+          <button class="admin-btn admin-btn-ghost" data-picker-nav='${JSON.stringify(c.nav)}' ${i === crumbs.length - 1 ? 'disabled' : ''} style="padding:4px 10px;text-transform:none">${escHtml(c.label)}</button>${i < crumbs.length - 1 ? '<span class="material-symbols-outlined" style="font-size:18px;color:var(--color-text-tertiary)">chevron_right</span>' : ''}
         `).join('')}
-      </div>
-      ${searchHtml}
+      </div>${searchHtml}
     </div>`;
 }
 
@@ -3838,14 +2914,7 @@ async function renderSliderPickerFolders() {
     const dbGroup = groupsByOrder.find(g => g.name === groupName);
     const catCount = (dbGroup && catsByGroupId.get(dbGroup.id)?.length) ?? (CATEGORY_GROUPS[groupName] || []).length;
     return `
-      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName, groupId: dbGroup?.id || null })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
-        <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
-        <div>
-          <strong>${escHtml(groupName)}</strong>
-          <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${catCount} categor${catCount === 1 ? 'y' : 'ies'}</div>
-        </div>
-      </button>
-    `;
+      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName, groupId: dbGroup?.id || null })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left"><span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span><div><strong>${escHtml(groupName)}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${catCount} categor${catCount === 1 ? 'y' : 'ies'}</div></div></button>`;
   }).join('');
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${groupsHtml}</div>`;
 }
@@ -3883,14 +2952,7 @@ async function renderSliderPickerCategories() {
   if (cats.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No categories match your search.</p></div>';
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3)">${
     cats.map(c => `
-      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'category', group: SLIDER_PICKER_STATE.group, category: c.id, categoryName: c.name })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
-        <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
-        <div>
-          <strong>${escHtml(c.name)}</strong>
-          <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">category</div>
-        </div>
-      </button>
-    `).join('')
+      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'category', group: SLIDER_PICKER_STATE.group, category: c.id, categoryName: c.name })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left"><span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span><div><strong>${escHtml(c.name)}</strong><div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">category</div></div></button>`).join('')
   }</div>`;
 }
 
@@ -3922,14 +2984,7 @@ async function renderSliderPickerProducts() {
       const img = (p.images && p.images[0]) || '/images/placeholder.jpg';
       const disabled = !isSelected && atCap;
       return `
-        <label style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);cursor:${disabled ? 'not-allowed' : 'pointer'};${isSelected ? 'background:var(--color-surface-alt);' : ''}${disabled ? 'opacity:0.5;' : ''}">
-          <input type="checkbox" class="picker-product-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} ${disabled ? 'disabled' : ''} style="cursor:inherit">
-          <img src="${img}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:4px;flex-shrink:0">
-          <div style="flex:1;min-width:0">
-            <strong style="display:block;font-size:var(--fs-sm)">${escHtml(p.name)}</strong>
-            <span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(p.slug || '')} Â· â‚¹${Number(p.price || 0).toLocaleString()}</span>
-          </div>
-        </label>`;
+        <label style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid var(--color-border-light);border-radius:var(--radius-md);cursor:${disabled ? 'not-allowed' : 'pointer'};${isSelected ? 'background:var(--color-surface-alt);' : ''}${disabled ? 'opacity:0.5;' : ''}"><input type="checkbox" class="picker-product-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} ${disabled ? 'disabled' : ''} style="cursor:inherit"><img src="${img}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:4px;flex-shrink:0"><div style="flex:1;min-width:0"><strong style="display:block;font-size:var(--fs-sm)">${escHtml(p.name)}</strong><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(p.slug || '')} Â· ₹${Number(p.price || 0).toLocaleString()}</span></div></label>`;
     }).join('')
   }</div>`;
 }
@@ -3948,41 +3003,10 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
   const overlay = document.createElement('div');
   overlay.className = 'admin-modal-overlay';
   overlay.innerHTML = `
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <h2>${isEdit ? 'Edit' : 'Add'} Shop Category</h2>
-        <button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <form class="admin-form" id="shop-cat-form">
-        <div class="form-group">
-          <label>Primary Category</label>
-          <select name="category_ref" id="cat-ref-select">
-            <option value="">â€” Select a category â€”</option>
-            ${(primaryCats || []).map(c => `
-              <option value="${c.slug}" data-name="${c.name}" ${isEdit && shopCat.link === '/shop?cat=' + c.slug ? 'selected' : ''}>${c.name}</option>
-            `).join('')}
-          </select>
-        </div>
-        <div class="form-group"><label>Title *</label><input name="title" id="shop-cat-title" required value="${shopCat?.title || ''}"></div>
-        <div class="form-group"><label>CTA Link *</label><input name="link" id="shop-cat-link" required value="${shopCat?.link || ''}"></div>
-        <div class="form-group">
-          <label>Image</label>
-          ${shopCat?.image_url ? `<div style="margin-bottom:var(--space-2)"><img src="${shopCat.image_url}" style="max-width:200px;max-height:120px;border-radius:4px;object-fit:cover" /></div>` : ''}
-          <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
-          <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Upload will replace existing image. Max 8MB.</small>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${shopCat?.sort_order || 0}"></div>
-          <div class="form-group checkbox"><input name="active" type="checkbox" id="shop-cat-active" ${shopCat?.active !== false ? 'checked' : ''}><label for="shop-cat-active">Active</label></div>
-        </div>
-        <input type="hidden" name="existing_image" value="${shopCat?.image_url || ''}">
-        <div class="admin-modal-actions">
-          <button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-modal"><div class="admin-modal-header"><h2>${isEdit ? 'Edit' : 'Add'} Shop Category</h2><button class="admin-modal-close"><span class="material-symbols-outlined">close</span></button></div><form class="admin-form" id="shop-cat-form"><div class="form-group"><label>Primary Category</label><select name="category_ref" id="cat-ref-select"><option value="">— Select a category —</option>${(primaryCats || []).map(c => `
+              <option value="${c.slug}" data-name="${c.name}" ${isEdit && shopCat.link === '/shop?cat=' + c.slug ? 'selected' : ''}>${c.name}</option>`).join('')}
+          </select></div><div class="form-group"><label>Title *</label><input name="title" id="shop-cat-title" required value="${shopCat?.title || ''}"></div><div class="form-group"><label>CTA Link *</label><input name="link" id="shop-cat-link" required value="${shopCat?.link || ''}"></div><div class="form-group"><label>Image</label>${shopCat?.image_url ? `<div style="margin-bottom:var(--space-2)"><img src="${shopCat.image_url}" style="max-width:200px;max-height:120px;border-radius:4px;object-fit:cover" /></div>` : ''}
+          <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp"><small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Upload will replace existing image. Max 8MB.</small></div><div class="form-row"><div class="form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${shopCat?.sort_order || 0}"></div><div class="form-group checkbox"><input name="active" type="checkbox" id="shop-cat-active" ${shopCat?.active !== false ? 'checked' : ''}><label for="shop-cat-active">Active</label></div></div><input type="hidden" name="existing_image" value="${shopCat?.image_url || ''}"><div class="admin-modal-actions"><button type="button" class="admin-btn admin-btn-ghost modal-cancel">Cancel</button><button type="submit" class="admin-btn admin-btn-primary">${isEdit ? 'Save Changes' : 'Add Category'}</button></div></form></div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
@@ -4055,60 +3079,7 @@ async function renderFooterSection(container) {
   const footerSections = Object.fromEntries((footerRows || []).map(s => [s.section_key, s]));
 
   container.innerHTML = `
-    <div class="admin-header">
-      <div class="admin-header-left">
-        <h1>Footer</h1>
-        <span class="admin-header-stats">Brand info, contact, social links</span>
-      </div>
-    </div>
-
-    <div class="admin-card" style="padding:var(--space-6)">
-      <form id="footer-form" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)">
-        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Brand</h2>
-          <div class="form-group"><label>Tagline</label><textarea name="tagline" rows="2">${get('footer_tagline') || get('tagline')}</textarea></div>
-          <div class="form-group"><label>Copyright Text</label><input name="copyright" value="${get('footer_copyright')}"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Contact</h2>
-          <div class="form-group"><label>Address</label><textarea name="address" rows="2">${get('contact_address')}</textarea></div>
-          <div class="form-row">
-            <div class="form-group"><label>Phone 1</label><input name="phone" value="${get('contact_phone')}"></div>
-            <div class="form-group"><label>Phone 2</label><input name="phone2" value="${get('contact_phone2')}"></div>
-          </div>
-          <div class="form-group"><label>Email</label><input name="email" value="${get('contact_email')}" type="email"></input></div>
-           <div class="form-group"><label>Business Hours</label><input name="hours" value="${get('footer_hours')}"></div>
-         </div>
-        <div class="form-group">
-          <label>About Left Paragraph</label>
-          <textarea name="footer_about_left" style="min-height:120px">${footerSections?.about_left?.content || ''}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Exporter Right Paragraph</label>
-          <textarea name="footer_exporter_right" style="min-height:120px">${footerSections?.exporter_right?.content || ''}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Services / Products List</label>
-          <textarea name="footer_services_list" style="min-height:120px">${footerSections?.services_list?.content || ''}</textarea>
-        </div>
-         <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-           <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2>
-          <div class="form-group"><label>Facebook URL</label><input name="facebook_url" value="${get('facebook_url')}" placeholder="https://facebook.com/..."></div>
-          <div class="form-group"><label>Instagram URL</label><input name="instagram_url" value="${get('instagram_url')}" placeholder="https://instagram.com/..."></div>
-          <div class="form-group"><label>Twitter/X URL</label><input name="twitter_url" value="${get('twitter_url')}" placeholder="https://twitter.com/..."></div>
-          <div class="form-group"><label>YouTube URL</label><input name="youtube_url" value="${get('youtube_url')}" placeholder="https://youtube.com/..."></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
-          <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Images & Other</h2>
-          <div class="form-group"><label>Payment Icons URL</label><input name="payment_icons_url" value="${get('payment_icons_url')}" placeholder="/images/payment-icons-transparent.png"></div>
-          <div class="form-group"><label>Map Embed URL</label><input name="map_embed_url" value="${get('map_embed_url')}" placeholder="Google Maps embed URL"></div>
-        </div>
-        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;padding-top:var(--space-4);border-top:1px solid var(--color-border)">
-          <button type="submit" class="admin-btn admin-btn-primary">Save Footer</button>
-        </div>
-      </form>
-    </div>
-  `;
+    <div class="admin-header"><div class="admin-header-left"><h1>Footer</h1><span class="admin-header-stats">Brand info, contact, social links</span></div></div><div class="admin-card" style="padding:var(--space-6)"><form id="footer-form" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)"><div style="display:flex;flex-direction:column;gap:var(--space-4)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Brand</h2><div class="form-group"><label>Tagline</label><textarea name="tagline" rows="2">${get('footer_tagline') || get('tagline')}</textarea></div><div class="form-group"><label>Copyright Text</label><input name="copyright" value="${get('footer_copyright')}"></div></div><div style="display:flex;flex-direction:column;gap:var(--space-4)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Contact</h2><div class="form-group"><label>Address</label><textarea name="address" rows="2">${get('contact_address')}</textarea></div><div class="form-row"><div class="form-group"><label>Phone 1</label><input name="phone" value="${get('contact_phone')}"></div><div class="form-group"><label>Phone 2</label><input name="phone2" value="${get('contact_phone2')}"></div></div><div class="form-group"><label>Email</label><input name="email" value="${get('contact_email')}" type="email"></input></div><div class="form-group"><label>Business Hours</label><input name="hours" value="${get('footer_hours')}"></div></div><div class="form-group"><label>About Left Paragraph</label><textarea name="footer_about_left" style="min-height:120px">${footerSections?.about_left?.content || ''}</textarea></div><div class="form-group"><label>Exporter Right Paragraph</label><textarea name="footer_exporter_right" style="min-height:120px">${footerSections?.exporter_right?.content || ''}</textarea></div><div class="form-group"><label>Services / Products List</label><textarea name="footer_services_list" style="min-height:120px">${footerSections?.services_list?.content || ''}</textarea></div><div style="display:flex;flex-direction:column;gap:var(--space-4)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Social Links</h2><div class="form-group"><label>Facebook URL</label><input name="facebook_url" value="${get('facebook_url')}" placeholder="https://facebook.com/..."></div><div class="form-group"><label>Instagram URL</label><input name="instagram_url" value="${get('instagram_url')}" placeholder="https://instagram.com/..."></div><div class="form-group"><label>Twitter/X URL</label><input name="twitter_url" value="${get('twitter_url')}" placeholder="https://twitter.com/..."></div><div class="form-group"><label>YouTube URL</label><input name="youtube_url" value="${get('youtube_url')}" placeholder="https://youtube.com/..."></div></div><div style="display:flex;flex-direction:column;gap:var(--space-4)"><h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">Images & Other</h2><div class="form-group"><label>Payment Icons URL</label><input name="payment_icons_url" value="${get('payment_icons_url')}" placeholder="/images/payment-icons-transparent.png"></div><div class="form-group"><label>Map Embed URL</label><input name="map_embed_url" value="${get('map_embed_url')}" placeholder="Google Maps embed URL"></div></div><div style="grid-column:1/-1;display:flex;justify-content:flex-end;padding-top:var(--space-4);border-top:1px solid var(--color-border)"><button type="submit" class="admin-btn admin-btn-primary">Save Footer</button></div></form></div>`;
 
   document.getElementById('footer-form').onsubmit = async (e) => {
     e.preventDefault();

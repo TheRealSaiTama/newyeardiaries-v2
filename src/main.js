@@ -154,13 +154,7 @@ const WHATSAPP_MESSAGE = encodeURIComponent('Hi Team NYD,\n\nContacting through 
 
 function renderFloatingButtons() {
   return `
-    <a class="floating-wa-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}" target="_blank" rel="noopener" aria-label="WhatsApp Enquiry">
-      <span class="floating-wa-icon">
-        <svg viewBox="0 0 32 32"><path d="M16.033 0a15.938 15.938 0 0 0-13.8 23.945L0 31.989l8.225-2.156A15.93 15.93 0 0 0 16.033 31.99c8.8 0 15.967-7.16 15.967-15.967S24.832 0 16.033 0zm0 29.317c-2.482 0-4.914-.633-7.06-1.831l-.506-.283-5.244 1.374 1.398-5.118-.311-.495A13.262 13.262 0 0 1 2.766 16.02c0-7.323 5.96-13.292 13.268-13.292 7.323 0 13.292 5.969 13.292 13.292s-5.969 13.297-13.293 13.297zm7.262-9.923c-.398-.2-2.355-1.164-2.72-1.298-.364-.132-.63-.2-.895.198-.266.398-1.028 1.298-1.26 1.564-.233.265-.465.298-.863.1-2.223-1.116-3.805-2.261-5.187-4.577-.266-.447.264-.413.644-1.178.132-.265.066-.497-.033-.695-.1-.2-1.026-2.484-1.358-3.361-.413-1.089-.824-.942-1.125-.961-.266-.015-.565-.015-.863-.015-.298 0-.796.116-1.212.646-.414.53-1.593 1.558-1.593 3.797 0 2.239 1.625 4.402 1.858 4.667.232.265 3.178 4.846 7.697 6.793 1.077.464 1.916.742 2.571.95 1.082.343 2.066.294 2.842.178.868-.13 2.355-.96 2.688-1.888.332-.928.332-1.722.232-1.888-.1-.166-.364-.265-.762-.464z"/></svg>
-      </span>
-      <span class="floating-wa-label">WhatsApp Enquiry</span>
-    </a>
-  `;
+    <a class="floating-wa-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}" target="_blank" rel="noopener" aria-label="WhatsApp Enquiry"><span class="floating-wa-icon"><svg viewBox="0 0 32 32"><path d="M16.033 0a15.938 15.938 0 0 0-13.8 23.945L0 31.989l8.225-2.156A15.93 15.93 0 0 0 16.033 31.99c8.8 0 15.967-7.16 15.967-15.967S24.832 0 16.033 0zm0 29.317c-2.482 0-4.914-.633-7.06-1.831l-.506-.283-5.244 1.374 1.398-5.118-.311-.495A13.262 13.262 0 0 1 2.766 16.02c0-7.323 5.96-13.292 13.268-13.292 7.323 0 13.292 5.969 13.292 13.292s-5.969 13.297-13.293 13.297zm7.262-9.923c-.398-.2-2.355-1.164-2.72-1.298-.364-.132-.63-.2-.895.198-.266.398-1.028 1.298-1.26 1.564-.233.265-.465.298-.863.1-2.223-1.116-3.805-2.261-5.187-4.577-.266-.447.264-.413.644-1.178.132-.265.066-.497-.033-.695-.1-.2-1.026-2.484-1.358-3.361-.413-1.089-.824-.942-1.125-.961-.266-.015-.565-.015-.863-.015-.298 0-.796.116-1.212.646-.414.53-1.593 1.558-1.593 3.797 0 2.239 1.625 4.402 1.858 4.667.232.265 3.178 4.846 7.697 6.793 1.077.464 1.916.742 2.571.95 1.082.343 2.066.294 2.842.178.868-.13 2.355-.96 2.688-1.888.332-.928.332-1.722.232-1.888-.1-.166-.364-.265-.762-.464z"/></svg></span><span class="floating-wa-label">WhatsApp Enquiry</span></a>`;
 }
 
 function initFloatingButtons() {
@@ -176,15 +170,9 @@ function safeRender(label, fn) {
 function setupShell() {
   const shell = document.getElementById('shell');
   shell.innerHTML = `
-    <div id="header-area">${safeRender('Header', () => renderHeader(appContent))}</div>
-    ${safeRender('QuickView', renderQuickViewModal)}
+    <div id="header-area">${safeRender('Header', () => renderHeader(appContent))}</div>${safeRender('QuickView', renderQuickViewModal)}
     ${safeRender('Search', renderSearchModal)}
-    <main id="app"></main>
-    <div id="about-section">${safeRender('About', renderAboutSection)}</div>
-    <div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div>
-    <div id="floating-buttons"></div>
-    <div id="faq-chatbot"></div>
-  `;
+    <main id="app"></main><div id="about-section">${safeRender('About', renderAboutSection)}</div><div id="footer-area">${safeRender('Footer', () => renderFooter(appContent))}</div><div id="floating-buttons"></div><div id="faq-chatbot"></div>`;
   try { initHeaderEvents(); } catch (e) { console.warn('[shell] initHeaderEvents failed:', e); }
   try { updateHeaderCounts(); } catch (e) { console.warn('[shell] updateHeaderCounts failed:', e); }
   try { initSearchModal(); } catch (e) { console.warn('[shell] initSearchModal failed:', e); }
@@ -258,7 +246,7 @@ function setCachedPage(params, html) {
         sessionStorage.removeItem(entries[i].k);
       }
     }
-  } catch { /* quota or disabled â€” silently ignore */ }
+  } catch { /* quota or disabled — silently ignore */ }
 }
 
 function clearPageCache() {
@@ -383,7 +371,7 @@ function raceWithTimeout(promise, ms, label) {
     const t = setTimeout(() => {
       if (done) return;
       done = true;
-      console.warn(`[boot] ${label} timed out after ${ms}ms â€” continuing`);
+      console.warn(`[boot] ${label} timed out after ${ms}ms — continuing`);
       resolve(null);
     }, ms);
     promise.then(

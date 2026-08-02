@@ -12,58 +12,8 @@ export function renderContactPage(params, appContent) {
   const address = rawAddress.replace(/\n/g, '<br>');
 
   document.getElementById('app').innerHTML = `
-    <div class="page-content">
-      <div class="container section">
-        ${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Contact Us' }])}
-        <div style="text-align:center;margin-bottom:var(--space-10);">
-          <h1 class="heading-1">Get in Touch</h1>
-          <p class="text-body" style="font-size:var(--fs-md);max-width:500px;margin:var(--space-3) auto 0;">We'd love to hear from you. Whether you have a question about our products, pricing, or anything else.</p>
-        </div>
-
-        <div class="contact-layout">
-          <div>
-            <div class="contact-info-cards">
-              <div class="contact-info-card">
-                <span class="material-symbols-outlined">call</span>
-                <div><strong>Phone</strong><br><span class="text-sm">${phone}${phone2 ? ' | ' + phone2 : ''}</span><br><span class="text-xs">Monâ€“Sat, 9amâ€“6pm IST</span></div>
-              </div>
-              <div class="contact-info-card">
-                <span class="material-symbols-outlined">mail</span>
-                <div><strong>Email</strong><br><span class="text-sm">${email}</span><br><span class="text-xs">Response within 24 hours</span></div>
-              </div>
-              <div class="contact-info-card">
-                <span class="material-symbols-outlined">location_on</span>
-                <div><strong>Address</strong><br><span class="text-sm">${address}</span></div>
-              </div>
-              <div class="contact-info-card">
-                <span class="material-symbols-outlined">factory</span>
-                <div><strong>Factory Tours</strong><br><span class="text-sm">Available by appointment.<br>See our manufacturing process firsthand.</span></div>
-              </div>
-            </div>
-          </div>
-          <div class="bulk-quote-form">
-            <h2 class="heading-3" style="margin-bottom:var(--space-6);">Send Us a Message</h2>
-            <form id="contact-form" class="auth-form">
-              <div class="input-group"><label>Name *</label><input name="name" type="text" class="input-field" required></div>
-              <div class="input-group"><label>Address *</label><input name="address" type="text" class="input-field" required placeholder="Street, City, PIN"></div>
-              <div class="form-row">
-                <div class="input-group"><label>State *</label><input name="state" type="text" class="input-field" required placeholder="e.g. Delhi"></div>
-                <div class="input-group"><label>Mobile Number *</label><input name="mobile" type="tel" class="input-field" required pattern="[0-9+\-\s()]{7,15}" placeholder="+91 93111 35190"></div>
-              </div>
-              <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
-              <div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div>
-              <div class="input-group">
-                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional â€” logos, briefs, references)</small></label>
-                <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="contact-files" class="input-field" style="padding:8px">
-                <small id="contact-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
-              </div>
-              <button type="submit" class="btn btn--accent btn--lg btn--full" id="contact-submit-btn">Send Message</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="page-content"><div class="container section">${renderBreadcrumbs([{ label: 'Home', path: '/' }, { label: 'Contact Us' }])}
+        <div style="text-align:center;margin-bottom:var(--space-10);"><h1 class="heading-1">Get in Touch</h1><p class="text-body" style="font-size:var(--fs-md);max-width:500px;margin:var(--space-3) auto 0;">We'd love to hear from you. Whether you have a question about our products, pricing, or anything else.</p></div><div class="contact-layout"><div><div class="contact-info-cards"><div class="contact-info-card"><span class="material-symbols-outlined">call</span><div><strong>Phone</strong><br><span class="text-sm">${phone}${phone2 ? ' | ' + phone2 : ''}</span><br><span class="text-xs">Mon–Sat, 9am–6pm IST</span></div></div><div class="contact-info-card"><span class="material-symbols-outlined">mail</span><div><strong>Email</strong><br><span class="text-sm">${email}</span><br><span class="text-xs">Response within 24 hours</span></div></div><div class="contact-info-card"><span class="material-symbols-outlined">location_on</span><div><strong>Address</strong><br><span class="text-sm">${address}</span></div></div><div class="contact-info-card"><span class="material-symbols-outlined">factory</span><div><strong>Factory Tours</strong><br><span class="text-sm">Available by appointment.<br>See our manufacturing process firsthand.</span></div></div></div></div><div class="bulk-quote-form"><h2 class="heading-3" style="margin-bottom:var(--space-6);">Send Us a Message</h2><form id="contact-form" class="auth-form"><div class="input-group"><label>Name *</label><input name="name" type="text" class="input-field" required></div><div class="input-group"><label>Address *</label><input name="address" type="text" class="input-field" required placeholder="Street, City, PIN"></div><div class="form-row"><div class="input-group"><label>State *</label><input name="state" type="text" class="input-field" required placeholder="e.g. Delhi"></div><div class="input-group"><label>Mobile Number *</label><input name="mobile" type="tel" class="input-field" required pattern="[0-9+\-\s()]{7,15}" placeholder="+91 93111 35190"></div></div><div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div><div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div><div class="input-group"><label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, briefs, references)</small></label><input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="contact-files" class="input-field" style="padding:8px"><small id="contact-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small></div><button type="submit" class="btn btn--accent btn--lg btn--full" id="contact-submit-btn">Send Message</button></form></div></div></div></div>`;
 
   document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -16,44 +16,13 @@ export function renderProductCardSkeleton(count = 6) {
 // image and text rows are replaced with .skeleton shimmer placeholders.
 function renderProductCardSkeletonItem() {
   return `
-    <div class="ap-product-card ap-product-card--skeleton" aria-hidden="true">
-      <div class="ap-product-image-wrapper">
-        <div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:0;"></div>
-      </div>
-      <div class="ap-product-body">
-        <div class="skeleton" style="width:50%;height:11px;margin-bottom:10px;border-radius:4px;"></div>
-        <div class="skeleton" style="width:80%;height:14px;margin-bottom:8px;border-radius:4px;"></div>
-        <div class="skeleton" style="width:40%;height:11px;margin-bottom:14px;border-radius:4px;"></div>
-        <div class="skeleton" style="width:30%;height:18px;border-radius:4px;"></div>
-      </div>
-    </div>
-  `;
+    <div class="ap-product-card ap-product-card--skeleton" aria-hidden="true"><div class="ap-product-image-wrapper"><div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:0;"></div></div><div class="ap-product-body"><div class="skeleton" style="width:50%;height:11px;margin-bottom:10px;border-radius:4px;"></div><div class="skeleton" style="width:80%;height:14px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:40%;height:11px;margin-bottom:14px;border-radius:4px;"></div><div class="skeleton" style="width:30%;height:18px;border-radius:4px;"></div></div></div>`;
 }
 
 export function renderPDPSkeleton() {
   return `
-    <div class="pdp-layout">
-      <div class="pdp-gallery">
-        <div class="pdp-main-image">
-          <div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:8px;"></div>
-        </div>
-        <div class="pdp-thumbnails">
-          ${Array(4).fill('').map(() => '<div class="skeleton" style="width:72px;height:72px;border-radius:8px;flex-shrink:0;"></div>').join('')}
-        </div>
-      </div>
-      <div class="pdp-info">
-        <div class="skeleton" style="width:40%;height:14px;border-radius:4px;"></div>
-        <div class="skeleton" style="width:70%;height:32px;margin:12px 0;border-radius:4px;"></div>
-        <div class="skeleton" style="width:25%;height:24px;margin-bottom:24px;border-radius:4px;"></div>
-        <div class="skeleton" style="width:100%;height:60px;margin-bottom:16px;border-radius:6px;"></div>
-        <div class="skeleton" style="width:100%;height:100px;margin-bottom:16px;border-radius:6px;"></div>
-        <div style="display:flex;gap:16px;">
-          <div class="skeleton" style="flex:1;height:48px;border-radius:6px;"></div>
-          <div class="skeleton" style="flex:1;height:48px;border-radius:6px;"></div>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="pdp-layout"><div class="pdp-gallery"><div class="pdp-main-image"><div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:8px;"></div></div><div class="pdp-thumbnails">${Array(4).fill('').map(() => '<div class="skeleton" style="width:72px;height:72px;border-radius:8px;flex-shrink:0;"></div>').join('')}
+        </div></div><div class="pdp-info"><div class="skeleton" style="width:40%;height:14px;border-radius:4px;"></div><div class="skeleton" style="width:70%;height:32px;margin:12px 0;border-radius:4px;"></div><div class="skeleton" style="width:25%;height:24px;margin-bottom:24px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:60px;margin-bottom:16px;border-radius:6px;"></div><div class="skeleton" style="width:100%;height:100px;margin-bottom:16px;border-radius:6px;"></div><div style="display:flex;gap:16px;"><div class="skeleton" style="flex:1;height:48px;border-radius:6px;"></div><div class="skeleton" style="flex:1;height:48px;border-radius:6px;"></div></div></div></div>`;
 }
 
 // Homepage skeleton — hero, category strip, and three product sections.
@@ -62,218 +31,30 @@ export function renderPDPSkeleton() {
 // like the actual page).
 export function renderHomeSkeleton() {
   const productRow = (n) => `
-    <div class="ap-product-grid">
-      ${Array(n).fill('').map(() => renderProductCardSkeletonItem()).join('')}
+    <div class="ap-product-grid">${Array(n).fill('').map(() => renderProductCardSkeletonItem()).join('')}
     </div>`;
 
   return `
-    <div class="page-content">
-      <!-- Hero banner skeleton -->
-      <section class="hero-section">
-        <div class="hero-slider" id="hero-slider">
-          <div class="hero-slide active" style="height:420px;position:relative;">
-            <div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:0;"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Category strip skeleton -->
-      <section class="category-strip-section" style="padding:32px 0;">
-        <div class="container">
-          <div class="skeleton" style="width:160px;height:14px;margin:0 auto 20px;border-radius:4px;"></div>
-          <div class="skeleton" style="width:60%;height:24px;margin:0 auto 24px;border-radius:4px;"></div>
-          <div style="display:flex;gap:18px;overflow:hidden;">
-            ${Array(6).fill('').map(() => '<div class="skeleton" style="flex:0 0 150px;height:120px;border-radius:12px;"></div>').join('')}
-          </div>
-        </div>
-      </section>
-
-      <!-- Product section 1 -->
-      <section class="product-section" style="padding:32px 0;">
-        <div class="container">
-          <div class="skeleton" style="width:220px;height:24px;margin-bottom:8px;border-radius:4px;"></div>
-          <div class="skeleton" style="width:60%;height:14px;margin-bottom:24px;border-radius:4px;"></div>
-          ${productRow(4)}
-        </div>
-      </section>
-
-      <!-- Trust badges / features skeleton -->
-      <section style="padding:24px 0;">
-        <div class="container">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-            ${Array(4).fill('').map(() => `
-              <div style="display:flex;align-items:center;gap:12px;padding:16px;border:1px solid #eee;border-radius:12px;">
-                <div class="skeleton" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;"></div>
-                <div style="flex:1;">
-                  <div class="skeleton" style="width:70%;height:12px;margin-bottom:6px;border-radius:4px;"></div>
-                  <div class="skeleton" style="width:50%;height:10px;border-radius:4px;"></div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </section>
-
-      <!-- Product section 2 -->
-      <section class="product-section" style="padding:32px 0;">
-        <div class="container">
-          <div class="skeleton" style="width:260px;height:24px;margin-bottom:8px;border-radius:4px;"></div>
-          <div class="skeleton" style="width:55%;height:14px;margin-bottom:24px;border-radius:4px;"></div>
-          ${productRow(4)}
-        </div>
-      </section>
-
-      <!-- Product section 3 -->
-      <section class="product-section" style="padding:32px 0;">
-        <div class="container">
-          <div class="skeleton" style="width:200px;height:24px;margin-bottom:8px;border-radius:4px;"></div>
-          <div class="skeleton" style="width:50%;height:14px;margin-bottom:24px;border-radius:4px;"></div>
-          ${productRow(3)}
-        </div>
-      </section>
-    </div>
-  `;
+    <div class="page-content"><!-- Hero banner skeleton --><section class="hero-section"><div class="hero-slider" id="hero-slider"><div class="hero-slide active" style="height:420px;position:relative;"><div class="skeleton" style="position:absolute;inset:0;width:100%;height:100%;border-radius:0;"></div></div></div></section><!-- Category strip skeleton --><section class="category-strip-section" style="padding:32px 0;"><div class="container"><div class="skeleton" style="width:160px;height:14px;margin:0 auto 20px;border-radius:4px;"></div><div class="skeleton" style="width:60%;height:24px;margin:0 auto 24px;border-radius:4px;"></div><div style="display:flex;gap:18px;overflow:hidden;">${Array(6).fill('').map(() => '<div class="skeleton" style="flex:0 0 150px;height:120px;border-radius:12px;"></div>').join('')}
+          </div></div></section><!-- Product section 1 --><section class="product-section" style="padding:32px 0;"><div class="container"><div class="skeleton" style="width:220px;height:24px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:60%;height:14px;margin-bottom:24px;border-radius:4px;"></div>${productRow(4)}
+        </div></section><!-- Trust badges / features skeleton --><section style="padding:24px 0;"><div class="container"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">${Array(4).fill('').map(() => `
+              <div style="display:flex;align-items:center;gap:12px;padding:16px;border:1px solid #eee;border-radius:12px;"><div class="skeleton" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton" style="width:70%;height:12px;margin-bottom:6px;border-radius:4px;"></div><div class="skeleton" style="width:50%;height:10px;border-radius:4px;"></div></div></div>`).join('')}
+          </div></div></section><!-- Product section 2 --><section class="product-section" style="padding:32px 0;"><div class="container"><div class="skeleton" style="width:260px;height:24px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:55%;height:14px;margin-bottom:24px;border-radius:4px;"></div>${productRow(4)}
+        </div></section><!-- Product section 3 --><section class="product-section" style="padding:32px 0;"><div class="container"><div class="skeleton" style="width:200px;height:24px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:50%;height:14px;margin-bottom:24px;border-radius:4px;"></div>${productRow(3)}
+        </div></section></div>`;
 }
 
 export function renderCheckoutSkeleton() {
   return `
-    <div class="page-content">
-      <div class="container section">
-        <!-- Stepper -->
-        <div class="checkout-stepper" style="margin-bottom: var(--space-8);">
-          <div class="step active"><span class="step-indicator">1</span><span class="step-label">Contact Info</span></div>
-          <div class="step-connector"></div>
-          <div class="step"><span class="step-indicator">2</span><span class="step-label">Review</span></div>
-          <div class="step-connector"></div>
-          <div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:3fr 2fr;gap:var(--space-8);align-items:flex-start;">
-          <!-- Left Column (Form groups) -->
-          <div>
-            <div style="margin-bottom:var(--space-6);background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
-              <div class="skeleton" style="width:200px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div>
-              <div style="display:flex;flex-direction:column;gap:var(--space-4);">
-                <div>
-                  <div class="skeleton" style="width:100px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
-                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
-                </div>
-                <div>
-                  <div class="skeleton" style="width:120px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
-                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
-                </div>
-              </div>
-            </div>
-
-            <div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
-              <div class="skeleton" style="width:160px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div>
-              <div style="display:flex;flex-direction:column;gap:var(--space-4);">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
-                  <div>
-                    <div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
-                    <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
-                  </div>
-                  <div>
-                    <div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
-                    <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="skeleton" style="width:150px;height:12px;margin-bottom:8px;border-radius:4px;"></div>
-                  <div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Column (Order Summary) -->
-          <div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);">
-            <div class="skeleton" style="width:150px;height:20px;margin-bottom:var(--space-6);border-radius:4px;"></div>
-            
-            <!-- Items skeleton -->
-            <div style="display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-6);">
-              ${Array(3).fill('').map(() => `
-                <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--color-border-light);">
-                  <div class="skeleton" style="width:50px;height:50px;border-radius:6px;flex-shrink:0;"></div>
-                  <div style="flex:1;">
-                    <div class="skeleton" style="width:70%;height:12px;margin-bottom:6px;border-radius:4px;"></div>
-                    <div class="skeleton" style="width:40%;height:10px;border-radius:4px;"></div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-
-            <!-- Pricing skeleton -->
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="skeleton" style="width:80px;height:12px;border-radius:4px;"></div>
-                <div class="skeleton" style="width:60px;height:12px;border-radius:4px;"></div>
-              </div>
-              <div style="display:flex;justify-content:space-between;">
-                <div class="skeleton" style="width:90px;height:12px;border-radius:4px;"></div>
-                <div class="skeleton" style="width:50px;height:12px;border-radius:4px;"></div>
-              </div>
-              <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--color-border-light);">
-                <div class="skeleton" style="width:100px;height:16px;border-radius:4px;"></div>
-                <div class="skeleton" style="width:80px;height:16px;border-radius:4px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="page-content"><div class="container section"><!-- Stepper --><div class="checkout-stepper" style="margin-bottom: var(--space-8);"><div class="step active"><span class="step-indicator">1</span><span class="step-label">Contact Info</span></div><div class="step-connector"></div><div class="step"><span class="step-indicator">2</span><span class="step-label">Review</span></div><div class="step-connector"></div><div class="step"><span class="step-indicator">3</span><span class="step-label">Order Confirmation</span></div></div><div style="display:grid;grid-template-columns:3fr 2fr;gap:var(--space-8);align-items:flex-start;"><!-- Left Column (Form groups) --><div><div style="margin-bottom:var(--space-6);background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);"><div class="skeleton" style="width:200px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div><div style="display:flex;flex-direction:column;gap:var(--space-4);"><div><div class="skeleton" style="width:100px;height:12px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div></div><div><div class="skeleton" style="width:120px;height:12px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div></div></div></div><div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);"><div class="skeleton" style="width:160px;height:24px;margin-bottom:var(--space-6);border-radius:4px;"></div><div style="display:flex;flex-direction:column;gap:var(--space-4);"><div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);"><div><div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div></div><div><div class="skeleton" style="width:80px;height:12px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div></div></div><div><div class="skeleton" style="width:150px;height:12px;margin-bottom:8px;border-radius:4px;"></div><div class="skeleton" style="width:100%;height:44px;border-radius:6px;"></div></div></div></div></div><!-- Right Column (Order Summary) --><div style="background:var(--color-surface);padding:var(--space-6);border-radius:var(--radius-lg);border:1.5px solid var(--color-border);"><div class="skeleton" style="width:150px;height:20px;margin-bottom:var(--space-6);border-radius:4px;"></div><!-- Items skeleton --><div style="display:flex;flex-direction:column;gap:var(--space-4);margin-bottom:var(--space-6);">${Array(3).fill('').map(() => `
+                <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--color-border-light);"><div class="skeleton" style="width:50px;height:50px;border-radius:6px;flex-shrink:0;"></div><div style="flex:1;"><div class="skeleton" style="width:70%;height:12px;margin-bottom:6px;border-radius:4px;"></div><div class="skeleton" style="width:40%;height:10px;border-radius:4px;"></div></div></div>`).join('')}
+            </div><!-- Pricing skeleton --><div style="display:flex;flex-direction:column;gap:12px;"><div style="display:flex;justify-content:space-between;"><div class="skeleton" style="width:80px;height:12px;border-radius:4px;"></div><div class="skeleton" style="width:60px;height:12px;border-radius:4px;"></div></div><div style="display:flex;justify-content:space-between;"><div class="skeleton" style="width:90px;height:12px;border-radius:4px;"></div><div class="skeleton" style="width:50px;height:12px;border-radius:4px;"></div></div><div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--color-border-light);"><div class="skeleton" style="width:100px;height:16px;border-radius:4px;"></div><div class="skeleton" style="width:80px;height:16px;border-radius:4px;"></div></div></div></div></div></div></div>`;
 }
 
 export function renderCartSkeleton() {
   return `
-    <div class="page-content">
-      <div class="container section">
-        <div style="margin-bottom:var(--space-4); display:flex; gap:var(--space-2);">
-          <div class="skeleton" style="width: 50px; height: 12px; border-radius: 4px;"></div>
-          <span style="color:var(--color-text-tertiary); font-size:var(--fs-xs);">/</span>
-          <div class="skeleton" style="width: 80px; height: 12px; border-radius: 4px;"></div>
-        </div>
-        <h1 class="heading-2" style="margin-bottom:var(--space-8);">Your Curated Selection</h1>
-        <div class="cart-layout">
-          <div>
-            ${Array(3).fill('').map(() => `
-              <div class="cart-item" style="display:flex; gap:var(--space-4); align-items:center;">
-                <div class="cart-item-image" style="width:80px; height:96px; border-radius:var(--radius-md); flex-shrink:0; overflow:hidden; position:relative;">
-                  <div class="skeleton" style="position:absolute; inset:0; width:100%; height:100%; border-radius:0;"></div>
-                </div>
-                <div class="cart-item-details" style="flex:1; display:flex; flex-direction:column; gap:8px;">
-                  <div class="skeleton" style="width:50%; height:14px; border-radius:4px;"></div>
-                  <div class="skeleton" style="width:30%; height:10px; border-radius:4px;"></div>
-                  <div class="skeleton" style="width:80px; height:24px; border-radius:4px; margin-top:4px;"></div>
-                </div>
-                <div class="cart-item-price" style="width:100px; text-align:right;">
-                  <div class="skeleton" style="width:70px; height:14px; border-radius:4px; margin-left:auto;"></div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-          <div class="order-summary" style="height:fit-content;">
-            <div class="skeleton" style="width:120px; height:20px; margin-bottom:var(--space-6); border-radius:4px;"></div>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <div style="display:flex; justify-content:space-between;">
-                <div class="skeleton" style="width:60px; height:12px; border-radius:4px;"></div>
-                <div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div>
-              </div>
-              <div style="display:flex; justify-content:space-between;">
-                <div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div>
-                <div class="skeleton" style="width:120px; height:12px; border-radius:4px;"></div>
-              </div>
-              <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--color-border-light);">
-                <div class="skeleton" style="width:50px; height:16px; border-radius:4px;"></div>
-                <div class="skeleton" style="width:90px; height:16px; border-radius:4px;"></div>
-              </div>
-              <div class="skeleton" style="width:100%; height:48px; border-radius:var(--radius-md); margin-top:var(--space-4);"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="page-content"><div class="container section"><div style="margin-bottom:var(--space-4); display:flex; gap:var(--space-2);"><div class="skeleton" style="width: 50px; height: 12px; border-radius: 4px;"></div><span style="color:var(--color-text-tertiary); font-size:var(--fs-xs);">/</span><div class="skeleton" style="width: 80px; height: 12px; border-radius: 4px;"></div></div><h1 class="heading-2" style="margin-bottom:var(--space-8);">Your Curated Selection</h1><div class="cart-layout"><div>${Array(3).fill('').map(() => `
+              <div class="cart-item" style="display:flex; gap:var(--space-4); align-items:center;"><div class="cart-item-image" style="width:80px; height:96px; border-radius:var(--radius-md); flex-shrink:0; overflow:hidden; position:relative;"><div class="skeleton" style="position:absolute; inset:0; width:100%; height:100%; border-radius:0;"></div></div><div class="cart-item-details" style="flex:1; display:flex; flex-direction:column; gap:8px;"><div class="skeleton" style="width:50%; height:14px; border-radius:4px;"></div><div class="skeleton" style="width:30%; height:10px; border-radius:4px;"></div><div class="skeleton" style="width:80px; height:24px; border-radius:4px; margin-top:4px;"></div></div><div class="cart-item-price" style="width:100px; text-align:right;"><div class="skeleton" style="width:70px; height:14px; border-radius:4px; margin-left:auto;"></div></div></div>`).join('')}
+          </div><div class="order-summary" style="height:fit-content;"><div class="skeleton" style="width:120px; height:20px; margin-bottom:var(--space-6); border-radius:4px;"></div><div style="display:flex; flex-direction:column; gap:12px;"><div style="display:flex; justify-content:space-between;"><div class="skeleton" style="width:60px; height:12px; border-radius:4px;"></div><div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div></div><div style="display:flex; justify-content:space-between;"><div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div><div class="skeleton" style="width:120px; height:12px; border-radius:4px;"></div></div><div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--color-border-light);"><div class="skeleton" style="width:50px; height:16px; border-radius:4px;"></div><div class="skeleton" style="width:90px; height:16px; border-radius:4px;"></div></div><div class="skeleton" style="width:100%; height:48px; border-radius:var(--radius-md); margin-top:var(--space-4);"></div></div></div></div></div></div>`;
 }
 

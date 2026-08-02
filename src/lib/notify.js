@@ -57,7 +57,7 @@ async function sendEnquiryEmail(type, data) {
 
   const code = shortCode(data.enquiry_code);
   const name = (data.name || data.firstName || 'Customer').toString().trim() || 'Customer';
-  const subjectAdmin = `[NYD-Query-${code}] New ${type === 'bulk_quote' ? 'Bulk Quote' : 'Contact'} â€” ${name}`;
+  const subjectAdmin = `[NYD-Query-${code}] New ${type === 'bulk_quote' ? 'Bulk Quote' : 'Contact'} — ${name}`;
   const subjectCustomer = `[NYD-Query-${code}] We received your message, ${name}`;
 
   const html = buildEnquiryHtml(type, data, code);
@@ -142,43 +142,10 @@ function buildEnquiryHtml(type, data, code) {
   }).join('');
 
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;">
-
-  <tr>
-    <td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">
-      ${esc(title)}
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">
-      ${esc(subLine)}
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:0 8px;background:#ffffff;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;">
-        <tbody>
-          ${rowsHtml || `<tr><td colspan="2" style="${td}">No details provided.</td></tr>`}
-        </tbody>
-      </table>
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:24px 20px;background:#fdf9f3;border-top:2px solid #a0522d;">
-      <div style="font-size:14px;font-weight:bold;color:#a0522d;margin-bottom:6px;">NYD Team</div>
-      <div style="font-size:12px;color:#444;line-height:1.7;">
-        Cell &nbsp;: + 91 93111 35190<br>
-        Off. &nbsp;&nbsp;: 011 2394 7088, 3333 1586<br>
-        Web &nbsp;: <a href="https://www.newyeardiaries.in" style="color:#1a56db;text-decoration:none;">www.newyeardiaries.in</a>
-      </div>
-      <div style="font-size:11px;color:#888;margin-top:10px;line-height:1.5;">New Year Diaries &mdash; Premium Diaries, Planners &amp; Corporate Gifts<br>174 D, Bawana Industrial Area, Delhi 110039, India</div>
-    </td>
-  </tr>
-
-</table>`;
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;"><tr><td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">${esc(title)}
+    </td></tr><tr><td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">${esc(subLine)}
+    </td></tr><tr><td style="padding:0 8px;background:#ffffff;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;"><tbody>${rowsHtml || `<tr><td colspan="2" style="${td}">No details provided.</td></tr>`}
+        </tbody></table></td></tr><tr><td style="padding:24px 20px;background:#fdf9f3;border-top:2px solid #a0522d;"><div style="font-size:14px;font-weight:bold;color:#a0522d;margin-bottom:6px;">NYD Team</div><div style="font-size:12px;color:#444;line-height:1.7;">Cell &nbsp;: + 91 93111 35190<br>Off. &nbsp;&nbsp;: 011 2394 7088, 3333 1586<br>Web &nbsp;: <a href="https://www.newyeardiaries.in" style="color:#1a56db;text-decoration:none;">www.newyeardiaries.in</a></div><div style="font-size:11px;color:#888;margin-top:10px;line-height:1.5;">New Year Diaries &mdash; Premium Diaries, Planners &amp; Corporate Gifts<br>174 D, Bawana Industrial Area, Delhi 110039, India</div></td></tr></table>`;
 }
 
 function fmtINR(n) {
@@ -298,13 +265,7 @@ async function buildOrderHtml(data, attachments = []) {
 
   const rowsHtml = (data.items || []).map((item) => {
     return `
-      <tr>
-        <td style="${tdC}">${esc(item.sku || 'â€”')}</td>
-        <td style="${td}">${esc(item.name || 'Item')}</td>
-        <td style="${tdC}">${esc(item.qty)}</td>
-        <td style="${tdR}">${fmtINR(item.unitPrice ?? item.price)}</td>
-        <td style="${tdR}">${fmtINR(item.lineTotal)}</td>
-      </tr>`;
+      <tr><td style="${tdC}">${esc(item.sku || '—')}</td><td style="${td}">${esc(item.name || 'Item')}</td><td style="${tdC}">${esc(item.qty)}</td><td style="${tdR}">${fmtINR(item.unitPrice ?? item.price)}</td><td style="${tdR}">${fmtINR(item.lineTotal)}</td></tr>`;
   }).join('');
 
   const logos = data.logos || [];
@@ -320,130 +281,32 @@ async function buildOrderHtml(data, attachments = []) {
       const isImg = du.startsWith('data:image/');
       if (isImg && att && att.cid) {
         return `
-          <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
-            <img src="cid:${att.cid}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">
-            <div style="font-size:11px;color:#555;margin-top:4px;max-width:100px;word-break:break-all;">${esc(l.name)}</div>
-          </div>`;
+          <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;"><img src="cid:${att.cid}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;"><div style="font-size:11px;color:#555;margin-top:4px;max-width:100px;word-break:break-all;">${esc(l.name)}</div></div>`;
       }
       if (isImg) {
         return `
-          <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
-            <img src="${du.replace(/"/g, '&quot;')}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">
-            <div style="font-size:11px;color:#555;margin-top:4px;max-width:100px;word-break:break-all;">${esc(l.name)}</div>
-          </div>`;
+          <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;"><img src="${du.replace(/"/g, '&quot;')}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;"><div style="font-size:11px;color:#555;margin-top:4px;max-width:100px;word-break:break-all;">${esc(l.name)}</div></div>`;
       }
       return `
-        <div style="display:inline-block;margin:6px 10px 6px 0;padding:12px;border:1px solid #c8d0dc;border-radius:6px;font-size:12px;color:#1a2744;background:#f8fafc;">
-          ðŸ“Ž ${esc(l.name)}
+        <div style="display:inline-block;margin:6px 10px 6px 0;padding:12px;border:1px solid #c8d0dc;border-radius:6px;font-size:12px;color:#1a2744;background:#f8fafc;">Ž ${esc(l.name)}
         </div>`;
     }).join('');
 
     attachHtml = `
-  <tr>
-    <td style="padding:16px 8px;background:#ffffff;">
-      <div style="font-size:14px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Attachments (${logos.length})</div>
-      <div>${previews}</div>
-      <div style="font-size:11px;color:#888;margin-top:8px;">All files (images, PDFs, docs) are sent as real email paperclip attachments. Click the file name in your email client to open or download.</div>
-    </td>
-  </tr>`;
+  <tr><td style="padding:16px 8px;background:#ffffff;"><div style="font-size:14px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Attachments (${logos.length})</div><div>${previews}</div><div style="font-size:11px;color:#888;margin-top:8px;">All files (images, PDFs, docs) are sent as real email paperclip attachments. Click the file name in your email client to open or download.</div></td></tr>`;
   }
 
   return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;"><tr><td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">New Order: #${esc(orderNo)}
+    </td></tr><tr><td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">${esc(subLine)}
+    </td></tr><tr><td style="padding:0;background:#ffffff;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;"><thead><tr style="background:#003366;color:#ffffff;"><th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">SKU</th><th style="padding:12px 10px;border:1px solid #002244;text-align:left;font-weight:600;color:#ffffff;">Product</th><th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Quantity</th><th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Price</th><th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Total</th></tr></thead><tbody>${rowsHtml || `<tr><td colspan="5" style="${tdC}">No items</td></tr>`}
+          <tr><td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td><td style="${labelTd}">Subtotal :</td><td style="${tdR}">${fmtINR(data.subtotal)}</td></tr><tr><td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td><td style="${labelTd}">GST :</td><td style="${tdR}">${fmtINR(data.gstAmount)}</td></tr><tr><td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td><td style="${labelTd}">Total :</td><td style="${tdR}font-weight:700;">${fmtINR(data.total)}</td></tr><tr><td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td><td style="${labelTd}vertical-align:top;">Payment Methods:</td><td style="${tdR}font-size:12px;line-height:1.45;">NEFT / RTGS / UPI /<br>QR Code / Net Banking /<br>Debit Card
+            </td></tr></tbody></table></td></tr><tr><td style="padding:28px 8px 8px;background:#ffffff;"><div style="font-size:16px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Billing Address :</div><div style="padding-left:12px;line-height:1.55;color:#1a2744;">${data.company ? `<div>${esc(data.company)}</div>` : ''}
+        <div>${esc(data.addressLine1)}${data.addressLine2 ? ', ' + esc(data.addressLine2) : ''}</div><div>${esc(data.city)}${data.state ? ', ' + esc(data.state) : ''}${data.postcode ? ', ' + esc(data.postcode) : ''}</div><div style="margin-top:12px;">${esc(data.firstName)} ${esc(data.lastName)}</div><div>Ph. ${esc(data.phone)}</div><div style="color:#1a56db;">${esc(data.email)}</div>${data.gst ? `<div style="margin-top:8px;">${esc(data.gst)}</div>` : ''}
+      </div></td></tr><tr><td style="padding:16px 8px;font-size:12px;color:#555;background:#ffffff;">T &amp; C : I have read &amp; agreed to your privacy statement. I am agree with all Terms and Conditions. : <span style="color:#1a4a8a;font-weight:600;">Yes</span></td></tr><tr><td style="padding:8px;background:#ffffff;"><div style="border:1px solid #c8d0dc;padding:12px 14px;font-size:13px;color:#1a4a8a;line-height:1.5;"><strong>Special Instructions or Comments about your order:</strong> ${esc(noteBody || '—')}
+      </div></td></tr>${attachHtml}
 
-  <tr>
-    <td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">
-      New Order: #${esc(orderNo)}
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">
-      ${esc(subLine)}
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:0;background:#ffffff;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;">
-        <thead>
-          <tr style="background:#003366;color:#ffffff;">
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">SKU</th>
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:left;font-weight:600;color:#ffffff;">Product</th>
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:center;font-weight:600;color:#ffffff;">Quantity</th>
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Price</th>
-            <th style="padding:12px 10px;border:1px solid #002244;text-align:right;font-weight:600;color:#ffffff;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml || `<tr><td colspan="5" style="${tdC}">No items</td></tr>`}
-          <tr>
-            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
-            <td style="${labelTd}">Subtotal :</td>
-            <td style="${tdR}">${fmtINR(data.subtotal)}</td>
-          </tr>
-          <tr>
-            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
-            <td style="${labelTd}">GST :</td>
-            <td style="${tdR}">${fmtINR(data.gstAmount)}</td>
-          </tr>
-          <tr>
-            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
-            <td style="${labelTd}">Total :</td>
-            <td style="${tdR}font-weight:700;">${fmtINR(data.total)}</td>
-          </tr>
-          <tr>
-            <td colspan="3" style="padding:12px 10px;border:${border};background:#ffffff;"></td>
-            <td style="${labelTd}vertical-align:top;">Payment Methods:</td>
-            <td style="${tdR}font-size:12px;line-height:1.45;">
-              NEFT / RTGS / UPI /<br>QR Code / Net Banking /<br>Debit Card
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:28px 8px 8px;background:#ffffff;">
-      <div style="font-size:16px;font-weight:bold;color:#1a4a8a;margin-bottom:10px;">Billing Address :</div>
-      <div style="padding-left:12px;line-height:1.55;color:#1a2744;">
-        ${data.company ? `<div>${esc(data.company)}</div>` : ''}
-        <div>${esc(data.addressLine1)}${data.addressLine2 ? ', ' + esc(data.addressLine2) : ''}</div>
-        <div>${esc(data.city)}${data.state ? ', ' + esc(data.state) : ''}${data.postcode ? ', ' + esc(data.postcode) : ''}</div>
-        <div style="margin-top:12px;">${esc(data.firstName)} ${esc(data.lastName)}</div>
-        <div>Ph. ${esc(data.phone)}</div>
-        <div style="color:#1a56db;">${esc(data.email)}</div>
-        ${data.gst ? `<div style="margin-top:8px;">${esc(data.gst)}</div>` : ''}
-      </div>
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:16px 8px;font-size:12px;color:#555;background:#ffffff;">
-      T &amp; C : I have read &amp; agreed to your privacy statement. I am agree with all Terms and Conditions. : <span style="color:#1a4a8a;font-weight:600;">Yes</span>
-    </td>
-  </tr>
-
-  <tr>
-    <td style="padding:8px;background:#ffffff;">
-      <div style="border:1px solid #c8d0dc;padding:12px 14px;font-size:13px;color:#1a4a8a;line-height:1.5;">
-        <strong>Special Instructions or Comments about your order:</strong> ${esc(noteBody || 'â€”')}
-      </div>
-    </td>
-  </tr>
-
-  ${attachHtml}
-
-  <tr>
-    <td style="padding:24px 20px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;">
-      <div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries â€” Premium Diaries, Planners &amp; Corporate Gifts</div>
-      <div style="font-size:11px;color:#666666;">174 D, Bawana Industrial Area, Delhi 110039, India</div>
-      <div style="font-size:11px;color:#666666;margin-top:2px;">Phone: +91 93111 35190 | Email: support@newyeardiaries.in | www.newyeardiaries.in</div>
-    </td>
-  </tr>
-
-</table>`;
+  <tr><td style="padding:24px 20px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;"><div style="font-size:13px;font-weight:bold;color:#a0522d;margin-bottom:4px;">New Year Diaries — Premium Diaries, Planners &amp; Corporate Gifts</div><div style="font-size:11px;color:#666666;">174 D, Bawana Industrial Area, Delhi 110039, India</div><div style="font-size:11px;color:#666666;margin-top:2px;">Phone: +91 93111 35190 | Email: support@newyeardiaries.in | www.newyeardiaries.in</div></td></tr></table>`;
 }
 
 export async function sendOrderEmail(data) {
@@ -453,7 +316,7 @@ export async function sendOrderEmail(data) {
     : `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Customer';
 
   const subjectAdmin = `New Order # ${orderNo} (${buyerName})`;
-  const subjectCustomer = `Order Confirmed # ${orderNo} â€” New Year Diaries`;
+  const subjectCustomer = `Order Confirmed # ${orderNo} — New Year Diaries`;
 
   const attachments = await prepareAttachments(data.logos);
   const html = await buildOrderHtml(data, attachments);

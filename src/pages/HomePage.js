@@ -42,8 +42,7 @@ export async function renderHomePage() {
         const slug = sec.categorySlug;
         // Honor the per-category sort_order on the junction if present, else
         // fall back to created_at desc (the order allProducts already uses).
-        const inCat = allProducts.filter(p =>
-          p.categorySlug === slug || (Array.isArray(p.categorySlugs) && p.categorySlugs.includes(slug))
+        const inCat = allProducts.filter(p =>p.categorySlug === slug || (Array.isArray(p.categorySlugs) && p.categorySlugs.includes(slug))
         );
         inCat.sort((a, b) => {
           const oa = a.categorySortOrders?.[slug];
@@ -81,72 +80,23 @@ export async function renderHomePage() {
   const app = document.getElementById('app');
 
   app.innerHTML = `
-    <div class="page-content">
-      <section class="hero-section">
-        <div class="hero-slider" id="hero-slider">
-          ${(content.banners && content.banners.length > 0) ? content.banners.map((b, i) => `
-            <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background-image:url('${b.image_url}')">
-              ${(b.title || b.subtitle || b.cta_text) ? `
-              <div class="hero-slide-content" style="position:absolute; bottom:20%; left:10%; color:#fff; background:rgba(0,0,0,0.5); padding:2rem; border-radius:8px;">
-                ${b.title ? `<h2 style="font-size:2rem; margin-bottom:0.5rem;">${b.title}</h2>` : ''}
+    <div class="page-content"><section class="hero-section"><div class="hero-slider" id="hero-slider">${(content.banners && content.banners.length > 0) ? content.banners.map((b, i) => `
+            <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background-image:url('${b.image_url}')">${(b.title || b.subtitle || b.cta_text) ? `
+              <div class="hero-slide-content" style="position:absolute; bottom:20%; left:10%; color:#fff; background:rgba(0,0,0,0.5); padding:2rem; border-radius:8px;">${b.title ? `<h2 style="font-size:2rem; margin-bottom:0.5rem;">${b.title}</h2>` : ''}
                 ${b.subtitle ? `<p style="font-size:1.2rem; margin-bottom:1rem;">${b.subtitle}</p>` : ''}
                 ${b.cta_text ? `<a href="${b.cta_link || '/shop'}" class="btn btn--primary">${b.cta_text}</a>` : ''}
-              </div>
-              ` : ''}
-            </div>
-          `).join('') : `
-          <div class="hero-slide active" style="background-image:url('/images/banner2.jpg')"></div>
-          <div class="hero-slide" style="background-image:url('/images/banner1.jpg')"></div>
-          <div class="hero-slide" style="background-image:url('/images/banner3.jpg')"></div>
-          <div class="hero-slide" style="background-image:url('/images/banner4.jpg')"></div>
-          `}
-          <button class="hero-arrow hero-arrow--prev" id="heroPrev" aria-label="Previous slide">&#8249;</button>
-          <button class="hero-arrow hero-arrow--next" id="heroNext" aria-label="Next slide">&#8250;</button>
-          <div class="hero-dots" id="heroDots"></div>
-        </div>
-      </section>
+              </div>` : ''}
+            </div>`).join('') : `
+          <div class="hero-slide active" style="background-image:url('/images/banner2.jpg')"></div><div class="hero-slide" style="background-image:url('/images/banner1.jpg')"></div><div class="hero-slide" style="background-image:url('/images/banner3.jpg')"></div><div class="hero-slide" style="background-image:url('/images/banner4.jpg')"></div>`}
+          <button class="hero-arrow hero-arrow--prev" id="heroPrev" aria-label="Previous slide">&#8249;</button><button class="hero-arrow hero-arrow--next" id="heroNext" aria-label="Next slide">&#8250;</button><div class="hero-dots" id="heroDots"></div></div></section>${renderAnnouncementMarquee(content.announcements || [])}
 
-      ${renderAnnouncementMarquee(content.announcements || [])}
-
-      <div class="home-wholesale-banner" aria-label="Wholesale only">
-        <span class="home-wholesale-banner__text">WHOLESALE ONLY</span>
-      </div>
-
-      <section class="section--sm">
-        <div class="container">
-          ${renderTrustBadges(getTrustBadges(content))}
-        </div>
-      </section>
-
-      <section class="ap-cat-section">
-        <div class="ap-cat-inner">
-          <div class="ap-cat-header">
-            <h2 class="ap-cat-heading">SHOP BY CATEGORY</h2>
-          </div>
-          <div class="ap-cat-wrapper">
-            <div class="ap-cat-grid" id="apCatGrid">
-              ${(shopCategories || []).map(sc => `
-                <div class="ap-cat-card-wrap">
-                  <a href="${sc.link}" class="ap-cat-card">
-                    <div class="ap-cat-img-wrapper">
-                      <img src="${sc.image_url || '/images/placeholder.jpg'}" alt="${sc.title}" loading="lazy" />
-                    </div>
-                    <div class="ap-cat-label">${sc.title}</div>
-                  </a>
-                </div>
-              `).join('')}
-            </div>
-            <button class="ap-cat-arrow ap-cat-arrow--left" id="apCatLeft">&#8249;</button>
-            <button class="ap-cat-arrow ap-cat-arrow--right" id="apCatRight">&#8250;</button>
-          </div>
-        </div>
-      </section>
-
-      ${sliderLists.map((s, i) => renderProductSliderSection(s.title, s.key + '-slider', s.products, 's' + i, s.bg, s.view_all_link)).join('')}
+      <div class="home-wholesale-banner" aria-label="Wholesale only"><span class="home-wholesale-banner__text">WHOLESALE ONLY</span></div><section class="section--sm"><div class="container">${renderTrustBadges(getTrustBadges(content))}
+        </div></section><section class="ap-cat-section"><div class="ap-cat-inner"><div class="ap-cat-header"><h2 class="ap-cat-heading">SHOP BY CATEGORY</h2></div><div class="ap-cat-wrapper"><div class="ap-cat-grid" id="apCatGrid">${(shopCategories || []).map(sc => `
+                <div class="ap-cat-card-wrap"><a href="${sc.link}" class="ap-cat-card"><div class="ap-cat-img-wrapper"><img src="${sc.image_url || '/images/placeholder.jpg'}" alt="${sc.title}" loading="lazy" /></div><div class="ap-cat-label">${sc.title}</div></a></div>`).join('')}
+            </div><button class="ap-cat-arrow ap-cat-arrow--left" id="apCatLeft">&#8249;</button><button class="ap-cat-arrow ap-cat-arrow--right" id="apCatRight">&#8250;</button></div></div></section>${sliderLists.map((s, i) => renderProductSliderSection(s.title, s.key + '-slider', s.products, 's' + i, s.bg, s.view_all_link)).join('')}
 
       ${renderCtaSection(getCtaContent(content))}
-    </div>
-  `;
+    </div>`;
 
   initProductCardEvents();
   initHeroSlider();
@@ -183,20 +133,12 @@ window.__reinitHomePage = reinitHomePage;
 
 function renderAnnouncementMarquee(announcements) {
   if (!Array.isArray(announcements) || announcements.length === 0) return '';
-  const items = announcements.map(a =>
-    `<span class="announcement-marquee-item">${a.link ? `<a href="${a.link}">${a.text}</a>` : a.text}</span>`
+  const items = announcements.map(a =>`<span class="announcement-marquee-item">${a.link ? `<a href="${a.link}">${a.text}</a>` : a.text}</span>`
   ).join('<span class="announcement-marquee-dot">•</span>');
   return `
-    <section class="announcement-marquee-section">
-      <div class="announcement-marquee">
-        <div class="announcement-marquee-track">
-          ${items}
-          <span class="announcement-marquee-dot">•</span>
-          ${items}
-        </div>
-      </div>
-    </section>
-  `;
+    <section class="announcement-marquee-section"><div class="announcement-marquee"><div class="announcement-marquee-track">${items}
+          <span class="announcement-marquee-dot">•</span>${items}
+        </div></div></section>`;
 }
 
 function renderProductSliderSection(title, slug, products, idSuffix, bg, viewAllLink) {
@@ -204,22 +146,8 @@ function renderProductSliderSection(title, slug, products, idSuffix, bg, viewAll
   const sliderId = `ap-slider-${idSuffix}`;
   const viewAllHref = viewAllLink || `/shop?cat=${slug}`;
   return `
-    <section class="ap-catalogue-section" style="background: ${bg};">
-      <div class="ap-catalogue-inner">
-        <div class="ap-catalogue-header">
-          <h2 class="ap-catalogue-title">${title}</h2>
-          <a href="${viewAllHref}" class="ap-catalogue-viewall">View All →</a>
-        </div>
-        <div class="ap-cat-wrapper">
-          <div class="ap-cat-grid" id="${sliderId}">
-            ${products.map(p => renderProductCard(p)).join('')}
-          </div>
-          <button class="ap-cat-arrow ap-cat-arrow--left ap-product-slider-btn" data-slider="${sliderId}" data-dir="-1">&#8249;</button>
-          <button class="ap-cat-arrow ap-cat-arrow--right ap-product-slider-btn" data-slider="${sliderId}" data-dir="1">&#8250;</button>
-        </div>
-      </div>
-    </section>
-  `;
+    <section class="ap-catalogue-section" style="background: ${bg};"><div class="ap-catalogue-inner"><div class="ap-catalogue-header"><h2 class="ap-catalogue-title">${title}</h2><a href="${viewAllHref}" class="ap-catalogue-viewall">View All →</a></div><div class="ap-cat-wrapper"><div class="ap-cat-grid" id="${sliderId}">${products.map(p => renderProductCard(p)).join('')}
+          </div><button class="ap-cat-arrow ap-cat-arrow--left ap-product-slider-btn" data-slider="${sliderId}" data-dir="-1">&#8249;</button><button class="ap-cat-arrow ap-cat-arrow--right ap-product-slider-btn" data-slider="${sliderId}" data-dir="1">&#8250;</button></div></div></section>`;
 }
 
 function initHeroSlider() {
@@ -255,8 +183,7 @@ function initHeroSlider() {
   // Build dots
   if (dotsContainer) {
     dotsContainer.style.display = '';
-    dotsContainer.innerHTML = slides.map((_, i) =>
-      `<button class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}" aria-label="Go to slide ${i + 1}"></button>`
+    dotsContainer.innerHTML = slides.map((_, i) =>`<button class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}" aria-label="Go to slide ${i + 1}"></button>`
     ).join('');
   }
 
@@ -389,14 +316,5 @@ function renderCtaSection(cta) {
   const ctaLink  = cta?.cta_link || '/contact';
 
   return `
-      <section class="section">
-        <div class="container" style="text-align:center;">
-          <h2 class="heading-2" style="margin-bottom:var(--space-4);">${title}</h2>
-          <p class="text-body" style="max-width:500px;margin:0 auto var(--space-8);font-size:var(--fs-md);">${subtitle}</p>
-          <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;">
-            <a href="${ctaLink}" class="btn btn--accent btn--lg">${ctaText}</a>
-          </div>
-        </div>
-      </section>
-  `;
+      <section class="section"><div class="container" style="text-align:center;"><h2 class="heading-2" style="margin-bottom:var(--space-4);">${title}</h2><p class="text-body" style="max-width:500px;margin:0 auto var(--space-8);font-size:var(--fs-md);">${subtitle}</p><div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap;"><a href="${ctaLink}" class="btn btn--accent btn--lg">${ctaText}</a></div></div></section>`;
 }

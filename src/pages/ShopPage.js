@@ -26,20 +26,20 @@ function getPaginationItems(currentPage, totalPages) {
 function renderPaginationButtons(currentPage, totalPages) {
   const items = getPaginationItems(currentPage, totalPages);
   return items.map(p => {
-    if (p === '...') return `<span class="shop-pag-ellipsis">â€¦</span>`;
+    if (p === '...') return `<span class="shop-pag-ellipsis">…</span>`;
     return `<button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
   }).join('');
 }
 const PAGE_TITLES = {
-  'Corporate Gift Sets': { title: 'Corporate Gift Sets', desc: 'Premium corporate gifting solutions â€” curated sets and gift packages that leave a lasting impression.' },
-  'Business Gifts': { title: 'Business Gifts', desc: 'Professional business gifting â€” eco-friendly, practical, and memorable.' },
+  'Corporate Gift Sets': { title: 'Corporate Gift Sets', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
+  'Business Gifts': { title: 'Business Gifts', desc: 'Professional business gifting — eco-friendly, practical, and memorable.' },
   'New Year Diary': { title: 'New Year Diary', desc: 'Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.' },
-  'Premium Diary': { title: 'Premium Diary', desc: 'Luxury diaries crafted from the finest materials â€” leather, PU, and more.' },
-  Calendars: { title: 'Calendars', desc: 'Premium calendars for the new year â€” desk and table designs.' },
-  'Customized Note Books': { title: 'Customized Note Books', desc: 'Personalized notebooks for every need â€” custom covers, pen included options.' },
-  'Leather Gifts': { title: 'Leather Gifts', desc: 'Handcrafted leather gifts â€” certificate folders, wallets, and accessories.' },
-  'Leather Planners': { title: 'Leather Planners', desc: 'Premium leather planners â€” crafted for focus, productivity, and style.' },
-  'Promotional Gifts': { title: 'Promotional Gifts', desc: 'Promotional products for brand visibility â€” pens, mugs, bags, and more.' },
+  'Premium Diary': { title: 'Premium Diary', desc: 'Luxury diaries crafted from the finest materials — leather, PU, and more.' },
+  Calendars: { title: 'Calendars', desc: 'Premium calendars for the new year — desk and table designs.' },
+  'Customized Note Books': { title: 'Customized Note Books', desc: 'Personalized notebooks for every need — custom covers, pen included options.' },
+  'Leather Gifts': { title: 'Leather Gifts', desc: 'Handcrafted leather gifts — certificate folders, wallets, and accessories.' },
+  'Leather Planners': { title: 'Leather Planners', desc: 'Premium leather planners — crafted for focus, productivity, and style.' },
+  'Promotional Gifts': { title: 'Promotional Gifts', desc: 'Promotional products for brand visibility — pens, mugs, bags, and more.' },
 };
 
 export async function renderShopPage() {
@@ -67,45 +67,16 @@ export async function renderShopPage() {
 
   const app = document.getElementById('app');
   app.innerHTML = `
-    <div class="page-content">
-      <div class="container section">
-        ${renderBreadcrumbs([
+    <div class="page-content"><div class="container section">${renderBreadcrumbs([
           { label: 'Home', path: '/' },
           { label: 'Collections', path: '/shop' },
           { label: breadcrumbLabel },
         ])}
-        <div class="shop-header">
-          <div>
-            <h1>${pageTitle}</h1>
-            ${pageDesc ? `<p>${pageDesc}</p>` : ''}
-          </div>
-          <div class="shop-controls">
-            <button class="btn btn--secondary btn--sm filter-toggle-mobile" id="filter-toggle">
-              <span class="material-symbols-outlined" style="font-size:16px;">tune</span>
-              Filters
-            </button>
-            <select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select" aria-label="Sort products">
-              <option value="featured">Sort by: Featured</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="newest">Newest First</option>
-            </select>
-          </div>
-        </div>
-        <div class="shop-layout">
-          ${renderFilterSidebar()}
-          <div class="shop-main">
-            <div class="product-grid" id="product-grid">
-              ${renderProductCardSkeleton(8)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button id="go-top-btn" class="go-top-btn" aria-label="Go to top">
-      <span class="material-symbols-outlined">keyboard_arrow_up</span>
-    </button>
-  `;
+        <div class="shop-header"><div><h1>${pageTitle}</h1>${pageDesc ? `<p>${pageDesc}</p>` : ''}
+          </div><div class="shop-controls"><button class="btn btn--secondary btn--sm filter-toggle-mobile" id="filter-toggle"><span class="material-symbols-outlined" style="font-size:16px;">tune</span>Filters
+            </button><select class="input-field select-field" style="width:auto;min-width:160px;" id="sort-select" aria-label="Sort products"><option value="featured">Sort by: Featured</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="newest">Newest First</option></select></div></div><div class="shop-layout">${renderFilterSidebar()}
+          <div class="shop-main"><div class="product-grid" id="product-grid">${renderProductCardSkeleton(8)}
+            </div></div></div></div></div><button id="go-top-btn" class="go-top-btn" aria-label="Go to top"><span class="material-symbols-outlined">keyboard_arrow_up</span></button>`;
   initFilterEvents();
   initGoTopButton();
 
@@ -129,8 +100,7 @@ export async function renderShopPage() {
   let products;
   if (searchQ) {
     const q = searchQ.toLowerCase();
-    products = allProducts.filter(p =>
-      p.name.toLowerCase().includes(q) ||
+    products = allProducts.filter(p =>p.name.toLowerCase().includes(q) ||
       (p.description || '').toLowerCase().includes(q) ||
       (p.shortDescription || '').toLowerCase().includes(q) ||
       (p.category || '').toLowerCase().includes(q) ||
@@ -169,11 +139,7 @@ export async function renderShopPage() {
     grid.innerHTML = pageProducts.length > 0
       ? pageProducts.map(p => renderProductCard(p)).join('')
       : `
-        <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
-          <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
-          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
-        </div>
-      `;
+        <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p></div>`;
     initProductCardSlideshows(grid);
   }
 
@@ -184,14 +150,8 @@ export async function renderShopPage() {
     const pagDiv = document.createElement('div');
     pagDiv.className = 'shop-pagination';
     pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      ${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    `;
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page"><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page"><span class="material-symbols-outlined">chevron_right</span></button>`;
     mainEl.appendChild(pagDiv);
   }
 
@@ -207,7 +167,7 @@ export async function renderShopPage() {
       const search = window.location.search || '';
       sessionStorage.setItem(prefix + path + search, JSON.stringify({ html, t: Date.now() }));
     }
-  } catch { /* quota or disabled â€” ignore */ }
+  } catch { /* quota or disabled — ignore */ }
 }
 
 function reinitShopPage() {
@@ -298,10 +258,8 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
       const pagDiv = document.createElement('div');
       pagDiv.className = 'shop-pagination';
       pagDiv.innerHTML = `
-        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
-        ${renderPaginationButtons(currentPage, totalPages)}
-        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
-      `;
+        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
+        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
       mainEl.appendChild(pagDiv);
     }
   } catch (e) { console.warn('[shop] in-place refresh failed:', e); }
@@ -475,11 +433,7 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
 
   if (pageProducts.length === 0) {
     grid.innerHTML = `
-      <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
-        <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
-        <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p>
-      </div>
-    `;
+      <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p></div>`;
     return;
   }
 
@@ -494,10 +448,8 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
     const pagDiv = document.createElement('div');
     pagDiv.className = 'shop-pagination';
     pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
-      ${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
-    `;
+      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>${renderPaginationButtons(currentPage, totalPages)}
+      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
     grid.after(pagDiv);
 
     document.getElementById('pag-prev')?.addEventListener('click', () => {

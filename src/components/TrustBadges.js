@@ -13,16 +13,7 @@ export function renderTrustBadges(badges) {
   const list = (Array.isArray(badges) && badges.length > 0) ? badges : DEFAULT_BADGES;
 
   return `
-    <div class="trust-badges">
-      ${list.map(b => `
-        <div class="trust-badge">
-          <div class="trust-badge-icon">
-            <span class="material-symbols-outlined">${b.icon || 'verified'}</span>
-          </div>
-          <h4 class="trust-badge-title">${b.title || ''}</h4>
-          <p class="trust-badge-desc">${b.description || b.desc || ''}</p>
-        </div>
-      `).join('')}
-    </div>
-  `;
+    <div class="trust-badges">${list.map(b => `
+        <div class="trust-badge"><div class="trust-badge-icon"><span class="material-symbols-outlined">${b.icon || 'verified'}</span></div><h4 class="trust-badge-title">${b.title || ''}</h4><p class="trust-badge-desc">${b.description || b.desc || ''}</p></div>`).join('')}
+    </div>`;
 }

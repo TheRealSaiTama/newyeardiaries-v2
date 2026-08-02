@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
   const adminEmail = (body.adminEmail || Deno.env.get('ORDER_ADMIN_EMAIL') || 'newyeardiaries@gmail.com').trim();
   const customerEmail = (body.customerEmail || '').trim();
   const subjectAdmin = body.subjectAdmin || `New Order # ${body.orderNumber || ''}`;
-  const subjectCustomer = body.subjectCustomer || `Order Confirmed # ${body.orderNumber || ''} â€” New Year Diaries`;
+  const subjectCustomer = body.subjectCustomer || `Order Confirmed # ${body.orderNumber || ''} — New Year Diaries`;
   const from = Deno.env.get('SMTP_FROM') || `New Year Diaries <${user}>`;
 
   const incomingAttachments = (body.attachments || []).slice(0, 5);
