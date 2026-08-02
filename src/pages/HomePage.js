@@ -110,8 +110,8 @@ export async function renderHomePage() {
           <div class="hero-slide" style="background-image:url('/images/banner3.jpg')"></div>
           <div class="hero-slide" style="background-image:url('/images/banner4.jpg')"></div>
           `}
-          <button class="hero-arrow hero-arrow--prev" id="heroPrev" aria-label="Previous slide">&#8249;</button>
-          <button class="hero-arrow hero-arrow--next" id="heroNext" aria-label="Next slide">&#8250;</button>
+          <button class="hero-arrow hero-arrow--prev" id="heroPrev" aria-label="Previous slide"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+          <button class="hero-arrow hero-arrow--next" id="heroNext" aria-label="Next slide"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
           <div class="hero-dots" id="heroDots"></div>
         </div>
       </section>
