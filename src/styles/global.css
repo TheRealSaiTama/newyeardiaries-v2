@@ -162,6 +162,19 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.btn--success {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #15803d !important;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.18) !important;
+  cursor: default !important;
+}
+
+.btn--success:hover {
+  background: #15803d !important;
+  transform: none !important;
+}
+
 .btn:disabled,
 .btn.btn--added {
   background: #CCCCCC !important;

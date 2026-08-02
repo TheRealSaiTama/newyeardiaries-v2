@@ -91,7 +91,12 @@ export function renderContactPage(params, appContent) {
 
     sendContactEmail(data).catch(() => {});
     form.reset();
-    btn.textContent = 'Message Sent!';
-    setTimeout(() => { btn.disabled = false; btn.textContent = 'Send Message'; }, 3000);
+    btn.classList.add('btn--success');
+    btn.textContent = '✓ Message Sent!';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.classList.remove('btn--success');
+      btn.textContent = 'Send Message';
+    }, 3500);
   });
 }

@@ -163,7 +163,9 @@ export async function renderBulkQuotePage() {
     }
 
     clearQuoteList();
+    btn.classList.add('btn--success');
+    btn.textContent = '✓ Enquiry Submitted!';
     sendQuoteEmail(data).catch(() => {});
-    navigateTo('/enquiry-success');
+    setTimeout(() => navigateTo('/enquiry-success'), 900);
   });
 }

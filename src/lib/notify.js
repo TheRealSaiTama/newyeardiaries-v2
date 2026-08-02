@@ -41,47 +41,144 @@ function sendEmail(templateParams, { toEmail, attachments } = {}) {
 }
 
 export function sendQuoteEmail(data) {
-  return sendEmail({
-    title: `[${data.enquiry_code || 'BQ'}] Bulk Quote - ${data.company}`,
-    name: data.name,
-    email: data.email,
-    message: [
-      `Enquiry Code: ${data.enquiry_code || 'N/A'}`,
-      ``,
-      `--- CONTACT ---`,
-      `Name: ${data.name}`,
-      `Company: ${data.company}`,
-      `Email: ${data.email}`,
-      `Phone: ${data.phone}`,
-      ``,
-      `--- ORDER DETAILS ---`,
-      `Product Interest: ${data.product_type || 'Not specified'}`,
-      `Quantity: ${data.quantity || 'Not specified'}`,
-      `${data.product_names ? `Products from Quote List:\n${data.product_names}` : ''}`,
-      ``,
-      `--- REQUIREMENTS ---`,
-      `Requirements: ${data.custom_requirements || 'None'}`,
-    ].join('\n'),
-  });
+  return sendEnquiryEmail('bulk_quote', data);
 }
 
 export function sendContactEmail(data) {
-  return sendEmail({
-    title: `[${data.enquiry_code || 'CT'}] Contact: ${data.subject}`,
-    name: data.name,
-    email: data.email,
-    message: [
-      `Enquiry Code: ${data.enquiry_code || 'N/A'}`,
-      ``,
-      `--- CONTACT ---`,
-      `Name: ${data.name}`,
-      `Email: ${data.email}`,
-      ``,
-      `--- MESSAGE ---`,
-      `Subject: ${data.subject}`,
-      `Message: ${data.message || 'No message'}`,
-    ].join('\n'),
+  return sendEnquiryEmail('contact', data);
+}
+
+// ---------------------------------------------------------------------------
+// Enquiry (contact + bulk quote) mail — same Edge Function as orders.
+// Subject: [NYD-Query-{shortCode}] {Customer Name}
+// Sends to BOTH admin (newyeardiaries@gmail.com) and customer with NYD
+// Team signature. Customer gets a confirmation copy.
+// ---------------------------------------------------------------------------
+
+/** Pull a short 4-char code from the full enquiry code (NYD-XX-YYYYMMDD-XXXX). */
+function shortCode(enquiryCode) {
+  if (!enquiryCode) return Math.random().toString(36).slice(2, 6).toUpperCase();
+  const parts = String(enquiryCode).split('-');
+  return (parts[parts.length - 1] || 'XXXX').toUpperCase();
+}
+
+async function sendEnquiryEmail(type, data) {
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    return { ok: false, skipped: true, reason: 'Supabase env not configured' };
+  }
+
+  const code = shortCode(data.enquiry_code);
+  const name = (data.name || data.firstName || 'Customer').toString().trim() || 'Customer';
+  const subjectAdmin = `[NYD-Query-${code}] New ${type === 'bulk_quote' ? 'Bulk Quote' : 'Contact'} — ${name}`;
+  const subjectCustomer = `[NYD-Query-${code}] We received your message, ${name}`;
+
+  const html = buildEnquiryHtml(type, data, code);
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_ANON}`,
+      apikey: SUPABASE_ANON,
+    },
+    body: JSON.stringify({
+      adminEmail: ORDER_ADMIN_EMAIL,
+      customerEmail: data.email,
+      subjectAdmin,
+      subjectCustomer,
+      html,
+      attachments: [],
+    }),
   });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || !payload.ok) {
+    const err = new Error(payload.error || `Edge function ${res.status}`);
+    err.payload = payload;
+    throw err;
+  }
+  return { ok: true, via: 'smtp', ...payload };
+}
+
+function buildEnquiryHtml(type, data, code) {
+  const isQuote = type === 'bulk_quote';
+  const title = isQuote ? 'New Bulk Quote Enquiry' : 'New Contact Enquiry';
+  const subLine = `[NYD-Query-${code}]`;
+
+  const rows = [];
+  const addRow = (label, value) => {
+    if (value === undefined || value === null || value === '') return;
+    rows.push({ label, value });
+  };
+
+  addRow('Enquiry Code', data.enquiry_code || `NYD-Query-${code}`);
+  addRow('Name', data.name);
+  addRow('Company', data.company);
+  addRow('Email', data.email);
+  addRow(isQuote ? 'Phone' : 'Mobile', data.phone || data.mobile);
+  addRow('Address', data.address);
+  addRow('State', data.state);
+  addRow('Product Interest', data.product_type);
+  addRow('Estimated Quantity', data.quantity ? `${data.quantity} units` : null);
+  addRow('Required By', data.required_by);
+  addRow('Subject', data.subject);
+  addRow('Message', data.message);
+  addRow('Customization / Requirements', data.custom_requirements);
+  if (data.product_names) {
+    addRow('Products from Quote List', data.product_names);
+  }
+
+  const border = '1px solid #c8d0dc';
+  const td = `padding:12px 10px;border:${border};vertical-align:top;background:#ffffff;color:#1a2744;font-size:13px;`;
+  const labelTd = `${td}color:#1a4a8a;font-weight:600;width:180px;background:#f8fafc;`;
+
+  const rowsHtml = rows.map((r) => {
+    const v = String(r.value);
+    const isMulti = v.includes('\n');
+    const valueHtml = isMulti
+      ? v.split('\n').filter(Boolean).map(line => `<div style="margin:2px 0;">${esc(line)}</div>`).join('')
+      : esc(v);
+    return `<tr><td style="${labelTd}">${esc(r.label)} :</td><td style="${td}">${valueHtml}</td></tr>`;
+  }).join('');
+
+  return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1a2744;font-size:14px;line-height:1.5;border-collapse:collapse;background:#ffffff;">
+
+  <tr>
+    <td style="background:#003366;color:#ffffff;padding:16px 20px;font-size:22px;font-weight:bold;">
+      ${esc(title)}
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:14px 4px 16px;font-size:14px;color:#1a4a8a;font-weight:600;background:#ffffff;">
+      ${esc(subLine)}
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:0 8px;background:#ffffff;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;background:#ffffff;">
+        <tbody>
+          ${rowsHtml || `<tr><td colspan="2" style="${td}">No details provided.</td></tr>`}
+        </tbody>
+      </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:24px 20px;background:#fdf9f3;border-top:2px solid #a0522d;">
+      <div style="font-size:14px;font-weight:bold;color:#a0522d;margin-bottom:6px;">NYD Team</div>
+      <div style="font-size:12px;color:#444;line-height:1.7;">
+        Cell &nbsp;: + 91 93111 35190<br>
+        Off. &nbsp;&nbsp;: 011 2394 7088, 3333 1586<br>
+        Web &nbsp;: <a href="https://www.newyeardiaries.in" style="color:#1a56db;text-decoration:none;">www.newyeardiaries.in</a>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:10px;line-height:1.5;">New Year Diaries &mdash; Premium Diaries, Planners &amp; Corporate Gifts<br>174 D, Bawana Industrial Area, Delhi 110039, India</div>
+    </td>
+  </tr>
+
+</table>`;
 }
 
 function fmtINR(n) {
