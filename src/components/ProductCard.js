@@ -6,12 +6,18 @@ export function renderProductCard(product) {
 
   let img;
   if (hasMultiple) {
-    img = images.map((src, i) =>
-      `<img src="${src}" alt="${product.title || product.name}" class="ap-product-img ${i === 0 ? 'ap-product-img--active' : ''}" loading="lazy" />`
-    ).join('');
+    // H3.4 fix: first image eager + high priority so it paints immediately,
+    // remaining images stay lazy.
+    img = images.map((src, i) => {
+      const isFirst = i === 0;
+      const loading = isFirst ? 'eager' : 'lazy';
+      const fetchpriority = isFirst ? 'high' : 'auto';
+      const decoding = 'async';
+      return `<img src="${src}" alt="${product.title || product.name}" class="ap-product-img ${isFirst ? 'ap-product-img--active' : ''}" loading="${loading}" fetchpriority="${fetchpriority}" decoding="${decoding}" />`;
+    }).join('');
   } else {
     img = product.image
-      ? `<img src="${product.image}" alt="${product.title || product.name}" loading="lazy" />`
+      ? `<img src="${product.image}" alt="${product.title || product.name}" loading="eager" fetchpriority="high" decoding="async" />`
       : `<div class="ap-product-icon"><span class="material-symbols-outlined">menu_book</span></div>`;
   }
 

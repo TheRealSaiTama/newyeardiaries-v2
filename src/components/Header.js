@@ -214,16 +214,30 @@ export function initHeaderEvents() {
       }
     });
 
-    // Sidebar hover → show right panel
+    // Sidebar hover/click/focus → show right panel
+    // H3.10/H3.11/M11 fix: also bind click + focusin so touch devices and
+    // keyboard users can switch the right panel.
     const sidebarBtns = exploreMenu.querySelectorAll('.explore-mega-cat-btn');
+    const activateSidebar = (btn) => {
+      sidebarBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const group = btn.dataset.group;
+      exploreMenu.querySelectorAll('.explore-mega-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.panel === group);
+      });
+    };
     sidebarBtns.forEach(btn => {
-      btn.addEventListener('mouseenter', () => {
-        sidebarBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const group = btn.dataset.group;
-        exploreMenu.querySelectorAll('.explore-mega-panel').forEach(p => {
-          p.classList.toggle('active', p.dataset.panel === group);
-        });
+      btn.addEventListener('mouseenter', () => activateSidebar(btn));
+      btn.addEventListener('focusin', () => activateSidebar(btn));
+      btn.addEventListener('click', (e) => {
+        // Allow navigation if a real link is clicked; only intercept the button.
+        if (e.target.closest('a')) return;
+        e.preventDefault();
+        activateSidebar(btn);
       });
     });
   }

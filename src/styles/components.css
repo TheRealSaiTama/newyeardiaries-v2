@@ -851,12 +851,17 @@ a.explore-mega-cat-btn.active {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
   cursor: pointer;
   padding: var(--space-2) 0;
   user-select: none;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font-family: inherit;
 }
 
 .filter-section-title .material-symbols-outlined {

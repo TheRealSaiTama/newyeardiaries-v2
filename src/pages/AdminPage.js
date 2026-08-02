@@ -338,8 +338,13 @@ function showToast(message, type = 'success') {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
+  // H3.23 fix: toast is a live region so screen readers announce feedback
+  // (form submit success, add-to-cart, review submitted, etc).
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+  toast.setAttribute('aria-atomic', 'true');
   const icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
-  toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${message}`;
+  toast.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span><span>${message}</span>`;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }

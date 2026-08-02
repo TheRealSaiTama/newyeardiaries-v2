@@ -6,12 +6,12 @@ export function renderFilterSidebar() {
     <aside class="filter-sidebar" id="filter-sidebar">
       <h2 style="font-size:var(--fs-md);font-weight:var(--fw-semibold);margin-bottom:var(--space-4);">Filters</h2>
       <p style="font-size:var(--fs-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">Refine your selection</p>
-      
+
       <div class="filter-section">
-        <div class="filter-section-title" data-filter="material">
+        <button type="button" class="filter-section-title" data-filter="material" aria-expanded="true">
           <span>Cover Material</span>
-          <span class="material-symbols-outlined">expand_more</span>
-        </div>
+          <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+        </button>
         <div class="filter-options">
           ${filters.material.map(m => `
             <label class="filter-option">
@@ -23,10 +23,10 @@ export function renderFilterSidebar() {
       </div>
 
       <div class="filter-section">
-        <div class="filter-section-title" data-filter="size">
+        <button type="button" class="filter-section-title" data-filter="size" aria-expanded="true">
           <span>Size</span>
-          <span class="material-symbols-outlined">expand_more</span>
-        </div>
+          <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+        </button>
         <div class="filter-options">
           ${filters.size.map(s => `
             <label class="filter-option">
@@ -38,10 +38,10 @@ export function renderFilterSidebar() {
       </div>
 
       <div class="filter-section">
-        <div class="filter-section-title" data-filter="price">
+        <button type="button" class="filter-section-title" data-filter="price" aria-expanded="true">
           <span>Price Range</span>
-          <span class="material-symbols-outlined">expand_more</span>
-        </div>
+          <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+        </button>
         <div class="filter-options">
           ${filters.priceRange.map(r => `
             <label class="filter-option">
@@ -57,8 +57,13 @@ export function renderFilterSidebar() {
 
 export function initFilterEvents() {
   document.querySelectorAll('.filter-section-title').forEach(title => {
-    title.addEventListener('click', () => {
-      title.closest('.filter-section')?.classList.toggle('collapsed');
-    });
+    const toggle = () => {
+      const section = title.closest('.filter-section');
+      const isCollapsed = section?.classList.toggle('collapsed');
+      title.setAttribute('aria-expanded', String(!isCollapsed));
+    };
+    title.addEventListener('click', toggle);
+    // H3.13 fix: button is now a real <button>, so keyboard Enter/Space
+    // works natively. Just wire the click handler.
   });
 }
