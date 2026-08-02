@@ -52,6 +52,11 @@ export function renderContactPage(params, appContent) {
               </div>
               <div class="input-group"><label>Email *</label><input name="email" type="email" class="input-field" required></div>
               <div class="input-group"><label>Description *</label><textarea name="message" class="input-field textarea-field" placeholder="Tell us what you're looking for" required></textarea></div>
+              <div class="input-group">
+                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, briefs, references)</small></label>
+                <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="contact-files" class="input-field" style="padding:8px">
+                <small id="contact-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
+              </div>
               <button type="submit" class="btn btn--accent btn--lg btn--full" id="contact-submit-btn">Send Message</button>
             </form>
           </div>
@@ -66,6 +71,38 @@ export function renderContactPage(params, appContent) {
     const btn = document.getElementById('contact-submit-btn');
     if (btn.disabled) return;
 
+    const fileInput = document.getElementById('contact-files');
+    const fileList = fileInput ? Array.from(fileInput.files || []) : [];
+    if (fileList.length > 5) {
+      alert('Please attach at most 5 files.');
+      return;
+    }
+    for (const f of fileList) {
+      if (f.size > 5 * 1024 * 1024) {
+        alert(`"${f.name}" is larger than 5 MB. Please compress and try again.`);
+        return;
+      }
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    // Read each file as a data URL for the email attachment
+    const attachments = [];
+    for (const f of fileList) {
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(f);
+        });
+        attachments.push({ name: f.name, type: f.type, size: f.size, dataUrl });
+      } catch (err) {
+        console.error('File read failed:', err);
+      }
+    }
+
     const data = {
       name: form.name.value.trim(),
       address: form.address.value.trim(),
@@ -73,13 +110,18 @@ export function renderContactPage(params, appContent) {
       mobile: form.mobile.value.trim(),
       email: form.email.value.trim(),
       message: form.message.value.trim() || '',
+      attachments,
       enquiry_code: generateEnquiryCode('CT'),
     };
 
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
-
-    const { error } = await supabase.from('contact_submissions').insert([data]);
+    const { error } = await supabase.from('contact_submissions').insert([{
+      name: data.name,
+      email: data.email,
+      address: data.address,
+      state: data.state,
+      mobile: data.mobile,
+      message: data.message,
+    }]);
 
     if (error) {
       console.error('Contact form error:', error);
@@ -89,10 +131,11 @@ export function renderContactPage(params, appContent) {
       return;
     }
 
-    sendContactEmail(data).catch(() => {});
+    sendContactEmail(data).catch((err) => console.error('Contact email failed:', err));
     form.reset();
+    document.getElementById('contact-files-hint').textContent = 'Max 5 files, 5 MB each. Files come in the email as attachments.';
     btn.classList.add('btn--success');
-    btn.textContent = '✓ Message Sent!';
+    btn.textContent = attachments.length ? `✓ Sent with ${attachments.length} file(s)!` : '✓ Message Sent!';
     setTimeout(() => {
       btn.disabled = false;
       btn.classList.remove('btn--success');

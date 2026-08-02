@@ -94,6 +94,11 @@ export async function renderBulkQuotePage() {
                 <label>Customization Details</label>
                 <textarea name="custom_requirements" class="input-field textarea-field" placeholder="Tell us about branding requirements, colors, special finishes..."></textarea>
               </div>
+              <div class="input-group">
+                <label>Attach Files <small style="color:var(--color-text-tertiary);font-weight:400">(optional — logos, references)</small></label>
+                <input name="attachments" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg,.doc,.docx" id="bulk-files" class="input-field" style="padding:8px">
+                <small id="bulk-files-hint" style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Max 5 files, 5 MB each. Files come in the email as attachments.</small>
+              </div>
               <button type="submit" class="btn btn--accent btn--lg btn--full" id="submit-btn">Submit Enquiry</button>
             </form>
           </div>
@@ -126,10 +131,43 @@ export async function renderBulkQuotePage() {
 
     if (!form.reportValidity()) return;
 
+    // Read attached files
+    const fileInput = document.getElementById('bulk-files');
+    const fileList = fileInput ? Array.from(fileInput.files || []) : [];
+    if (fileList.length > 5) {
+      alert('Please attach at most 5 files.');
+      return;
+    }
+    for (const f of fileList) {
+      if (f.size > 5 * 1024 * 1024) {
+        alert(`"${f.name}" is larger than 5 MB. Please compress and try again.`);
+        return;
+      }
+    }
+
     const enquiryCode = generateEnquiryCode('BQ');
 
     // Compile dynamic selected items details into requirements if available
     const productNamesStr = quoteItems.map(it => `${it.product.title} (SKU: ${it.product.sku}) [Qty: ${it.qty}]`).join(', ');
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    // Read each file as a data URL for the email attachment
+    const attachments = [];
+    for (const f of fileList) {
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(f);
+        });
+        attachments.push({ name: f.name, type: f.type, size: f.size, dataUrl });
+      } catch (err) {
+        console.error('File read failed:', err);
+      }
+    }
 
     const data = {
       name,
@@ -147,12 +185,18 @@ export async function renderBulkQuotePage() {
       ].filter(Boolean).join('\n\n') || null,
       enquiry_code: enquiryCode,
       product_names: productNamesStr || null,
+      attachments,
     };
 
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
-
-    const { error } = await supabase.from('quote_requests').insert([data]);
+    const { error } = await supabase.from('quote_requests').insert([{
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      company: data.company,
+      product_type: data.product_type,
+      quantity: data.quantity,
+      custom_requirements: data.custom_requirements,
+    }]);
 
     if (error) {
       console.error(error);
@@ -164,8 +208,8 @@ export async function renderBulkQuotePage() {
 
     clearQuoteList();
     btn.classList.add('btn--success');
-    btn.textContent = '✓ Enquiry Submitted!';
-    sendQuoteEmail(data).catch(() => {});
+    btn.textContent = attachments.length ? `✓ Submitted with ${attachments.length} file(s)!` : '✓ Enquiry Submitted!';
+    sendQuoteEmail(data).catch((err) => console.error('Quote email failed:', err));
     setTimeout(() => navigateTo('/enquiry-success'), 900);
   });
 }

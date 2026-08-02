@@ -74,6 +74,15 @@ async function sendEnquiryEmail(type, data) {
 
   const html = buildEnquiryHtml(type, data, code);
 
+  // Build attachments list for the Edge Function. Each item needs
+  // {name, type, dataUrl} — the Edge Function parses base64 from the
+  // dataUrl and attaches it as a paperclip (4.5MB per file cap).
+  const attachments = (data.attachments || []).filter(a => a && a.dataUrl).map(a => ({
+    name: a.name,
+    type: a.type || 'application/octet-stream',
+    dataUrl: a.dataUrl,
+  }));
+
   const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
     method: 'POST',
     headers: {
@@ -87,7 +96,7 @@ async function sendEnquiryEmail(type, data) {
       subjectAdmin,
       subjectCustomer,
       html,
-      attachments: [],
+      attachments,
     }),
   });
 
@@ -126,6 +135,12 @@ function buildEnquiryHtml(type, data, code) {
   addRow('Customization / Requirements', data.custom_requirements);
   if (data.product_names) {
     addRow('Products from Quote List', data.product_names);
+  }
+  if (Array.isArray(data.attachments) && data.attachments.length) {
+    const list = data.attachments
+      .map(a => `${esc(a.name)} (${Math.round((a.size || 0) / 1024)} KB)`)
+      .join('\n');
+    addRow('Attached Files', list);
   }
 
   const border = '1px solid #c8d0dc';
