@@ -12,12 +12,23 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
-  'https://newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
+  'https://newyeardiaries.in,https://www.newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
   .split(',').map((s) => s.trim()).filter(Boolean);
+
+function isAllowedOrigin(origin: string) {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Preview / production Vercel deploys for this project
+  try {
+    const host = new URL(origin).hostname;
+    if (host.endsWith('.vercel.app')) return true;
+  } catch { /* ignore */ }
+  return false;
+}
 
 function corsHeadersFor(req: Request) {
   const origin = req.headers.get('origin') || '';
-  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  const allowOrigin = isAllowedOrigin(origin) ? (origin || '*') : '';
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Vary': 'Origin',
@@ -26,8 +37,13 @@ function corsHeadersFor(req: Request) {
   };
 }
 
+// Supabase auto-injects SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY on deploy.
+// Also accept manual SERVICE_ROLE_KEY secret for compatibility.
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
+const SERVICE_ROLE_KEY =
+  Deno.env.get('SERVICE_ROLE_KEY') ??
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ??
+  '';
 const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') ?? '';
 const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'admin@newyeardiaries.in';
 
@@ -47,20 +63,20 @@ Deno.serve(async (req) => {
   }
 
   const origin = req.headers.get('origin') || '';
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && !isAllowedOrigin(origin)) {
     return json(req, 403, { error: 'Origin not allowed' });
   }
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return json(req, 503, {
       error: 'Server not configured',
-      hint: 'Set SUPABASE_URL and SERVICE_ROLE_KEY secrets, then redeploy.',
+      hint: 'SUPABASE_URL / service role key missing. Redeploy the function; service role is auto-injected as SUPABASE_SERVICE_ROLE_KEY.',
     });
   }
   if (!ADMIN_PASSWORD) {
     return json(req, 503, {
       error: 'Admin password not configured',
-      hint: 'Set ADMIN_PASSWORD secret, then redeploy.',
+      hint: 'Run: supabase secrets set ADMIN_PASSWORD=your-password',
     });
   }
 
