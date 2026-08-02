@@ -114,9 +114,7 @@ async function sendOne(
     to,
     subject,
     html,
-    content: 'auto',
-    // H1.8 fix: when sending to admin, set reply-to to the customer email
-    // so hitting "Reply" in Gmail goes to the buyer, not back at us.
+    content: 'html',
     replyTo: replyTo || undefined,
     attachments: attachments.map((a) => {
       const out: Record<string, unknown> = {
