@@ -676,7 +676,12 @@ export async function renderCheckoutPage() {
       serverShipping = Number(rpcData.shipping);
       serverTotal = Number(rpcData.total);
     } else {
-      // RPC missing / failed → legacy dual insert (still better than failing hard)
+      const rpcMsg = rpcErr?.message || rpcData?.message || '';
+      if (/MOQ|out of stock|not found or inactive|quantity/i.test(rpcMsg)) {
+        showToast(rpcMsg, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
+        return;
+      }
       console.warn('[checkout] place_order RPC unavailable, using fallback insert', rpcErr);
 
       const _now = new Date();
