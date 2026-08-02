@@ -1087,7 +1087,8 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
         // Clear junction first (FK cascade should handle it, but be explicit)
-        await supabase.from('product_categories').delete().eq('product_id', id);
+        const { error: juncErr } = await supabase.from('product_categories').delete().eq('product_id', id);
+        if (juncErr) console.warn('[admin] product_categories delete:', juncErr.message);
         const { data: deleted, error } = await supabase.from('products').delete().eq('id', id).select('id');
         if (error) {
           showToast(`Failed to delete product: ${error.message}`, 'error');
@@ -2365,14 +2366,17 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
       return;
     }
 
-    if (savedGroupId) {
-      const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === savedGroupId || c.group_name === oldName || c.group?.name === oldName) || []);
-      const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
-      if (catIds.length) {
-        // H1.4 / A4 fix: capture the error so the back-association isn't silent.
-        const { error: linkErr } = await supabase.from('categories').update({ group_id: savedGroupId }).in('id', catIds);
-        if (linkErr) showToast(`Group saved, but linking ${catIds.length} categories failed: ${linkErr.message}`, 'error');
-      }
+    // M15: never toast "created" if we never got an id
+    if (!savedGroupId) {
+      showToast('Group save returned no id. Check RLS / unique name and try again.', 'error');
+      return;
+    }
+
+    const groupCats = (grouped[oldName] || []).concat(categories?.filter(c => c.group_id === savedGroupId || c.group_name === oldName || c.group?.name === oldName) || []);
+    const catIds = Array.from(new Set(groupCats.map(c => c.id).filter(Boolean)));
+    if (catIds.length) {
+      const { error: linkErr } = await supabase.from('categories').update({ group_id: savedGroupId }).in('id', catIds);
+      if (linkErr) showToast(`Group saved, but linking ${catIds.length} categories failed: ${linkErr.message}`, 'error');
     }
 
     bustCategoriesCache();
