@@ -15,6 +15,16 @@ const SECTION_CATS = {
 const WHATSAPP_NUMBER = '919311135190';
 const WHATSAPP_MESSAGE = encodeURIComponent('Hi Team NYD,\n\nContacting through your website "www.NewYearDiaries.in" regarding order. Please get back asap.\n\nThank you.');
 
+function bannerCtaHref(b) {
+  const text = String(b?.cta_text || '').toLowerCase();
+  const link = String(b?.cta_link || '').trim();
+  if (text.includes('quote') || text.includes('enquiry') || text.includes('inquiry')) {
+    return link && link !== '#' && link !== '/shop' ? link : '/contact';
+  }
+  if (link && link !== '#') return link;
+  return '/contact';
+}
+
 export async function renderHomePage() {
   const [content, allCategories, allProducts] = await Promise.all([
     getContent(),
@@ -90,7 +100,7 @@ export async function renderHomePage() {
               <div class="hero-slide-content" style="position:absolute; bottom:20%; left:10%; color:#fff; background:rgba(0,0,0,0.5); padding:2rem; border-radius:8px;">
                 ${b.title ? `<h2 style="font-size:2rem; margin-bottom:0.5rem;">${b.title}</h2>` : ''}
                 ${b.subtitle ? `<p style="font-size:1.2rem; margin-bottom:1rem;">${b.subtitle}</p>` : ''}
-                ${b.cta_text ? `<a href="${b.cta_link || '/shop'}" class="btn btn--primary">${b.cta_text}</a>` : ''}
+                ${b.cta_text ? `<a href="${bannerCtaHref(b)}" class="btn btn--primary">${b.cta_text}</a>` : ''}
               </div>
               ` : ''}
             </div>
