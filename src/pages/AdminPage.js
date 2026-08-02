@@ -954,8 +954,22 @@ const catMapByProduct = {};
               ${showSortColumn ? `<td><input class="category-sort-input" data-product-id="${p.id}" data-category-id="${filterCategory}" type="number" min="1" max="100" value="${sortByProduct?.get(p.id) || ''}" style="width:82px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm)"></td>` : ''}
               <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
               <td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
-              <td>${p.in_stock ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>` : '<span style="color:var(--color-error)">Out of stock</span>'}</td>
-              <td><span class="badge ${p.active ? 'badge-active' : 'badge-inactive'}">${p.active ? 'Active' : 'Inactive'}</span></td>
+              <td>
+                <button type="button" class="stock-toggle-btn" data-id="${p.id}" data-in-stock="${p.in_stock !== false ? '1' : '0'}"
+                  title="Click to toggle stock"
+                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit;color:inherit">
+                  ${p.in_stock !== false
+                    ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>`
+                    : `<span style="color:var(--color-error)">Out of stock</span>`}
+                </button>
+              </td>
+              <td>
+                <button type="button" class="active-toggle-btn" data-id="${p.id}" data-active="${p.active !== false ? '1' : '0'}"
+                  title="Click to toggle active"
+                  style="border:none;background:transparent;cursor:pointer;padding:0;font:inherit">
+                  <span class="badge ${p.active !== false ? 'badge-active' : 'badge-inactive'}">${p.active !== false ? 'Active' : 'Inactive'}</span>
+                </button>
+              </td>
               <td class="col-actions">
                 <button class="edit-btn" title="Edit"><span class="material-symbols-outlined">edit</span></button>
                 <button class="duplicate-btn" title="Duplicate"><span class="material-symbols-outlined">content_copy</span></button>
@@ -1036,7 +1050,7 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
   document.querySelectorAll('.duplicate-btn').forEach(btn => {
     btn.onclick = async () => {
       const id = btn.closest('tr').dataset.id;
-      const product = products.find(p => p.id === id);
+      const product = products.find(p => String(p.id) === String(id));
       if (!product) return;
       btn.disabled = true;
       try {
@@ -1074,8 +1088,53 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
-      const product = products.find(p => p.id === id);
+      const product = products.find(p => String(p.id) === String(id));
       if (product) openProductModal(container, product);
+    };
+  });
+
+  // One-click stock / active toggles — no modal, no slug write (avoids products_slug_key)
+  document.querySelectorAll('.stock-toggle-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const next = btn.dataset.inStock !== '1';
+      btn.disabled = true;
+      const { error } = await supabase.from('products').update({ in_stock: next }).eq('id', id);
+      btn.disabled = false;
+      if (error) {
+        showToast(`Failed to update stock: ${error.message}`, 'error');
+        return;
+      }
+      const p = products.find(x => String(x.id) === String(id));
+      if (p) p.in_stock = next;
+      btn.dataset.inStock = next ? '1' : '0';
+      btn.innerHTML = next
+        ? `<span style="color:var(--color-success);font-weight:var(--fw-medium)">In Stock</span>`
+        : `<span style="color:var(--color-error)">Out of stock</span>`;
+      acBust('prods:');
+      showToast(next ? 'Marked In Stock' : 'Marked Out of Stock');
+    };
+  });
+
+  document.querySelectorAll('.active-toggle-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const next = btn.dataset.active !== '1';
+      btn.disabled = true;
+      const { error } = await supabase.from('products').update({ active: next }).eq('id', id);
+      btn.disabled = false;
+      if (error) {
+        showToast(`Failed to update status: ${error.message}`, 'error');
+        return;
+      }
+      const p = products.find(x => String(x.id) === String(id));
+      if (p) p.active = next;
+      btn.dataset.active = next ? '1' : '0';
+      btn.innerHTML = `<span class="badge ${next ? 'badge-active' : 'badge-inactive'}">${next ? 'Active' : 'Inactive'}</span>`;
+      acBust('prods:');
+      showToast(next ? 'Product is Active' : 'Product is Inactive');
     };
   });
 
@@ -1730,20 +1789,31 @@ async function openProductModal(container, product = null) {
       return;
     }
 
-    // Slug uniqueness — "products_slug_key" is NOT caused by In Stock.
-    // It fires when Add Product (or a changed slug) collides with an existing row.
+    // Slug uniqueness — "products_slug_key" is NOT caused by Active/In Stock.
+    // It fires when Add Product reuses an existing slug (or Edit steals another product's slug).
     try {
-      let slugQ = supabase.from('products').select('id, name').eq('slug', slug).limit(1);
+      let slugQ = supabase.from('products').select('id, name, slug').eq('slug', slug).limit(1);
       if (isEdit && product?.id) slugQ = slugQ.neq('id', product.id);
       const { data: slugHit } = await slugQ.maybeSingle();
       if (slugHit) {
-        showToast(
-          isEdit
-            ? `Slug "${slug}" is already used by "${slugHit.name}". Change the slug or edit that product.`
-            : `A product with slug "${slug}" already exists ("${slugHit.name}"). Open Edit on that product to mark Out of Stock — don't Add a duplicate.`,
-          'error'
-        );
-        return;
+        if (isEdit) {
+          showToast(`Slug "${slug}" is already used by "${slugHit.name}". Change the slug.`, 'error');
+          return;
+        }
+        // Add Product: auto-suffix so save never dies on a taken slug
+        const base = slug;
+        let n = 2;
+        let candidate = `${base}-${n}`;
+        // Find free slug (cap attempts)
+        for (; n < 50; n++) {
+          candidate = `${base}-${n}`;
+          const { data: hit } = await supabase.from('products').select('id').eq('slug', candidate).limit(1).maybeSingle();
+          if (!hit) break;
+        }
+        slug = candidate;
+        const slugField = e.target.querySelector('[name="slug"]');
+        if (slugField) slugField.value = slug;
+        showToast(`Slug was taken — using "${slug}" instead. To change stock/active on the original, use the list toggles or Edit.`, 'error');
       }
     } catch (err) {
       console.warn('[admin] slug pre-check failed', err);
