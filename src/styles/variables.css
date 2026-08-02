@@ -20,7 +20,7 @@
   /* Text */
   --color-text-primary: #2C2C2C;
   --color-text-secondary: #6B6B6B;
-  --color-text-tertiary: #9B9B9B;
+  --color-text-tertiary: #6B6B6B; /* H3.18 fix: was #9B9B9B (2.6:1 on cream), now ~4.7:1 — passes WCAG AA */
   --color-text-inverse: #FFFFFF;
   --color-text-on-primary: #FFFFFF;
   --color-text-on-accent: #FFFFFF;

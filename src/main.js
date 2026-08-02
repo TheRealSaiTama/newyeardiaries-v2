@@ -17,6 +17,7 @@ import { renderHomePage } from './pages/HomePage.js';
 import { renderShopPage } from './pages/ShopPage.js';
 import { renderCorporatePage } from './pages/CorporatePage.js';
 import { renderProductDetailPage } from './pages/ProductDetailPage.js';
+import { renderNotFoundPage } from './pages/NotFoundPage.js';
 import { renderCartPage } from './pages/CartPage.js';
 import { renderCheckoutPage } from './pages/CheckoutPage.js';
 import { renderBulkQuotePage } from './pages/BulkQuotePage.js';
@@ -262,6 +263,19 @@ function wrapPage(renderFn) {
     const app = document.getElementById('app');
     const cached = getCachedPage(params);
 
+    // H3.33 fix: noindex on private / non-content routes so search engines
+    // don't index /admin, /cart, /checkout, /account, /login, /order-success
+    const path = window.location.pathname;
+    if (/^\/(admin|cart|checkout|account|login|order-success|enquiry-success|bulk-quote|quote-list)(\/|$)/.test(path)) {
+      let robots = document.querySelector('meta[name="robots"]');
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.setAttribute('name', 'robots');
+        document.head.appendChild(robots);
+      }
+      robots.setAttribute('content', 'noindex, nofollow');
+    }
+
     document.getElementById('header-area').innerHTML = renderHeader(appContent);
     document.getElementById('footer-area').style.display = '';
     initHeaderEvents();
@@ -334,13 +348,18 @@ addRoute('/admin', (params) => {
 // Catch-all short URL: /<slug> renders the product directly. Must be added
 // LAST so specific routes (/cart, /about, /admin, etc.) win.
 addRoute('/:slug', async (params) => {
+  // Ignore obvious asset paths and known prefixes that should never reach here.
+  const reservedPrefixes = ['assets', 'images', 'logo', 'favicon', 'robots.txt', 'sitemap.xml'];
+  if (reservedPrefixes.some(p => params.slug.startsWith(p))) {
+    return wrapPage(renderNotFoundPage)(params);
+  }
   try {
     const { getProductBySlug } = await import('./data/products.js');
     const product = await getProductBySlug(params.slug);
     if (product) return wrapPage(renderProductDetailPage)({ slug: params.slug });
-  } catch (e) { /* fall through to home */ }
-  // Unknown slug → home (better UX than 404)
-  navigateTo('/');
+  } catch (e) { /* fall through */ }
+  // Unknown slug → render a proper 404 page (H3.34 fix)
+  return wrapPage(renderNotFoundPage)(params);
 });
 
 // Boot strategy

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /login
+Disallow: /order-success
+Disallow: /enquiry-success
+Disallow: /api/
+
+Sitemap: https://newyeardiaries.in/sitemap.xml

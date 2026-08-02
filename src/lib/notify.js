@@ -347,11 +347,18 @@ async function buildOrderHtml(data, attachments = []) {
   const logos = data.logos || [];
   let attachHtml = '';
   if (logos.length) {
-    // Pair logos with their prepared attachments so each image preview
-    // can reference the matching CID.
-    const previews = logos.map((l, i) => {
+    // H1.6 / E1 fix: build a name → attachment map so CID pairing can't
+    // break if `prepareAttachments` filters out a logo (oversize, parse
+    // failure, etc). The `attachments[i]` index approach silently referenced
+    // the wrong CID when a logo was dropped, producing the broken-image
+    // icon the user saw in their inbox.
+    const attByName = new Map();
+    for (const a of attachments) {
+      if (a?.name) attByName.set(a.name, a);
+    }
+    const previews = logos.map((l) => {
       const du = l.dataUrl || l.data || '';
-      const att = attachments[i];
+      const att = attByName.get(l.name);
       const isImg = du.startsWith('data:image/');
       if (isImg && att && att.cid) {
         return `
@@ -361,7 +368,8 @@ async function buildOrderHtml(data, attachments = []) {
           </div>`;
       }
       if (isImg) {
-        // Fallback: data URL (may be stripped by Gmail for large images)
+        // Fallback: data URL inline (works for most email clients unless
+        // Gmail strips it for size).
         return `
           <div style="display:inline-block;margin:6px 10px 6px 0;text-align:center;vertical-align:top;">
             <img src="${du.replace(/"/g, '&quot;')}" alt="${esc(l.name)}" width="100" height="100" style="width:100px;height:100px;object-fit:contain;border:1px solid #c8d0dc;border-radius:6px;background:#fff;">

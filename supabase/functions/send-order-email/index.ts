@@ -107,6 +107,7 @@ async function sendOne(
   subject: string,
   html: string,
   attachments: ParsedAttachment[],
+  replyTo?: string,
 ) {
   await client.send({
     from,
@@ -114,6 +115,9 @@ async function sendOne(
     subject,
     html,
     content: 'auto',
+    // H1.8 fix: when sending to admin, set reply-to to the customer email
+    // so hitting "Reply" in Gmail goes to the buyer, not back at us.
+    replyTo: replyTo || undefined,
     attachments: attachments.map((a) => {
       const out: Record<string, unknown> = {
         filename: a.filename,
@@ -171,10 +175,21 @@ Deno.serve(async (req) => {
   const subjectCustomer = body.subjectCustomer || `Order Confirmed # ${body.orderNumber || ''} — New Year Diaries`;
   const from = Deno.env.get('SMTP_FROM') || `New Year Diaries <${user}>`;
 
-  const attachments = (body.attachments || [])
-    .map(parseBase64)
-    .filter((a): a is NonNullable<typeof a> => !!a)
-    .slice(0, 5);
+  // H1.7 fix: surface oversized files in the response (instead of silently
+  // dropping them) so the caller can warn the user.
+  const incomingAttachments = (body.attachments || []).slice(0, 5);
+  const droppedOversized = [];
+  const parsedAttachments = [];
+  for (const att of incomingAttachments) {
+    const parsed = parseBase64(att);
+    if (parsed) {
+      parsedAttachments.push(parsed);
+    } else {
+      // parseBase64 returns null if file > 4.5MB or invalid base64
+      droppedOversized.push(att?.name || 'unknown');
+    }
+  }
+  const attachments = parsedAttachments;
 
   const client = new SMTPClient({
     connection: {
@@ -186,12 +201,14 @@ Deno.serve(async (req) => {
   });
 
   try {
-    // Admin always
-    await sendOne(client, from, adminEmail, subjectAdmin, html, attachments);
+    // Admin always — set reply-to so the team can hit Reply and reach the
+    // customer without copy-pasting the address.
+    await sendOne(client, from, adminEmail, subjectAdmin, html, attachments, customerEmail);
 
-    // Customer if different
+    // Customer if different — set reply-to to admin so customer can reply
+    // back to the team easily.
     if (customerEmail && customerEmail.toLowerCase() !== adminEmail.toLowerCase()) {
-      await sendOne(client, from, customerEmail, subjectCustomer, html, attachments);
+      await sendOne(client, from, customerEmail, subjectCustomer, html, attachments, adminEmail);
     }
 
     await client.close();
@@ -201,6 +218,8 @@ Deno.serve(async (req) => {
         admin: adminEmail,
         customer: customerEmail || null,
         attachmentCount: attachments.length,
+        // H1.7: report dropped oversized files so the caller can warn user.
+        droppedOversized,
       },
     });
   } catch (e) {

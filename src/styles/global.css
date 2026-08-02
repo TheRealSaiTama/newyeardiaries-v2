@@ -208,6 +208,8 @@ body {
 .btn--sm {
   padding: var(--space-2) var(--space-4);
   font-size: var(--fs-xs);
+  /* H3.19 fix: 36px min-height for small buttons (was ~28-32px, below 44px touch target) */
+  min-height: 36px;
 }
 
 .btn--full {
