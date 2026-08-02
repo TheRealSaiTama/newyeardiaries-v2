@@ -489,15 +489,18 @@ function initShopEvents(products, currentPage, totalPages, searchQ, usePerCatego
     });
   });
 
+  // H2.10 fix: use in-app navigation (navigateTo) instead of full page reload
+  // (window.location.href) so the user doesn't lose scroll position and the
+  // loader doesn't flash on every page change.
   document.getElementById('pag-prev')?.addEventListener('click', () => {
-    if (currentPage > 1) window.location.href = buildPageUrl(currentPage - 1);
+    if (currentPage > 1) navigateTo(buildPageUrl(currentPage - 1));
   });
   document.getElementById('pag-next')?.addEventListener('click', () => {
-    if (currentPage < totalPages) window.location.href = buildPageUrl(currentPage + 1);
+    if (currentPage < totalPages) navigateTo(buildPageUrl(currentPage + 1));
   });
   document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
-      window.location.href = buildPageUrl(parseInt(btn.dataset.page));
+      navigateTo(buildPageUrl(parseInt(btn.dataset.page)));
     });
   });
 
@@ -546,14 +549,14 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
     grid.after(pagDiv);
 
     document.getElementById('pag-prev')?.addEventListener('click', () => {
-      if (currentPage > 1) window.location.href = buildPageUrl(currentPage - 1);
+      if (currentPage > 1) navigateTo(buildPageUrl(currentPage - 1));
     });
     document.getElementById('pag-next')?.addEventListener('click', () => {
-      if (currentPage < totalPages) window.location.href = buildPageUrl(currentPage + 1);
+      if (currentPage < totalPages) navigateTo(buildPageUrl(currentPage + 1));
     });
     document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
       btn.addEventListener('click', () => {
-        window.location.href = buildPageUrl(parseInt(btn.dataset.page));
+        navigateTo(buildPageUrl(parseInt(btn.dataset.page)));
       });
     });
   }

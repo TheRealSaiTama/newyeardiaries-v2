@@ -427,13 +427,33 @@ export async function renderCheckoutPage() {
     });
   }
 
+  // H2.5 fix: max 10 MB per file, 20 MB total — prevents tab crash on
+  // 500MB uploads and the resulting 20MB JSONB row from choking Supabase.
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+  const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
   async function handleLogoFiles(files) {
     const list = Array.from(files || []);
     if (!list.length) return;
+    const existingSize = uploadedLogos.reduce((s, l) => s + (l.dataUrl?.length || 0), 0);
+    let runningSize = existingSize;
     for (const f of list) {
+      if (f.size > MAX_FILE_BYTES) {
+        alert(`"${f.name}" is larger than 10 MB. Please compress and try again.`);
+        continue;
+      }
+      if (runningSize + f.size > MAX_TOTAL_BYTES) {
+        alert(`Total upload size limit (20 MB) reached. Skipped "${f.name}".`);
+        continue;
+      }
+      runningSize += f.size;
       if (f.type.startsWith('image/')) {
         const dataUrl = await convertToJpg(f);
-        if (dataUrl) uploadedLogos.push({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', dataUrl });
+        if (dataUrl) {
+          uploadedLogos.push({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', dataUrl });
+          showToast('File added');
+        } else {
+          alert(`Failed to process "${f.name}". File may be corrupt or unsupported.`);
+        }
       } else if (
         f.type === 'application/pdf' ||
         f.type.startsWith('text/') ||
@@ -442,11 +462,38 @@ export async function renderCheckoutPage() {
         /\.(pdf|txt|doc|docx)$/i.test(f.name)
       ) {
         const dataUrl = await readFileAsDataURL(f);
-        if (dataUrl) uploadedLogos.push({ name: f.name, dataUrl });
+        if (dataUrl) {
+          uploadedLogos.push({ name: f.name, dataUrl });
+          showToast('File added');
+        }
+      } else {
+        alert(`"${f.name}" — unsupported file type.`);
       }
     }
     renderLogoPreviews();
+    persistLogos();
   }
+
+  // M1 fix: persist uploaded logos in sessionStorage so a refresh or
+  // accidental F5 doesn't wipe 5 minutes of work.
+  const LOGO_STORAGE_KEY = '__nyd_checkout_logos';
+  function persistLogos() {
+    try { sessionStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(uploadedLogos)); } catch { /* quota */ }
+  }
+  function restoreLogos() {
+    try {
+      const raw = sessionStorage.getItem(LOGO_STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) {
+          uploadedLogos.push(...arr);
+          return true;
+        }
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+  const restored = restoreLogos();
 
   const uploadArea = document.getElementById('logo-upload-area');
   const fileInput = document.getElementById('logo-file-input');
@@ -472,8 +519,12 @@ export async function renderCheckoutPage() {
     });
   }
 
-  // Render any previously uploaded logos (when step 1 is re-rendered)
+  // Render any previously uploaded logos (when step 1 is re-rendered, or
+  // when logos were persisted from a previous session/page load).
   renderLogoPreviews();
+  if (restored && uploadedLogos.length) {
+    showToast(`Restored ${uploadedLogos.length} previously uploaded file(s)`);
+  }
 
   // Step 1 → Step 2: validate the form, persist the data, advance to review.
   // ponytail: validation + collection shared with submit via collectCheckoutData().
@@ -546,7 +597,13 @@ export async function renderCheckoutPage() {
     const paymentMethod = 'bank';
 
     // Generate a human-readable order number
-    const orderNumber = 'NYD' + Date.now().toString().slice(-8);
+    // M2 fix: use a short random suffix so simultaneous orders can't collide
+    // (the old 8-digit timestamp wraps every ~28h and collides under load).
+    // Format: NYD-YYYYMMDD-XXXX (4 random uppercase alphanumerics).
+    const _now = new Date();
+    const _datePart = `${_now.getFullYear()}${String(_now.getMonth() + 1).padStart(2, '0')}${String(_now.getDate()).padStart(2, '0')}`;
+    const _rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const orderNumber = `NYD-${_datePart}-${_rand}`;
     // Single GST 18% line (not CGST/SGST split — avoids confusion for interstate IGST buyers)
     const gstAmount = subtotal * gstRate;
     const finalTotal = shipping > 0 ? total + shipping : total;
@@ -724,6 +781,8 @@ export async function renderCheckoutPage() {
     lastCartJson = '';
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
+    // M1 fix: clear persisted logo uploads after successful order.
+    try { sessionStorage.removeItem('__nyd_checkout_logos'); } catch { /* ignore */ }
     uploadedLogos = [];
     // don't block UI; emailPromise already fired
     void emailPromise;
