@@ -28,11 +28,6 @@ function acBust(prefix) {
 const tabCache = new Map();
 
 export function renderAdminPage() {
-  // Supabase stores the auth session in localStorage under
-  // `sb-<project-ref>-auth-token`. We do a synchronous presence check
-  // so the login form can render without an async flicker. The full
-  // Supabase session validation happens in `initAdminPage` — if the
-  // token is expired or tampered with, the user is bounced to login.
   let hasSession = false;
   try {
     const projectRef = (import.meta.env.VITE_SUPABASE_URL || '').match(/https?:\/\/([^.]+)/)?.[1];
@@ -171,7 +166,6 @@ export function renderAdminPage() {
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Shared admin table styles */
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); gap: var(--space-4); flex-wrap: wrap; }
     .admin-header-left { display: flex; flex-direction: column; gap: var(--space-1); }
     .admin-header h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); color: var(--color-text-primary); }
@@ -216,7 +210,6 @@ export function renderAdminPage() {
     .badge-new { background: rgba(160,82,45,0.1); color: var(--color-primary); }
     .badge-reviewed { background: var(--color-success-bg); color: var(--color-success); }
 
-    /* Pagination */
     .admin-pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-4); }
     .admin-pagination button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; font-family: inherit; font-size: var(--fs-base); transition: var(--transition-fast); }
     .admin-pagination button:hover:not(:disabled) { background: var(--color-surface-alt); color: var(--color-text-primary); border-color: var(--color-primary); }
@@ -224,7 +217,6 @@ export function renderAdminPage() {
     .admin-pagination button.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
     .admin-pagination .page-info { font-size: var(--fs-sm); color: var(--color-text-secondary); padding: 0 var(--space-3); }
 
-    /* Modal */
     .admin-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--space-4); backdrop-filter: blur(4px); }
     .admin-modal { background: var(--color-surface); border-radius: var(--radius-xl); width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-modal); animation: modalIn 0.2s ease; }
     @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: none; } }
@@ -275,16 +267,13 @@ export function renderAdminPage() {
     .toast .material-symbols-outlined { font-size: 18px; }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    /* Image lightbox */
     .img-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
     .img-lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); }
 
-    /* Settings form */
     .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
     .settings-section { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-md); }
     .settings-section h3 { font-size: var(--fs-lg); font-weight: var(--fw-bold); margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
 
-    /* Enquiry tabs */
     .enquiry-tabs { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2); }
     .enquiry-tab { padding: var(--space-2) var(--space-4); border: none; background: transparent; color: var(--color-text-secondary); cursor: pointer; font-family: inherit; font-size: var(--fs-base); border-radius: var(--radius-md); transition: var(--transition-fast); position: relative; }
     .enquiry-tab:hover { background: var(--color-surface); color: var(--color-text-primary); }
@@ -296,19 +285,15 @@ export function renderAdminPage() {
     .enquiry-field:last-child { border-bottom: none; }
     .enquiry-field label { font-size: var(--fs-xs); color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: var(--ls-wider); }
     .enquiry-field .value { font-size: var(--fs-base); color: var(--color-text-primary); }
-    /* ponytail: Gmail-style read/unread — unread rows pop (bold + tint + accent rail),
-       reviewed rows recede (normal weight, muted). */
     .admin-table tbody tr.is-unread { background: var(--color-primary-bg, rgba(160, 82, 45, 0.04)); font-weight: var(--fw-medium); }
     .admin-table tbody tr.is-unread td:first-child { box-shadow: inset 3px 0 0 var(--color-primary); }
     .admin-table tbody tr.is-reviewed { color: var(--color-text-tertiary); }
     .admin-table tbody tr.is-reviewed a { color: var(--color-text-tertiary); }
     .admin-table tbody tr.is-reviewed code { opacity: .7; }
 
-    /* Confirm dialog */
     .confirm-dialog { max-width: 400px; }
     .confirm-dialog p { font-size: var(--fs-base); color: var(--color-text-secondary); margin: 0; }
 
-    /* ===== Products filesystem directory ===== */
     .fs-breadcrumb { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-3) var(--space-4); background: var(--color-surface-alt); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); margin-bottom: var(--space-5); font-size: var(--fs-sm); }
     .fs-back { display: inline-flex; align-items: center; gap: 4px; padding: var(--space-1) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; font-family: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium); transition: var(--transition-fast); }
     .fs-back:hover:not(:disabled) { background: var(--color-surface); color: var(--color-primary); border-color: var(--color-primary); }
@@ -338,8 +323,6 @@ function showToast(message, type = 'success') {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  // H3.23 fix: toast is a live region so screen readers announce feedback
-  // (form submit success, add-to-cart, review submitted, etc).
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
   toast.setAttribute('aria-atomic', 'true');
@@ -350,7 +333,6 @@ function showToast(message, type = 'success') {
 }
 
 export async function initAdminPage() {
-  // Check for an existing Supabase Auth session (replaces sessionStorage flag).
   const { data: { session } } = await supabase.auth.getSession();
   const isAuthed = !!session;
 
@@ -366,12 +348,10 @@ export async function initAdminPage() {
       const origLabel = submitBtn?.innerHTML;
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Signing in…';
+        submitBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Signing inâ€¦';
       }
 
       try {
-        // Call the server-side verify-admin Edge Function. The shared password
-        // is now stored only as a Supabase secret — never in the JS bundle.
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
         const res = await fetch(`${supabaseUrl}/functions/v1/verify-admin`, {
@@ -387,7 +367,6 @@ export async function initAdminPage() {
         if (!res.ok || !data?.access_token) {
           throw new Error(data?.error || `Sign-in failed (${res.status})`);
         }
-        // Promote the anon-key client to the admin's authenticated session.
         const setRes = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
@@ -416,7 +395,6 @@ export async function initAdminPage() {
     return;
   }
 
-  // Logout button in sidebar
   const nav = document.querySelector('.admin-nav');
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'admin-nav-item';
@@ -481,22 +459,15 @@ async function loadTab(tab) {
 }
 
 function closeModal() {
-  // ponytail: remove every admin overlay. Safe — only one is open at a time in
-  // practice, and this avoids the "which overlay had the id?" lookup bug.
   document.querySelectorAll('.admin-modal-overlay').forEach(o => o.remove());
 }
 
-// ponytail: one delegated handler closes ANY admin overlay via backdrop click,
-// close button, or Cancel button — regardless of whether it set an id.
-// Covers the Trust Badge, Slider Section, and Shop Category modals (id-less)
-// alongside the older id-ed ones. Attached once on the admin shell.
 function setupAdminModalCloseDelegation() {
   if (window.__adminModalCloseDelegated) return;
   window.__adminModalCloseDelegated = true;
   document.addEventListener('click', (e) => {
     const overlay = e.target.closest('.admin-modal-overlay');
     if (!overlay) return;
-    // Close if click landed on the backdrop itself, the close button, or Cancel.
     const isBackdrop = e.target === overlay;
     const isCloseBtn = e.target.closest('.admin-modal-close');
     const isCancelBtn = e.target.closest('.modal-cancel');
@@ -506,7 +477,7 @@ function setupAdminModalCloseDelegation() {
         overlay.closeModal({ isBackdrop, isCloseBtn, isCancelBtn });
       } else {
         const hasForm = overlay.querySelector('form') !== null;
-        if (isBackdrop && hasForm) return; // Prevent losing form data on accidental clicks
+        if (isBackdrop && hasForm) return;
         overlay.remove();
       }
     }
@@ -533,8 +504,6 @@ function showConfirmDialog(message, onConfirm) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — only the X button (or Cancel) closes; clicking the
-  // backdrop is a no-op so dad doesn't lose filled data from a stray click.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -548,14 +517,9 @@ function showConfirmDialog(message, onConfirm) {
   document.getElementById('confirm-yes').onclick = () => { closeModal(); onConfirm(); };
 }
 
-// ===== PRODUCTS =====
 const PRODUCTS_PER_PAGE = 20;
 
-// ===== PRODUCTS — Filesystem Directory =====
-// 3-level nav: Root → Group → Category → Products
-// Search box overrides to global flat search across all products.
 async function renderProducts(container, page = 1, search = '', filterActive = '', nav = { level: 'root', group: null, category: null }) {
-  // Persist nav across re-renders via container dataset
   if (container.dataset.fsNav) {
     try { nav = JSON.parse(container.dataset.fsNav); } catch {}
   }
@@ -588,7 +552,6 @@ async function renderProducts(container, page = 1, search = '', filterActive = '
     </div>
   `;
 
-  // Search-override: if search term present, show global flat results (ignore folder nav)
   if (search && search.trim()) {
     await renderProductRows(container, header, { search, filterActive, page });
     return;
@@ -610,7 +573,6 @@ async function renderProducts(container, page = 1, search = '', filterActive = '
   }
 }
 
-// Breadcrumb: Root › Group › Category
 function renderFsBreadcrumb(nav) {
   const crumbs = [{ label: 'Products', nav: { level: 'root', group: null, groupId: null, category: null } }];
   if (nav.level !== 'root' && nav.group) {
@@ -637,9 +599,7 @@ function renderFsBreadcrumb(nav) {
   `;
 }
 
-// Folder grid view (root shows Groups, group-level shows Categories)
 async function renderFolderGrid(container, header, breadcrumb, opts) {
-  // Fetch all categories, junction rows, and products to compute distinct uncategorized counts
   const [{ data: categories }, { data: pcRows }, { data: products }, dbGroups] = await Promise.all([
     supabase.from('categories').select('id, name, slug, active, group_id, sort_order').order('sort_order'),
     supabase.from('product_categories').select('product_id, category_id'),
@@ -648,7 +608,7 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   ]);
 
   const countByCat = new Map();
-  const productsByCat = new Map(); // category_id -> Set(product_id)
+  const productsByCat = new Map();
   (pcRows || []).forEach(r => {
     if (!productsByCat.has(r.category_id)) productsByCat.set(r.category_id, new Set());
     productsByCat.get(r.category_id).add(r.product_id);
@@ -657,7 +617,7 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
 
   const activeCats = (categories || []).filter(c => c.active !== false);
   const catBySlug = new Map(activeCats.map(c => [c.slug, c]));
-  const catByGroupId = new Map(); // group_id -> [cat], sorted by sort_order
+  const catByGroupId = new Map();
   for (const c of activeCats) {
     if (c.group_id) {
       if (!catByGroupId.has(c.group_id)) catByGroupId.set(c.group_id, []);
@@ -667,10 +627,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   for (const arr of catByGroupId.values()) {
     arr.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
   }
-  // Prefer DB category_groups exclusively when any exist. The hardcoded
-  // CATEGORY_GROUPS map is bootstrap-only — if we always merge it in, a
-  // renamed group (e.g. "Note Books & Pads" → "Customized Notebooks") still
-  // shows the old name as a ghost folder in this Products directory.
   const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const useHardcodedFallback = groupsByOrder.length === 0;
   const allGroupEntries = useHardcodedFallback
@@ -681,7 +637,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   let totalProducts = 0;
 
   if (opts.type === 'groups') {
-    // One folder per Category Group, plus an Uncategorized system folder
     folders = allGroupEntries.map(entry => {
       const groupName = entry.name;
       let cats;
@@ -691,7 +646,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         const slugs = CATEGORY_GROUPS[groupName] || [];
         cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
       } else {
-        // DB group with no linked cats yet
         cats = catByGroupId.get(entry.id) || [];
       }
       const productCount = cats.reduce((sum, c) => sum + (countByCat.get(c.id) || 0), 0);
@@ -702,15 +656,12 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         count: productCount,
         meta: `${cats.length} categor${cats.length === 1 ? 'y' : 'ies'}`,
         icon: 'folder',
-        // Prefer groupId so renames don't break open nav; keep name for breadcrumbs
         nav: { level: 'group', group: groupName, groupId: entry.id || null, category: null },
         system: false,
       };
     });
-    // Uncategorized = products not in any of the grouped categories (distinct count)
     const allGroupedCatIds = new Set();
     for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
-    // Only use fallback slug coverage when we're in pure-fallback mode
     if (useHardcodedFallback) {
       for (const slugs of Object.values(CATEGORY_GROUPS)) {
         for (const s of slugs) {
@@ -745,7 +696,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
     const groupName = opts.group;
     const groupId = opts.groupId || null;
     if (groupName === '__uncategorized') {
-      // Show categories not in any group
       const allGroupedCatIds = new Set();
       for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
       if (useHardcodedFallback) {
@@ -761,7 +711,7 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
       folders = cats.map(c => ({
         key: c.id,
-        name: c.name, // always live DB name
+        name: c.name,
         count: countByCat.get(c.id) || 0,
         meta: 'category',
         icon: 'folder',
@@ -769,7 +719,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         system: false,
       }));
 
-      // Add a virtual folder for products with NO category at all
       const noCategoryProductIds = new Set();
       (products || []).forEach(p => {
         const inAnyCat = (pcRows || []).some(r => r.product_id === p.id);
@@ -787,7 +736,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         });
       }
     } else {
-      // Resolve by groupId first (stable across renames), then by name, then fallback slugs
       const dbGroup = (groupId && groupsByOrder.find(g => g.id === groupId))
         || groupsByOrder.find(g => g.name === groupName);
       let cats;
@@ -802,7 +750,7 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
       const displayGroupName = dbGroup?.name || groupName;
       folders = cats.map(c => ({
         key: c.id,
-        name: c.name, // always live DB subcategory name
+        name: c.name,
         count: countByCat.get(c.id) || 0,
         meta: 'category',
         icon: 'folder',
@@ -861,7 +809,6 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   });
 }
 
-// Product rows view (inside a category folder, or global search)
 async function renderProductRows(container, header, opts, breadcrumb = '') {
   const { search, filterCategory, filterActive, page } = opts;
   const cacheKey = `prods:${search}|${filterCategory}|${filterActive}|${page}`;
@@ -973,8 +920,8 @@ const catMapByProduct = {};
               <td class="col-image">${p.images?.[0] ? `<img src="${p.images[0]}" alt="${p.name}" data-src="${p.images[0]}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
               <td class="col-name"><strong>${p.name}</strong><span>${p.slug}</span></td>
               ${showSortColumn ? `<td><input class="category-sort-input" data-product-id="${p.id}" data-category-id="${filterCategory}" type="number" min="1" max="100" value="${sortByProduct?.get(p.id) || ''}" style="width:82px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm)"></td>` : ''}
-              <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || '—'}</td>
-              <td><strong>₹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">₹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
+              <td>${(catMapByProduct[p.id] || []).join(', ') || p.category?.name || 'â€”'}</td>
+              <td><strong>â‚¹${Number(p.price).toLocaleString()}</strong>${p.original_price && p.original_price > p.price ? `<br><s style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">â‚¹${Number(p.original_price).toLocaleString()}</s>` : ''}</td>
               <td>
                 <button type="button" class="stock-toggle-btn" data-id="${p.id}" data-in-stock="${p.in_stock !== false ? '1' : '0'}"
                   title="Click to toggle stock"
@@ -1021,16 +968,9 @@ const catMapByProduct = {};
   wireProductRows(container, header, opts, breadcrumb, products, page);
 }
 
-// Wire up all interactive handlers for the product-rows view. Called both after
-// a fresh render AND on a cache hit (so pagination/buttons keep working within
-// the cache TTL — previously the cache path called an undefined function and
-// left the list unclickable).
 function wireProductRows(container, header, opts, breadcrumb, products, page) {
   wireFsShared(container);
 
-  // ponytail: back + breadcrumb clicks only got wired in renderFolderGrid,
-  // leaving them dead inside a category folder. Wire them here too so they
-  // work on both fresh render and cache hits.
   document.getElementById('fs-back')?.addEventListener('click', () => fsGoBack(container));
   document.querySelectorAll('.fs-crumb').forEach(btn => {
     btn.onclick = () => {
@@ -1086,7 +1026,6 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
       showConfirmDialog('Delete this product? This action cannot be undone.', async () => {
-        // Clear junction first (FK cascade should handle it, but be explicit)
         const { error: juncErr } = await supabase.from('product_categories').delete().eq('product_id', id);
         if (juncErr) console.warn('[admin] product_categories delete:', juncErr.message);
         const { data: deleted, error } = await supabase.from('products').delete().eq('id', id).select('id');
@@ -1115,7 +1054,6 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
     };
   });
 
-  // One-click stock / active toggles — no modal, no slug write (avoids products_slug_key)
   document.querySelectorAll('.stock-toggle-btn').forEach(btn => {
     btn.onclick = async (e) => {
       e.stopPropagation();
@@ -1160,7 +1098,6 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
     };
   });
 
-  // Pagination
   document.getElementById('page-prev')?.addEventListener('click', () => {
     rerenderRows(container, header, opts, breadcrumb, page - 1);
   });
@@ -1174,7 +1111,6 @@ function wireProductRows(container, header, opts, breadcrumb, products, page) {
   });
 }
 
-// Re-render just the rows view at a new page (preserves search/nav context)
 function rerenderRows(container, header, opts, breadcrumb, newPage) {
   const search = document.getElementById('product-search')?.value || '';
   const filterActive = document.getElementById('filter-active')?.value || '';
@@ -1186,7 +1122,6 @@ function rerenderRows(container, header, opts, breadcrumb, newPage) {
   }
 }
 
-// Navigate one level up
 function fsGoBack(container, fallbackNav) {
   const nav = container.dataset.fsNav ? JSON.parse(container.dataset.fsNav) : { level: 'root' };
   let next;
@@ -1198,7 +1133,6 @@ function fsGoBack(container, fallbackNav) {
   renderProducts(container, 1, '', '');
 }
 
-// Shared event wiring for search + add button + status filter (on every render)
 function wireFsShared(container) {
   let searchTimeout;
   const searchInput = document.getElementById('product-search');
@@ -1263,7 +1197,7 @@ async function validateBannerImage(file) {
       const minW = 1920;
       const minH = 720;
       if (img.width < minW || img.height < minH) {
-        reject(new Error(`Banner image must be at least ${minW}×${minH} pixels (16:6 ratio). Current: ${img.width}×${img.height}`));
+        reject(new Error(`Banner image must be at least ${minW}Ã—${minH} pixels (16:6 ratio). Current: ${img.width}Ã—${img.height}`));
       } else if (Math.abs((img.width / img.height) - (16 / 6)) > 0.05) {
         reject(new Error(`Banner image must match the 16:6 aspect ratio. Current aspect ratio is ${(img.width / img.height).toFixed(2)}:1`));
       } else {
@@ -1282,20 +1216,13 @@ function isVideoMedia(src, type = '') {
   return type === 'video/mp4' || /\\.mp4($|[?#])/i.test(src);
 }
 
-
-// Deep-clone an existing product. Copies every column verbatim, including
-// images and category junctions. Only the name (and slug) is changed.
-// Naming: "Copy of <name>" → "Copy of <name> (1)" → ... (file-system style).
 async function duplicateProduct(source, container) {
-  // Fetch fresh source + its category junctions (the list-row copy may
-  // miss the junction rows).
   const [{ data: fullSrc }, { data: catRows }] = await Promise.all([
     supabase.from('products').select('*').eq('id', source.id).single(),
     supabase.from('product_categories').select('category_id').eq('product_id', source.id),
   ]);
   if (!fullSrc) { showToast('Source product not found.', 'error'); return; }
 
-  // Build a unique name + slug.
   const baseName = `Copy of ${fullSrc.name}`;
   const { data: existing } = await supabase
     .from('products')
@@ -1321,7 +1248,6 @@ async function duplicateProduct(source, container) {
     newSlug = `${baseSlug}-${i}`;
   }
 
-  // ponytail: auto-generate unique SKU if present to prevent products_sku_key constraint error
   let newSku = null;
   if (fullSrc.sku) {
     const baseSku = `${fullSrc.sku}-COPY`;
@@ -1338,7 +1264,6 @@ async function duplicateProduct(source, container) {
     }
   }
 
-  // Strip the immutable / PK columns, keep everything else.
   const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = fullSrc;
   const payload = { ...rest, name: newName, slug: newSlug, sku: newSku };
 
@@ -1352,8 +1277,6 @@ async function duplicateProduct(source, container) {
   if (inserted?.id && catRows?.length) {
     const rows = catRows.map(r => ({ product_id: inserted.id, category_id: r.category_id }));
     const { error: pcError } = await supabase.from('product_categories').insert(rows);
-    // H1.5 / A5 fix: surface the error so admin knows the duplicate is
-    // missing its category links (data integrity), not just console-log.
     if (pcError) {
       showToast(`Duplicated as "${newName}", but category copy failed: ${pcError.message}`, 'error');
     }
@@ -1368,23 +1291,16 @@ async function duplicateProduct(source, container) {
 }
 
 async function openProductModal(container, product = null) {
-  // Use fetchCategories() so the list mirrors the navbar's grouping (DB
-  // group_id with the hardcoded CATEGORY_GROUPS fallback). Linear, with
-  // group labels as section headers and a tab indent before each item.
   const [allCategories, existingCats] = await Promise.all([
     fetchCategories(),
     product?.id ? supabase.from('product_categories').select('category_id').eq('product_id', product.id) : Promise.resolve({ data: [] }),
   ]);
 
-  // Group categories by their group_name. Group order matches the navbar
-  // (sort_order on category_groups), then the hardcoded fallback order,
-  // then any orphan group last.
   const groups = await fetchCategoryGroups();
   const groupOrder = groups.map(g => g.name);
   const groupSortByName = new Map(groups.map(g => [g.name, g.sort_order || 0]));
   const FALLBACK_ORDER = Object.keys(CATEGORY_GROUPS);
 
-  // Buckets: groupName -> [cat]
   const buckets = new Map();
   const orphans = [];
   for (const c of allCategories || []) {
@@ -1396,7 +1312,6 @@ async function openProductModal(container, product = null) {
       orphans.push(c);
     }
   }
-  // Compose the final ordered list: [group, [cat...]], [group, [cat...]], ...
   const ordered = [];
   const seen = new Set();
   const pushBucket = (name) => {
@@ -1415,14 +1330,11 @@ async function openProductModal(container, product = null) {
     const sorted = orphans.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     ordered.push({ name: 'Other', items: sorted });
   }
-  // Sort groups that came only from the fallback by their hardcoded index.
   ordered.forEach(g => {
     if (groupSortByName.has(g.name)) return;
     const idx = FALLBACK_ORDER.indexOf(g.name);
     g._fallbackIdx = idx === -1 ? 9999 : idx;
   });
-  // Stable order: DB group sort_order, then fallback order, then 'Other' last.
-  // (groupOrder/FALLBACK_ORDER iteration above already does this.)
   const isEdit = !!product;
   const primaryImage = product?.images?.[0] || '';
   const secondaryImages = product?.images?.slice(1) || [];
@@ -1479,7 +1391,7 @@ async function openProductModal(container, product = null) {
         <div class="form-group"><label>Description</label><textarea name="description" id="rte-description" class="nyd-rte">${product?.description || ''}</textarea></div>
         <div class="form-group">
           <label>SEO / Meta Tags <small style="color:var(--color-text-tertiary)">(for product detail page & social)</small></label>
-          <input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (≤60 chars)">
+          <input name="meta_title" value="${product?.meta_title || ''}" placeholder="Meta title (â‰¤60 chars)">
           <textarea name="meta_description" placeholder="Meta description (150-160 chars)" style="min-height:60px">${product?.meta_description || ''}</textarea>
           <input name="meta_keywords" value="${product?.meta_keywords || ''}" placeholder="Keywords (comma separated)">
           <input name="og_image_url" value="${product?.og_image_url || ''}" placeholder="OG image URL (optional)">
@@ -1522,9 +1434,6 @@ async function openProductModal(container, product = null) {
   `;
   document.body.appendChild(overlay);
 
-  // ===== Rich text editors (TinyMCE) for Short Description and Description =====
-  // Loaded lazily from CDN the first time the product modal opens. Reused
-  // across openings via the module-level promise.
   const TINYMCE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.5/tinymce.min.js';
   if (!window.__tinymceLoadPromise) {
     window.__tinymceLoadPromise = new Promise((resolve, reject) => {
@@ -1534,7 +1443,6 @@ async function openProductModal(container, product = null) {
         existing.addEventListener('error', reject);
         return;
       }
-      // Load the TinyMCE skin CSS first (icons + popup chrome)
       if (!document.querySelector('link[data-tinymce-skin]')) {
         const skinLink = document.createElement('link');
         skinLink.rel = 'stylesheet';
@@ -1610,7 +1518,6 @@ async function openProductModal(container, product = null) {
           '1B5E20', 'Green', 'FBC02D', 'Yellow', 'FFFFFF', 'White',
         ],
       };
-      // Short description: expanded height
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-short-description',
@@ -1621,7 +1528,6 @@ async function openProductModal(container, product = null) {
       });
       rteInstances.push('rte-short-description');
 
-      // Description: full toolbar
       await tinymce.init({
         ...baseConfig,
         selector: '#rte-description',
@@ -1630,7 +1536,6 @@ async function openProductModal(container, product = null) {
       rteInstances.push('rte-description');
     } catch (e) {
       console.warn('[product] TinyMCE failed to load, using plain textareas:', e);
-      // Fallback: leave the textareas as-is; the form still works.
     }
   };
   initRtes();
@@ -1644,10 +1549,6 @@ async function openProductModal(container, product = null) {
     if (isBackdrop) return;
     closeProductModal();
   };
-  // Close handlers — only the X button (or Cancel) closes. Backdrop click
-  // and ESC are intentionally no-ops so dad doesn't lose form data from a
-  // stray click. ponytail: keep the X/Cancel handlers since TinyMCE's
-  // iframe can swallow normal click events, so mousedown is still used.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1703,7 +1604,6 @@ async function openProductModal(container, product = null) {
 
       const name = document.createElement('div');
       name.className = 'admin-media-name';
-      // Don't show raw base64 tails (e.g. "2Q==") in the tile label
       if (String(src).startsWith('data:')) {
         const kind = isVideoMedia(src) ? 'Video' : 'Image';
         name.textContent = `${kind} ${index + 1}`;
@@ -1759,7 +1659,6 @@ async function openProductModal(container, product = null) {
     });
   };
 
-  // Textarea is hidden — tiles + file picker are the only UI.
   secondaryFileInput?.addEventListener('change', async () => {
     const incoming = Array.from(secondaryFileInput.files || []);
     try {
@@ -1783,7 +1682,6 @@ async function openProductModal(container, product = null) {
   });
   renderSecondaryMediaGrid();
 
-  // Auto-generate slug from name
   const nameInput = document.getElementById('p-name');
   const slugInput = document.getElementById('p-slug');
   nameInput?.addEventListener('input', () => {
@@ -1799,8 +1697,6 @@ async function openProductModal(container, product = null) {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button[type="submit"]');
     if (submitBtn?.dataset.busy === '1') return;
-    // Sync TinyMCE editor content into the underlying textareas so FormData
-    // picks up the latest HTML.
     if (window.tinymce) {
       try { window.tinymce.triggerSave(); } catch (_) { /* ignore */ }
     }
@@ -1811,8 +1707,6 @@ async function openProductModal(container, product = null) {
       return;
     }
 
-    // Slug uniqueness — "products_slug_key" is NOT caused by Active/In Stock.
-    // It fires when Add Product reuses an existing slug (or Edit steals another product's slug).
     try {
       let slugQ = supabase.from('products').select('id, name, slug').eq('slug', slug).limit(1);
       if (isEdit && product?.id) slugQ = slugQ.neq('id', product.id);
@@ -1822,11 +1716,9 @@ async function openProductModal(container, product = null) {
           showToast(`Slug "${slug}" is already used by "${slugHit.name}". Change the slug.`, 'error');
           return;
         }
-        // Add Product: auto-suffix so save never dies on a taken slug
         const base = slug;
         let n = 2;
         let candidate = `${base}-${n}`;
-        // Find free slug (cap attempts)
         for (; n < 50; n++) {
           candidate = `${base}-${n}`;
           const { data: hit } = await supabase.from('products').select('id').eq('slug', candidate).limit(1).maybeSingle();
@@ -1835,7 +1727,7 @@ async function openProductModal(container, product = null) {
         slug = candidate;
         const slugField = e.target.querySelector('[name="slug"]');
         if (slugField) slugField.value = slug;
-        showToast(`Slug was taken — using "${slug}" instead. To change stock/active on the original, use the list toggles or Edit.`, 'error');
+        showToast(`Slug was taken â€” using "${slug}" instead. To change stock/active on the original, use the list toggles or Edit.`, 'error');
       }
     } catch (err) {
       console.warn('[admin] slug pre-check failed', err);
@@ -1862,7 +1754,6 @@ async function openProductModal(container, product = null) {
     const selectedCatIds = fd.getAll('category_ids');
     const skuVal = String(fd.get('sku') || '').trim() || null;
 
-    // SKU uniqueness (same class of error as slug)
     if (skuVal) {
       try {
         let skuQ = supabase.from('products').select('id, name').eq('sku', skuVal).limit(1);
@@ -1889,7 +1780,6 @@ async function openProductModal(container, product = null) {
       description: fd.get('description') || null,
       images,
       min_bulk_order: Number(fd.get('min_bulk_order')) || 100,
-      // Checkbox: missing from FormData when unchecked → false (out of stock)
       in_stock: fd.get('in_stock') === 'on',
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
@@ -1905,7 +1795,7 @@ async function openProductModal(container, product = null) {
     if (submitBtn) {
       submitBtn.dataset.busy = '1';
       submitBtn.disabled = true;
-      submitBtn.textContent = isEdit ? 'Saving…' : 'Adding…';
+      submitBtn.textContent = isEdit ? 'Savingâ€¦' : 'Addingâ€¦';
     }
 
     const friendlyDbError = (err) => {
@@ -1938,7 +1828,7 @@ async function openProductModal(container, product = null) {
           return;
         }
         if (!updated?.id) {
-          showToast('Update failed — product not found or no permission. Try logging into admin again.', 'error');
+          showToast('Update failed â€” product not found or no permission. Try logging into admin again.', 'error');
           return;
         }
         savedProduct = { ...product, id: updated.id };
@@ -1960,8 +1850,6 @@ async function openProductModal(container, product = null) {
     }
 
     if (savedProduct?.id) {
-      // Preserve existing per-category sort_order so the list column stays
-      // populated. ponytail: 2 queries, but junction is small per product.
       const { data: existingPc } = await supabase
         .from('product_categories')
         .select('category_id, sort_order')
@@ -1997,8 +1885,6 @@ async function openProductModal(container, product = null) {
   };
 }
 
-// ===== CATEGORIES =====
-// ===== CATEGORIES (collapsible groups, DB-backed) =====
 function renderCategoryTable(cats, group, opts = {}) {
   const groupName = group?.name || opts.fallbackName || 'Uncategorized';
   const groupId = group?.id || '';
@@ -2055,7 +1941,6 @@ function renderCategoryTable(cats, group, opts = {}) {
 }
 
 async function renderCategories(container) {
-  // Always read fresh from the DB (with 60s cache inside fetchCategories)
   const [categories, groups] = await Promise.all([
     fetchCategories(),
     fetchCategoryGroups(),
@@ -2064,12 +1949,10 @@ async function renderCategories(container) {
   const grouped = getCategoriesByGroup(categories || []);
   const uncategorized = (categories || []).filter(c => !c.group_name);
 
-  // Preserve collapsed state across re-renders
   const collapsedSet = new Set(
     JSON.parse(sessionStorage.getItem('admin_cat_collapsed') || '[]')
   );
 
-  // Preserve add-to-group scroll/focus intent if the caller asked for it
   const expandGroup = sessionStorage.getItem('admin_cat_expand_once') || null;
   if (expandGroup) {
     collapsedSet.delete(expandGroup);
@@ -2123,7 +2006,6 @@ async function renderCategories(container) {
     sessionStorage.setItem('admin_cat_collapsed', JSON.stringify([...collapsedSet]));
   };
 
-  // ===== Wire interactions =====
   document.getElementById('cat-search')?.addEventListener('input', (e) => {
     const q = e.target.value.toLowerCase();
     document.querySelectorAll('.cat-row').forEach(row => {
@@ -2138,7 +2020,6 @@ async function renderCategories(container) {
     });
   });
 
-  // Collapse/expand toggle
   document.querySelectorAll('.admin-cat-toggle').forEach(btn => {
     btn.onclick = () => {
       const name = btn.dataset.group;
@@ -2161,7 +2042,6 @@ async function renderCategories(container) {
     };
   });
 
-  // Add to specific group (sets the group in the modal)
   document.querySelectorAll('[data-add-to-group]').forEach(btn => {
     btn.onclick = () => openCategoryModal(container, null, btn.dataset.addToGroup);
   });
@@ -2174,7 +2054,6 @@ async function renderCategories(container) {
     };
   });
 
-  // Delete group (moves its categories to Uncategorized, then deletes the group)
   document.querySelectorAll('[data-delete-group]').forEach(btn => {
     btn.onclick = () => {
       const id = btn.dataset.deleteGroup;
@@ -2183,7 +2062,6 @@ async function renderCategories(container) {
       showConfirmDialog(
         `Delete group "${name}"? Subcategories will move to Uncategorized.`,
         async () => {
-          // Clear group_id on any categories in this group, then delete the group
           await supabase.from('categories').update({ group_id: null }).eq('group_id', id);
           const { error } = await supabase.from('category_groups').delete().eq('id', id);
           if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
@@ -2195,15 +2073,12 @@ async function renderCategories(container) {
     };
   });
 
-  // New group
   const onAddGroup = () => openCategoryGroupModal(container, null, categories, grouped);
   document.getElementById('add-group-btn')?.addEventListener('click', onAddGroup);
   document.getElementById('add-group-btn-empty')?.addEventListener('click', onAddGroup);
 
-  // Add category (no group preselected)
   document.getElementById('add-cat-btn')?.addEventListener('click', () => openCategoryModal(container, null, null));
 
-  // Per-row actions
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.onclick = () => {
       const id = btn.closest('tr').dataset.id;
@@ -2220,7 +2095,6 @@ async function renderCategories(container) {
           cat?.image_url ? ' This will not delete the image file (base64 is in the row).' : ''
         }`,
         async () => {
-          // Also clean up product_categories junction rows pointing here
           await supabase.from('product_categories').delete().eq('category_id', id);
           const { error } = await supabase.from('categories').delete().eq('id', id);
           if (error) { showToast(`Delete failed: ${error.message}`, 'error'); return; }
@@ -2366,7 +2240,6 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
       return;
     }
 
-    // M15: never toast "created" if we never got an id
     if (!savedGroupId) {
       showToast('Group save returned no id. Check RLS / unique name and try again.', 'error');
       return;
@@ -2389,7 +2262,6 @@ async function openCategoryGroupModal(container, group = null, categories = [], 
 
 async function openCategoryModal(container, category = null, presetGroupName = null) {
   const isEdit = !!category;
-  // Always read groups fresh so the dropdown reflects the current DB state
   const groups = await fetchCategoryGroups();
   const currentGroup = isEdit
     ? (category?.group_name || null)
@@ -2409,7 +2281,7 @@ async function openCategoryModal(container, category = null, presetGroupName = n
         <div class="form-group">
           <label>Parent Group</label>
           <select name="group_id" id="cat-group-select">
-            <option value="">— Uncategorized —</option>
+            <option value="">â€” Uncategorized â€”</option>
             ${groups.map(g => `<option value="${g.id}" ${g.name === currentGroup ? 'selected' : ''}>${g.name}</option>`).join('')}
           </select>
           <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">Determines which main group menu this subcategory appears under.</small>
@@ -2459,8 +2331,6 @@ async function openCategoryModal(container, category = null, presetGroupName = n
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — only the X button (or Cancel) closes. Backdrop click
-  // is intentionally a no-op so dad doesn't lose form data from a stray click.
   overlay.querySelector('.admin-modal-close').addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2525,7 +2395,6 @@ async function openCategoryModal(container, category = null, presetGroupName = n
   });
 }
 
-// ===== BANNERS =====
 async function renderBanners(container) {
   const { data: banners } = await supabase.from('banners').select('*').order('order_index');
 
@@ -2548,8 +2417,8 @@ async function renderBanners(container) {
           ${banners.map(b => `<tr class="banner-row" data-id="${b.id}">
             <td class="col-image">${b.image_url ? `<img src="${b.image_url}" alt="${b.title}" data-src="${b.image_url}">` : '<div style="width:64px;height:64px;background:var(--color-surface-alt);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border-light)"><span class="material-symbols-outlined" style="font-size:24px;color:var(--color-text-tertiary)">image</span></div>'}</td>
             <td class="col-name"><strong>${b.title}</strong><span>${b.subtitle || ''}</span></td>
-            <td style="color:var(--color-text-secondary);font-size:var(--fs-sm)">${b.subtitle || '—'}</td>
-            <td>${b.cta_text ? `<span style="font-size:var(--fs-sm)">${b.cta_text}</span><br><span style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">${b.cta_link || '—'}</span>` : '—'}</td>
+            <td style="color:var(--color-text-secondary);font-size:var(--fs-sm)">${b.subtitle || 'â€”'}</td>
+            <td>${b.cta_text ? `<span style="font-size:var(--fs-sm)">${b.cta_text}</span><br><span style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">${b.cta_link || 'â€”'}</span>` : 'â€”'}</td>
             <td>${b.order_index || 0}</td>
             <td><span class="badge ${b.active ? 'badge-active' : 'badge-inactive'}">${b.active ? 'Active' : 'Inactive'}</span></td>
             <td class="col-actions">
@@ -2683,7 +2552,6 @@ function openBannerModal(container, banner = null) {
     }
   });
 
-  // Close handlers — robust against nested editors
   const closeBannerModal = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     closeModal();
@@ -2746,13 +2614,11 @@ function openBannerModal(container, banner = null) {
   };
 }
 
-// ===== SETTINGS =====
 async function renderSettings(container) {
   const { data: settings } = await supabase.from('site_settings').select('*').order('key');
 
   const getSetting = (key, fallback = '') => settings?.find(s => s.key === key)?.value || fallback;
 
-  // Word/char counters for meta description + title
   const descCount = (getSetting('meta_description') || '').length;
   const ogDescCount = (getSetting('og_description') || '').length;
 
@@ -2781,15 +2647,15 @@ async function renderSettings(container) {
       </div>
 
       <div class="settings-section" style="margin-top:var(--space-6)">
-        <h3>🔍 SEO &amp; Meta Tags <small style="font-weight:400;color:var(--color-text-tertiary);font-size:var(--fs-sm)">— shown in Google results and when sharing on WhatsApp / Facebook / Twitter</small></h3>
+        <h3>ðŸ” SEO &amp; Meta Tags <small style="font-weight:400;color:var(--color-text-tertiary);font-size:var(--fs-sm)">â€” shown in Google results and when sharing on WhatsApp / Facebook / Twitter</small></h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5)">
           <div style="display:flex;flex-direction:column;gap:var(--space-4)">
             <div class="form-group">
-              <label>Meta Title <small style="color:var(--color-text-tertiary)">(60 chars max — Google cuts off around 580px)</small></label>
+              <label>Meta Title <small style="color:var(--color-text-tertiary)">(60 chars max â€” Google cuts off around 580px)</small></label>
               <input name="meta_title" maxlength="80" value="${escHtml(getSetting('meta_title'))}" placeholder="Auto-falls-back to Site Title if empty">
             </div>
             <div class="form-group">
-              <label>Meta Description <small style="color:var(--color-text-tertiary)">(150–160 chars ideal)</small></label>
+              <label>Meta Description <small style="color:var(--color-text-tertiary)">(150â€“160 chars ideal)</small></label>
               <textarea name="meta_description" rows="3" maxlength="320" oninput="document.getElementById('meta-desc-count').textContent=this.value.length">${escHtml(getSetting('meta_description'))}</textarea>
               <small id="meta-desc-count" style="color:var(--color-text-tertiary)">${descCount} chars</small>
             </div>
@@ -2809,7 +2675,7 @@ async function renderSettings(container) {
               <small id="og-desc-count" style="color:var(--color-text-tertiary)">${ogDescCount} chars</small>
             </div>
             <div class="form-group">
-              <label>OG Image URL <small style="color:var(--color-text-tertiary)">(1200×630 px recommended for social cards)</small></label>
+              <label>OG Image URL <small style="color:var(--color-text-tertiary)">(1200Ã—630 px recommended for social cards)</small></label>
               <input name="og_image" value="${escHtml(getSetting('og_image'))}" placeholder="https://... or paste a Supabase storage URL">
             </div>
             <div class="form-group">
@@ -2826,7 +2692,7 @@ async function renderSettings(container) {
           </div>
         </div>
         <div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);font-size:var(--fs-xs);color:var(--color-text-tertiary)">
-          💡 Tip: After saving, refresh your homepage in a new tab to verify. Test social previews at <a href="https://www.opengraph.xyz/" target="_blank" rel="noopener">opengraph.xyz</a>.
+          ðŸ’¡ Tip: After saving, refresh your homepage in a new tab to verify. Test social previews at <a href="https://www.opengraph.xyz/" target="_blank" rel="noopener">opengraph.xyz</a>.
         </div>
       </div>
 
@@ -2861,13 +2727,11 @@ async function renderSettings(container) {
       return;
     }
     bustContentCache();
-    showToast('Settings + meta tags saved! Refreshing…');
-    // Reload so all the meta tag overrides re-apply (some crawlers cache)
+    showToast('Settings + meta tags saved! Refreshingâ€¦');
     setTimeout(() => window.location.reload(), 800);
   };
 }
 
-// ===== ENQUIRIES =====
 let enquiryTab = 'contact';
 
 async function renderEnquiries(container, tab = 'contact') {
@@ -2891,12 +2755,12 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>State</th><th>Message</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${contacts.map(c => `<tr data-id="${c.id}" class="${c.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(c.enquiry_code || '—')}</code></td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(c.enquiry_code || 'â€”')}</code></td>
           <td>${escHtml(c.name)}${c.address ? `<br><span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(c.address)}</span>` : ''}</td>
           <td><a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a></td>
-          <td>${c.mobile ? `<a href="tel:${escHtml(c.mobile)}">${escHtml(c.mobile)}</a>` : '—'}</td>
-          <td>${escHtml(c.state || '—')}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.message || '')}">${escHtml(c.message || '—')}</td>
+          <td>${c.mobile ? `<a href="tel:${escHtml(c.mobile)}">${escHtml(c.mobile)}</a>` : 'â€”'}</td>
+          <td>${escHtml(c.state || 'â€”')}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.message || '')}">${escHtml(c.message || 'â€”')}</td>
           <td>${new Date(c.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${c.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${c.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
@@ -2913,11 +2777,11 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Company</th><th>Products</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${enquiries.map(e => `<tr data-id="${e.id}" class="${e.status === 'reviewed' ? 'is-reviewed' : 'is-unread'}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(e.enquiry_code || '—')}</code></td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(e.enquiry_code || 'â€”')}</code></td>
           <td>${escHtml(e.name)}</td>
           <td><a href="mailto:${escHtml(e.email)}">${escHtml(e.email)}</a></td>
-          <td>${escHtml(e.company || '—')}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.product_names || e.products || '—')}</td>
+          <td>${escHtml(e.company || 'â€”')}</td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.product_names || e.products || 'â€”')}</td>
           <td>${new Date(e.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${e.status === 'reviewed' ? 'badge-reviewed' : 'badge-new'}">${e.status === 'reviewed' ? 'Reviewed' : 'New'}</span></td>
           <td class="col-actions">
@@ -2934,11 +2798,11 @@ async function renderEnquiries(container, tab = 'contact') {
       <thead><tr><th>Order #</th><th>Name</th><th>Email</th><th>Phone</th><th>Total</th><th>Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
       <tbody>
         ${orders.map(o => `<tr data-id="${o.id}">
-          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(o.order_number || '—')}</code></td>
+          <td><code style="font-size:var(--fs-xs);background:var(--color-surface-alt);padding:2px 6px;border-radius:var(--radius-sm);">${escHtml(o.order_number || 'â€”')}</code></td>
           <td>${escHtml(o.first_name)} ${escHtml(o.last_name)}</td>
           <td><a href="mailto:${escHtml(o.email)}">${escHtml(o.email)}</a></td>
-          <td>${escHtml(o.phone || '—')}</td>
-          <td>₹${Number(o.total).toLocaleString()}</td>
+          <td>${escHtml(o.phone || 'â€”')}</td>
+          <td>â‚¹${Number(o.total).toLocaleString()}</td>
           <td>${new Date(o.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${o.status === 'pending' ? 'badge-new' : 'badge-reviewed'}">${escHtml(o.status || 'Pending')}</span></td>
           <td class="col-actions">
@@ -2986,17 +2850,14 @@ async function renderEnquiries(container, tab = 'contact') {
     </div>
   `;
 
-  // Stat card navigation
   document.getElementById('stat-contacts')?.addEventListener('click', () => renderEnquiries(container, 'contact'));
   document.getElementById('stat-enquiries')?.addEventListener('click', () => renderEnquiries(container, 'enquiry'));
   document.getElementById('stat-orders')?.addEventListener('click', () => renderEnquiries(container, 'orders'));
 
-  // Tab switching
   document.querySelectorAll('.enquiry-tab').forEach(btn => {
     btn.addEventListener('click', () => renderEnquiries(container, btn.dataset.etab));
   });
 
-  // Action handlers
   const currentData = tab === 'contact' ? contacts : tab === 'enquiry' ? enquiries : orders;
   const tableName = tab === 'contact' ? 'contact_submissions' : tab === 'enquiry' ? 'enquiries' : 'orders';
 
@@ -3004,11 +2865,7 @@ async function renderEnquiries(container, tab = 'contact') {
     btn.onclick = async () => {
       const id = btn.closest('tr').dataset.id;
       const item = currentData.find(d => d.id === id);
-      // ponytail: opening an enquiry marks it reviewed (Gmail-style: viewed = read).
-      // Orders have no reviewed status, so only contact + enquiry auto-mark.
       if (item && tableName !== 'orders' && item.status !== 'reviewed') {
-        // M16 fix: capture error and don't flip client-side status if the
-        // DB update failed (avoids UI showing 'reviewed' that didn't persist).
         const { error: viewErr } = await supabase.from(tableName).update({ status: 'reviewed' }).eq('id', id);
         if (viewErr) { showToast('Mark reviewed failed: ' + viewErr.message, 'error'); }
         else item.status = 'reviewed';
@@ -3035,8 +2892,6 @@ async function renderEnquiries(container, tab = 'contact') {
       const row = btn.closest('tr');
       const id = row.dataset.id;
       showConfirmDialog('Delete this item permanently?', async () => {
-        // ponytail: was fire-and-forget — check if delete succeeded using .select()
-        // since Supabase returns success code even if RLS blocked deletion.
         const { data, error } = await supabase.from(tableName).delete().eq('id', id).select();
         if (error) {
           showToast(`Delete failed: ${error.message}`, 'error');
@@ -3061,52 +2916,52 @@ function openEnquiryDetailModal(item, type) {
 
   const fields = type === 'contact'
     ? [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || '—') },
-        { label: 'Subject', value: escHtml(item.subject || '—') },
-        { label: 'Message', value: escHtml(item.message || '—') },
+        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
+        { label: 'Subject', value: escHtml(item.subject || 'â€”') },
+        { label: 'Message', value: escHtml(item.message || 'â€”') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'enquiry'
     ? [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Company', value: escHtml(item.company || '—') },
-        { label: 'Products', value: escHtml(item.product_names || item.products || '—') },
-        { label: 'Message', value: escHtml(item.message || '—') },
+        { label: 'Company', value: escHtml(item.company || 'â€”') },
+        { label: 'Products', value: escHtml(item.product_names || item.products || 'â€”') },
+        { label: 'Message', value: escHtml(item.message || 'â€”') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ]
     : type === 'orders' || type === 'order'
     ? [
-        { label: 'Order Number', value: escHtml(item.order_number || '—') },
+        { label: 'Order Number', value: escHtml(item.order_number || 'â€”') },
         { label: 'Customer Name', value: escHtml(`${item.first_name || ''} ${item.last_name || ''}`.trim()) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || '—') },
-        { label: 'Company', value: escHtml(item.company || '—') },
-        { label: 'GST Number', value: escHtml(item.gst || '—') },
+        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
+        { label: 'Company', value: escHtml(item.company || 'â€”') },
+        { label: 'GST Number', value: escHtml(item.gst || 'â€”') },
         { label: 'Shipping Address', value: escHtml(`${item.address_line_1 || ''}${item.address_line_2 ? ', ' + item.address_line_2 : ''}, ${item.city || ''}, ${item.state || ''} - ${item.postcode || ''}, ${item.country || 'India'}`) },
-        { label: 'Payment Method', value: escHtml(item.payment_method || '—') },
-        { label: 'Financial Summary', value: `Subtotal: ₹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): ₹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: ₹${Number(item.shipping || 0).toLocaleString()} | Total: ₹${Number(item.total || 0).toLocaleString()}` },
-        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${escHtml(item.special_instructions)}</div>` : '—' },
+        { label: 'Payment Method', value: escHtml(item.payment_method || 'â€”') },
+        { label: 'Financial Summary', value: `Subtotal: â‚¹${Number(item.subtotal || 0).toLocaleString()} | GST (18%): â‚¹${Number(item.gst_amount || 0).toLocaleString()} | Shipping: â‚¹${Number(item.shipping || 0).toLocaleString()} | Total: â‚¹${Number(item.total || 0).toLocaleString()}` },
+        { label: 'Requirements / Customisation', value: item.special_instructions ? `<div style="white-space:pre-line;">${escHtml(item.special_instructions)}</div>` : 'â€”' },
         { label: 'Order Items', value: '<div id="modal-order-items">Loading order items...</div>' },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Order Date', value: new Date(item.created_at).toLocaleString() },
       ]
     : [
-        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || '—') },
+        { label: 'Enquiry Code', value: escHtml(item.enquiry_code || 'â€”') },
         { label: 'Name', value: escHtml(item.name) },
         { label: 'Email', value: escHtml(item.email) },
-        { label: 'Phone', value: escHtml(item.phone || '—') },
-        { label: 'Company', value: escHtml(item.company || '—') },
-        { label: 'Product Interest', value: escHtml(item.product_type || '—') },
-        { label: 'Products', value: escHtml(item.product_names || '—') },
-        { label: 'Quantity', value: escHtml(item.quantity || '—') },
-        { label: 'Requirements', value: escHtml(item.custom_requirements || '—') },
+        { label: 'Phone', value: escHtml(item.phone || 'â€”') },
+        { label: 'Company', value: escHtml(item.company || 'â€”') },
+        { label: 'Product Interest', value: escHtml(item.product_type || 'â€”') },
+        { label: 'Products', value: escHtml(item.product_names || 'â€”') },
+        { label: 'Quantity', value: escHtml(item.quantity || 'â€”') },
+        { label: 'Requirements', value: escHtml(item.custom_requirements || 'â€”') },
         { label: 'Status', value: escHtml(item.status || 'pending') },
         { label: 'Submitted', value: new Date(item.created_at).toLocaleString() },
       ];
@@ -3161,11 +3016,11 @@ function openEnquiryDetailModal(item, type) {
                 <tr style="border-bottom:1px solid var(--color-border-light);">
                   <td style="padding:8px 0;">
                     <div style="font-weight:600;">${escHtml(it.product_name)}</div>
-                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).map(escHtml).join(' • ')}</div>` : ''}
+                    ${it.material || it.size ? `<div style="font-size:11px; color:var(--color-text-tertiary);">${[it.material, it.size].filter(Boolean).map(escHtml).join(' â€¢ ')}</div>` : ''}
                   </td>
                   <td style="padding:8px 0; text-align:center;">${it.quantity}</td>
-                  <td style="padding:8px 0; text-align:right;">₹${Number(it.unit_price).toLocaleString()}</td>
-                  <td style="padding:8px 0; text-align:right; font-weight:600;">₹${Number(it.line_total).toLocaleString()}</td>
+                  <td style="padding:8px 0; text-align:right;">â‚¹${Number(it.unit_price).toLocaleString()}</td>
+                  <td style="padding:8px 0; text-align:right; font-weight:600;">â‚¹${Number(it.line_total).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -3187,7 +3042,6 @@ function openEnquiryDetailModal(item, type) {
   });
 }
 
-// ===== HEADER SECTION =====
 async function renderHeaderSection(container) {
   const { data: ann } = await supabase.from('announcements').select('*').order('sort_order');
   const { data: contentRows } = await supabase.from('site_content').select('*').eq('section', 'header');
@@ -3213,7 +3067,7 @@ async function renderHeaderSection(container) {
             <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--color-surface-alt);border-radius:var(--radius-md);border:1px solid var(--color-border-light)">
               <div style="flex:1">
                 <div style="font-weight:var(--fw-medium)">${a.text}</div>
-                ${a.link ? `<div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">→ ${a.link}</div>` : ''}
+                ${a.link ? `<div style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">â†’ ${a.link}</div>` : ''}
               </div>
               <button class="ann-edit-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
               <button class="ann-del-btn" data-id="${a.id}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-error);cursor:pointer"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
@@ -3299,7 +3153,6 @@ function openAnnModal(container, ann = null) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
       e.preventDefault();
@@ -3335,7 +3188,6 @@ function openAnnModal(container, ann = null) {
   };
 }
 
-// ===== HOMEPAGE SECTION =====
 async function renderHomepageSection(container) {
   const { data: hero } = await supabase.from('homepage_sections').select('*').eq('section_key', 'hero').single();
   const { data: cta } = await supabase.from('homepage_sections').select('*').eq('section_key', 'cta').single();
@@ -3355,7 +3207,7 @@ async function renderHomepageSection(container) {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)">
       <div class="admin-card" style="padding:var(--space-6)">
-        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">🏠 Hero Banner</h2>
+        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">ðŸ  Hero Banner</h2>
         <form id="hero-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
           <div class="form-group"><label>Title</label><input name="title" value="${hero?.title || ''}"></div>
           <div class="form-group"><label>Subtitle</label><input name="subtitle" value="${hero?.subtitle || ''}"></div>
@@ -3372,7 +3224,7 @@ async function renderHomepageSection(container) {
       </div>
 
       <div class="admin-card" style="padding:var(--space-6)">
-        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">📣 CTA Section</h2>
+        <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-bold);margin-bottom:var(--space-4)">ðŸ“£ CTA Section</h2>
         <form id="cta-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
           <div class="form-group"><label>Title</label><input name="title" value="${cta?.title || ''}"></div>
           <div class="form-group"><label>Subtitle</label><textarea name="subtitle" rows="3">${cta?.subtitle || ''}</textarea></div>
@@ -3388,7 +3240,7 @@ async function renderHomepageSection(container) {
     <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
       <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">⭐ Trust Badges</h2>
+          <h2 style="font-size:var(--fs-lg);margin:0">â­ Trust Badges</h2>
           <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 4 USP cards shown above the "Ready for Corporate Orders?" section (icon, title, description)</p>
         </div>
         <button class="admin-btn admin-btn-primary" id="add-trust-badge-btn">
@@ -3416,8 +3268,8 @@ async function renderHomepageSection(container) {
         <div class="admin-card" style="padding:0;overflow:hidden;margin-bottom:var(--space-6)">
       <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">🎠 Slider Sections</h2>
-          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 5 product carousels on the homepage — edit title, "View All" link, background, and the products shown (up to 10 each).</p>
+          <h2 style="font-size:var(--fs-lg);margin:0">ðŸŽ  Slider Sections</h2>
+          <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">The 5 product carousels on the homepage â€” edit title, "View All" link, background, and the products shown (up to 10 each).</p>
         </div>
       </div>
       ${sliderSections?.length ? `<div style="padding:var(--space-2)">
@@ -3427,7 +3279,7 @@ async function renderHomepageSection(container) {
           <div style="display:grid;grid-template-columns:1fr 80px 70px 90px 130px;gap:var(--space-3);align-items:center;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-light)">
             <div>
               <strong style="font-size:var(--fs-md)">${sec.title}</strong>
-              <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:2px">${sec.view_all_link || '— no view all —'} · <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sec.bg_color || '#FAF8F5'};border:1px solid var(--color-border-light);vertical-align:middle"></span> ${sec.bg_color || '#FAF8F5'}</div>
+              <div style="font-size:var(--fs-xs);color:var(--color-text-tertiary);margin-top:2px">${sec.view_all_link || 'â€” no view all â€”'} Â· <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sec.bg_color || '#FAF8F5'};border:1px solid var(--color-border-light);vertical-align:middle"></span> ${sec.bg_color || '#FAF8F5'}</div>
             </div>
             <div style="text-align:center"><span class="badge ${sec.active !== false ? 'badge-active' : 'badge-inactive'}">${sec.active !== false ? 'Active' : 'Inactive'}</span></div>
             <div style="text-align:center;font-weight:var(--fw-semibold)">${secItems.length}/10</div>
@@ -3445,7 +3297,7 @@ async function renderHomepageSection(container) {
         <div class="admin-card" style="padding:0;overflow:hidden">
       <div class="admin-modal-header" style="padding:var(--space-4) var(--space-6);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <h2 style="font-size:var(--fs-lg);margin:0">🗂️ Shop by Category</h2>
+          <h2 style="font-size:var(--fs-lg);margin:0">ðŸ—‚ï¸ Shop by Category</h2>
           <p style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin:0">Categories displayed in the homepage "SHOP BY CATEGORY" section</p>
         </div>
         <button class="admin-btn admin-btn-primary" id="add-shop-cat-btn">
@@ -3594,7 +3446,6 @@ function openTrustBadgeModal(container, badge, allBadges) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
       e.preventDefault();
@@ -3641,8 +3492,6 @@ function openTrustBadgeModal(container, badge, allBadges) {
 
 function openSliderSectionModal(container, section, primaryCats) {
   const isEdit = !!section;
-  // Build category <option>s from the same primaryCats list the page already
-  // fetched. Sorted by name for stable order.
   const catOptions = (primaryCats || [])
     .slice()
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
@@ -3662,7 +3511,7 @@ function openSliderSectionModal(container, section, primaryCats) {
         <div class="form-group">
           <label>Auto-fill from Category <small style="color:var(--color-text-tertiary)">(recommended)</small></label>
           <select name="category_slug">
-            <option value="">— Manual: use product picker below —</option>
+            <option value="">â€” Manual: use product picker below â€”</option>
             ${catOptions}
           </select>
           <small style="color:var(--color-text-tertiary);font-size:var(--fs-xs)">When set, the slider automatically shows up to 10 products in this category. When you change a product's category in the admin, the slider updates with it. Leave empty to use the manually-picked products instead.</small>
@@ -3682,7 +3531,6 @@ function openSliderSectionModal(container, section, primaryCats) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
       e.preventDefault();
@@ -3701,7 +3549,6 @@ function openSliderSectionModal(container, section, primaryCats) {
     closeModal();
   });
 
-  // Sync color picker ↔ text input
   const colorPicker = overlay.querySelector('[name="bg_color_picker"]');
   const colorText = overlay.querySelector('[name="bg_color"]');
   colorPicker.addEventListener('input', (e) => { colorText.value = e.target.value; });
@@ -3734,10 +3581,6 @@ function openSliderSectionModal(container, section, primaryCats) {
   };
 }
 
-// ============ Slider Product Picker Modal ============
-// Folder-style browser: Root → Groups → Categories → Products with checkboxes.
-// Selection limit: 10 products per section. Already-selected products from
-// other sections don't conflict; only the cap matters.
 const SLIDER_PICKER_LIMIT = 10;
 const SLIDER_PICKER_STATE = { level: 'root', group: null, category: null, search: '', selected: [], allProducts: [] };
 
@@ -3772,7 +3615,6 @@ async function openSliderPickerModal(container, section, currentProductIds) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
       e.preventDefault();
@@ -3791,7 +3633,6 @@ async function openSliderPickerModal(container, section, currentProductIds) {
     closeModal();
   });
 
-  // Load all products once for the chip strip and for direct search
   const { data: allProducts } = await supabase
     .from('products')
     .select('id, name, slug, images, price')
@@ -3853,7 +3694,6 @@ async function openSliderPickerModal(container, section, currentProductIds) {
       showToast(`Maximum ${SLIDER_PICKER_LIMIT} products.`, 'error');
       return;
     }
-    // M14: check delete error before insert (avoid duplicate rows on partial fail)
     const { error: delErr } = await supabase.from('homepage_slider_items').delete().eq('section_id', section.id);
     if (delErr) {
       showToast('Failed to clear previous slider items: ' + delErr.message, 'error');
@@ -3877,7 +3717,6 @@ async function openSliderPickerModal(container, section, currentProductIds) {
   function wireSliderPickerFolderClicks() {
     const body = document.getElementById('slider-picker-body');
     if (!body) return;
-    // Search box: re-render the current level with the new query.
     const searchInput = document.getElementById('slider-picker-search');
     if (searchInput && !searchInput.dataset.bound) {
       searchInput.dataset.bound = '1';
@@ -3932,7 +3771,6 @@ async function openSliderPickerModal(container, section, currentProductIds) {
           SLIDER_PICKER_STATE.selected = SLIDER_PICKER_STATE.selected.filter(x => x !== id);
         }
         refresh();
-        // Disable unchecked boxes when at cap
         const atCap = SLIDER_PICKER_STATE.selected.length >= SLIDER_PICKER_LIMIT;
         body.querySelectorAll('.picker-product-check').forEach(c => {
           if (!c.checked) c.disabled = atCap;
@@ -3963,7 +3801,7 @@ function renderSliderPickerBreadcrumb() {
   const searchHtml = `
     <div style="position:relative;flex:1;min-width:180px;max-width:280px">
       <span class="material-symbols-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-tertiary);font-size:18px;pointer-events:none">search</span>
-      <input id="slider-picker-search" type="text" placeholder="Search ${placeholder}…" value="${escHtml(s.search || '')}" style="width:100%;padding:6px 10px 6px 34px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--fs-sm)">
+      <input id="slider-picker-search" type="text" placeholder="Search ${placeholder}â€¦" value="${escHtml(s.search || '')}" style="width:100%;padding:6px 10px 6px 34px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);font-size:var(--fs-sm)">
     </div>
   `;
   return `
@@ -3980,9 +3818,6 @@ function renderSliderPickerBreadcrumb() {
 }
 
 async function renderSliderPickerFolders() {
-  // Build group folders from DB only (same as Products directory). Hardcoded
-  // CATEGORY_GROUPS is bootstrap-only — merging it after renames created ghost
-  // folders with the old names (e.g. "Note Books & Pads").
   const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
   const dbGroups = await fetchCategoryGroups();
   const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -3992,7 +3827,6 @@ async function renderSliderPickerFolders() {
     : groupsByOrder.map(g => g.name);
   const matchedGroups = allNames.filter(n => !q || n.toLowerCase().includes(q));
   if (matchedGroups.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No groups match your search.</p></div>';
-  // Count categories per group using DB
   const { data: allCats } = await supabase.from('categories').select('id, group_id, slug').order('sort_order');
   const catsByGroupId = new Map();
   for (const c of allCats || []) {
@@ -4024,7 +3858,6 @@ async function renderSliderPickerCategories() {
     const { data: allCats } = await supabase.from('categories').select('id, name, slug, group_id, sort_order').order('sort_order');
     cats = (allCats || []).filter(c => !c.group_id);
   } else {
-    // Find the group in DB by name
     const dbGroups = await fetchCategoryGroups();
     const dbGroup = (dbGroups || []).find(g => g.name === group);
     if (dbGroup) {
@@ -4035,7 +3868,6 @@ async function renderSliderPickerCategories() {
         .order('sort_order');
       cats = allCats || [];
     } else {
-      // Fallback: hardcoded slugs
       const slugs = CATEGORY_GROUPS[group] || [];
       if (slugs.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>No categories in this group.</p></div>';
       const { data: allCats } = await supabase
@@ -4066,7 +3898,6 @@ async function renderSliderPickerProducts() {
   const categoryId = SLIDER_PICKER_STATE.category;
   if (!categoryId) return '<div class="empty-state"><span class="material-symbols-outlined">folder_off</span><p>Pick a category first.</p></div>';
 
-  // Use product_categories junction so products in MULTIPLE categories show up everywhere
   const { data: pcRows } = await supabase.from('product_categories').select('product_id').eq('category_id', categoryId);
   const productIds = (pcRows || []).map(r => r.product_id);
   if (productIds.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">inventory_2</span><p>No products in this category.</p></div>';
@@ -4096,7 +3927,7 @@ async function renderSliderPickerProducts() {
           <img src="${img}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:4px;flex-shrink:0">
           <div style="flex:1;min-width:0">
             <strong style="display:block;font-size:var(--fs-sm)">${escHtml(p.name)}</strong>
-            <span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(p.slug || '')} · ₹${Number(p.price || 0).toLocaleString()}</span>
+            <span style="font-size:var(--fs-xs);color:var(--color-text-tertiary)">${escHtml(p.slug || '')} Â· â‚¹${Number(p.price || 0).toLocaleString()}</span>
           </div>
         </label>`;
     }).join('')
@@ -4126,7 +3957,7 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
         <div class="form-group">
           <label>Primary Category</label>
           <select name="category_ref" id="cat-ref-select">
-            <option value="">— Select a category —</option>
+            <option value="">â€” Select a category â€”</option>
             ${(primaryCats || []).map(c => `
               <option value="${c.slug}" data-name="${c.name}" ${isEdit && shopCat.link === '/shop?cat=' + c.slug ? 'selected' : ''}>${c.name}</option>
             `).join('')}
@@ -4153,7 +3984,6 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
     </div>
   `;
   document.body.appendChild(overlay);
-  // Close handlers — robust against nested editors
   overlay.addEventListener('mousedown', (e) => {
     if (e.target === overlay) {
       e.preventDefault();
@@ -4218,7 +4048,6 @@ function openShopCategoryModal(container, shopCat, primaryCats) {
   };
 }
 
-// ===== FOOTER SECTION =====
 async function renderFooterSection(container) {
   const { data: rows } = await supabase.from('site_settings').select('*');
   const get = (key, fallback = '') => rows?.find(r => r.key === key)?.value || fallback;
