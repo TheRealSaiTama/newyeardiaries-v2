@@ -1412,7 +1412,7 @@ async function openProductModal(container, product = null) {
            ${primaryImage ? '<small style="color:var(--color-text-tertiary);font-size:var(--fs-xs);margin-top:var(--space-1)">Leave URL/file empty to keep current image</small>' : ''}
          </div>
         <div class="form-group">
-          <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(one URL per line, jpg/png/webp/mp4)</small></label>
+          <label>Secondary Images / Media <small style="color:var(--color-text-tertiary)">(jpg/png/webp/mp4)</small></label>
           <div class="admin-media-picker">
             <div class="admin-media-grid" id="secondary-media-grid"></div>
             <div class="admin-media-actions">
@@ -1424,7 +1424,8 @@ async function openProductModal(container, product = null) {
               <small>Select multiple local files. Remove unwanted items from the tiles before saving.</small>
             </div>
           </div>
-          <textarea name="secondary_images" placeholder="https://example.com/angle-2.jpg&#10;https://example.com/demo.mp4" style="min-height:80px">${secondaryImages.join('\n')}</textarea>
+          <!-- Hidden: keeps existing secondary media (URLs/base64) for save; UI is tiles only -->
+          <textarea name="secondary_images" hidden aria-hidden="true" tabindex="-1">${secondaryImages.join('\n')}</textarea>
         </div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div>
@@ -1621,7 +1622,18 @@ async function openProductModal(container, product = null) {
 
       const name = document.createElement('div');
       name.className = 'admin-media-name';
-      name.textContent = src.split('/').pop() || 'Media URL';
+      // Don't show raw base64 tails (e.g. "2Q==") in the tile label
+      if (String(src).startsWith('data:')) {
+        const kind = isVideoMedia(src) ? 'Video' : 'Image';
+        name.textContent = `${kind} ${index + 1}`;
+      } else {
+        try {
+          const path = String(src).split('?')[0];
+          name.textContent = path.split('/').pop() || 'Media';
+        } catch {
+          name.textContent = 'Media';
+        }
+      }
       tile.appendChild(name);
       secondaryGrid.appendChild(tile);
     });
@@ -1666,7 +1678,7 @@ async function openProductModal(container, product = null) {
     });
   };
 
-  secondaryTextarea?.addEventListener('input', renderSecondaryMediaGrid);
+  // Textarea is hidden — tiles + file picker are the only UI.
   secondaryFileInput?.addEventListener('change', async () => {
     const incoming = Array.from(secondaryFileInput.files || []);
     try {
