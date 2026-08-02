@@ -1424,8 +1424,8 @@ async function openProductModal(container, product = null) {
               <small>Select multiple local files. Remove unwanted items from the tiles before saving.</small>
             </div>
           </div>
-          <!-- Hidden: keeps existing secondary media (URLs/base64) for save; UI is tiles only -->
-          <textarea name="secondary_images" hidden aria-hidden="true" tabindex="-1">${secondaryImages.join('\n')}</textarea>
+          <!-- Hidden storage for existing secondary media (URLs/base64). UI is tiles only. -->
+          <textarea name="secondary_images" class="sr-only" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;white-space:nowrap">${secondaryImages.join('\n')}</textarea>
         </div>
         <div class="form-row">
           <div class="form-group checkbox"><input name="in_stock" type="checkbox" id="in_stock" ${product?.in_stock !== false ? 'checked' : ''}><label for="in_stock">In Stock</label></div>
@@ -1716,13 +1716,39 @@ async function openProductModal(container, product = null) {
 
   document.getElementById('product-form').onsubmit = async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn?.dataset.busy === '1') return;
     // Sync TinyMCE editor content into the underlying textareas so FormData
     // picks up the latest HTML.
     if (window.tinymce) {
       try { window.tinymce.triggerSave(); } catch (_) { /* ignore */ }
     }
     const fd = new FormData(e.target);
-    let slug = fd.get('slug') || generateSlug(fd.get('name'));
+    let slug = String(fd.get('slug') || generateSlug(fd.get('name')) || '').trim();
+    if (!slug) {
+      showToast('Slug is required.', 'error');
+      return;
+    }
+
+    // Slug uniqueness — "products_slug_key" is NOT caused by In Stock.
+    // It fires when Add Product (or a changed slug) collides with an existing row.
+    try {
+      let slugQ = supabase.from('products').select('id, name').eq('slug', slug).limit(1);
+      if (isEdit && product?.id) slugQ = slugQ.neq('id', product.id);
+      const { data: slugHit } = await slugQ.maybeSingle();
+      if (slugHit) {
+        showToast(
+          isEdit
+            ? `Slug "${slug}" is already used by "${slugHit.name}". Change the slug or edit that product.`
+            : `A product with slug "${slug}" already exists ("${slugHit.name}"). Open Edit on that product to mark Out of Stock — don't Add a duplicate.`,
+          'error'
+        );
+        return;
+      }
+    } catch (err) {
+      console.warn('[admin] slug pre-check failed', err);
+    }
+
     let uploadedPrimary = [];
     let uploadedSecondary = [];
     try {
@@ -1742,6 +1768,22 @@ async function openProductModal(container, product = null) {
     const images = [...primaryImages.slice(0, 1), ...secondaryMedia];
 
     const selectedCatIds = fd.getAll('category_ids');
+    const skuVal = String(fd.get('sku') || '').trim() || null;
+
+    // SKU uniqueness (same class of error as slug)
+    if (skuVal) {
+      try {
+        let skuQ = supabase.from('products').select('id, name').eq('sku', skuVal).limit(1);
+        if (isEdit && product?.id) skuQ = skuQ.neq('id', product.id);
+        const { data: skuHit } = await skuQ.maybeSingle();
+        if (skuHit) {
+          showToast(`SKU "${skuVal}" is already used by "${skuHit.name}".`, 'error');
+          return;
+        }
+      } catch (err) {
+        console.warn('[admin] sku pre-check failed', err);
+      }
+    }
 
     const payload = {
       name: fd.get('name'),
@@ -1749,12 +1791,13 @@ async function openProductModal(container, product = null) {
       category_id: selectedCatIds[0] || null,
       price: Number(fd.get('price')),
       original_price: fd.get('original_price') ? Number(fd.get('original_price')) : null,
-      sku: fd.get('sku') || null,
+      sku: skuVal,
       badge: fd.get('badge') || null,
       short_description: fd.get('short_description') || null,
       description: fd.get('description') || null,
       images,
       min_bulk_order: Number(fd.get('min_bulk_order')) || 100,
+      // Checkbox: missing from FormData when unchecked → false (out of stock)
       in_stock: fd.get('in_stock') === 'on',
       active: fd.get('active') === 'on',
       sort_order: Number(fd.get('sort_order')) || 0,
@@ -1767,23 +1810,61 @@ async function openProductModal(container, product = null) {
       og_image_url: fd.get('og_image_url') || null,
     };
 
+    if (submitBtn) {
+      submitBtn.dataset.busy = '1';
+      submitBtn.disabled = true;
+      submitBtn.textContent = isEdit ? 'Saving…' : 'Adding…';
+    }
+
+    const friendlyDbError = (err) => {
+      const msg = err?.message || String(err);
+      if (/products_slug_key|duplicate key.*slug/i.test(msg)) {
+        return `Slug "${slug}" already exists. Edit the existing product instead of adding a duplicate.`;
+      }
+      if (/products_sku_key|duplicate key.*sku/i.test(msg)) {
+        return `SKU "${skuVal || ''}" already exists on another product.`;
+      }
+      return `Failed: ${msg}`;
+    };
+
     let savedProduct;
-    if (isEdit) {
-      const { error: updateError } = await supabase.from('products').update(payload).eq('id', product.id);
-      if (updateError) {
-        console.error('Product save failed:', updateError);
-        showToast(`Failed: ${updateError.message}`, 'error');
-        return;
+    try {
+      if (isEdit) {
+        if (!product?.id) {
+          showToast('Cannot save: missing product id. Close and open Edit again.', 'error');
+          return;
+        }
+        const { data: updated, error: updateError } = await supabase
+          .from('products')
+          .update(payload)
+          .eq('id', product.id)
+          .select('id')
+          .maybeSingle();
+        if (updateError) {
+          console.error('Product save failed:', updateError);
+          showToast(friendlyDbError(updateError), 'error');
+          return;
+        }
+        if (!updated?.id) {
+          showToast('Update failed — product not found or no permission. Try logging into admin again.', 'error');
+          return;
+        }
+        savedProduct = { ...product, id: updated.id };
+      } else {
+        const { data: inserted, error: insertError } = await supabase.from('products').insert(payload).select('id').single();
+        if (insertError) {
+          console.error('Product save failed:', insertError);
+          showToast(friendlyDbError(insertError), 'error');
+          return;
+        }
+        savedProduct = inserted;
       }
-      savedProduct = product;
-    } else {
-      const { data: inserted, error: insertError } = await supabase.from('products').insert(payload).select('id').single();
-      if (insertError) {
-        console.error('Product save failed:', insertError);
-        showToast(`Failed: ${insertError.message}`, 'error');
-        return;
+    } finally {
+      if (submitBtn) {
+        submitBtn.dataset.busy = '0';
+        submitBtn.disabled = false;
+        submitBtn.textContent = isEdit ? 'Save Changes' : 'Add Product';
       }
-      savedProduct = inserted;
     }
 
     if (savedProduct?.id) {
