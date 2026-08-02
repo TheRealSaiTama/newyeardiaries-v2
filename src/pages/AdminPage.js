@@ -600,7 +600,11 @@ async function renderProducts(container, page = 1, search = '', filterActive = '
   if (level === 'root') {
     await renderFolderGrid(container, header, breadcrumb, { type: 'groups' });
   } else if (level === 'group') {
-    await renderFolderGrid(container, header, breadcrumb, { type: 'categories', group: nav.group });
+    await renderFolderGrid(container, header, breadcrumb, {
+      type: 'categories',
+      group: nav.group,
+      groupId: nav.groupId || null,
+    });
   } else if (level === 'category') {
     await renderProductRows(container, header, { filterCategory: nav.category, filterActive, page }, breadcrumb);
   }
@@ -608,9 +612,12 @@ async function renderProducts(container, page = 1, search = '', filterActive = '
 
 // Breadcrumb: Root › Group › Category
 function renderFsBreadcrumb(nav) {
-  const crumbs = [{ label: 'Products', nav: { level: 'root', group: null, category: null } }];
+  const crumbs = [{ label: 'Products', nav: { level: 'root', group: null, groupId: null, category: null } }];
   if (nav.level !== 'root' && nav.group) {
-    crumbs.push({ label: nav.group, nav: { level: 'group', group: nav.group, category: null } });
+    crumbs.push({
+      label: nav.group,
+      nav: { level: 'group', group: nav.group, groupId: nav.groupId || null, category: null },
+    });
   }
   if (nav.level === 'category' && nav.categoryName) {
     crumbs.push({ label: nav.categoryName, nav });
@@ -660,55 +667,56 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
   for (const arr of catByGroupId.values()) {
     arr.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
   }
-  // Build ordered group list: real DB groups (by sort_order) + the hardcoded
-  // fallback for any group that exists in the fallback but not in the DB
-  // (preserves compatibility if category_groups table is empty).
+  // Prefer DB category_groups exclusively when any exist. The hardcoded
+  // CATEGORY_GROUPS map is bootstrap-only — if we always merge it in, a
+  // renamed group (e.g. "Note Books & Pads" → "Customized Notebooks") still
+  // shows the old name as a ghost folder in this Products directory.
   const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-  const dbGroupNames = new Set(groupsByOrder.map(g => g.name));
-  const fallbackNames = Object.keys(CATEGORY_GROUPS).filter(n => !dbGroupNames.has(n));
-  // Plus any DB group whose name isn't in the fallback (newly created groups)
-  const allGroupNames = [...groupsByOrder.map(g => g.name), ...fallbackNames];
-  // Add any DB group that has no name match in the fallback (truly new groups)
-  for (const g of groupsByOrder) {
-    if (!allGroupNames.includes(g.name)) allGroupNames.push(g.name);
-  }
+  const useHardcodedFallback = groupsByOrder.length === 0;
+  const allGroupEntries = useHardcodedFallback
+    ? Object.keys(CATEGORY_GROUPS).map(name => ({ id: null, name, fromFallback: true }))
+    : groupsByOrder.map(g => ({ id: g.id, name: g.name, fromFallback: false }));
 
   let folders = [];
   let totalProducts = 0;
 
   if (opts.type === 'groups') {
     // One folder per Category Group, plus an Uncategorized system folder
-    folders = allGroupNames.map(groupName => {
-      // Find categories belonging to this group by name (DB-backed or fallback)
-      const dbGroup = groupsByOrder.find(g => g.name === groupName);
+    folders = allGroupEntries.map(entry => {
+      const groupName = entry.name;
       let cats;
-      if (dbGroup && catByGroupId.has(dbGroup.id)) {
-        cats = catByGroupId.get(dbGroup.id);
-      } else {
-        // Fallback: look up slugs in the hardcoded map
+      if (entry.id && catByGroupId.has(entry.id)) {
+        cats = catByGroupId.get(entry.id);
+      } else if (entry.fromFallback) {
         const slugs = CATEGORY_GROUPS[groupName] || [];
         cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+      } else {
+        // DB group with no linked cats yet
+        cats = catByGroupId.get(entry.id) || [];
       }
       const productCount = cats.reduce((sum, c) => sum + (countByCat.get(c.id) || 0), 0);
       totalProducts += productCount;
       return {
-        key: groupName,
+        key: entry.id || groupName,
         name: groupName,
         count: productCount,
         meta: `${cats.length} categor${cats.length === 1 ? 'y' : 'ies'}`,
         icon: 'folder',
-        nav: { level: 'group', group: groupName, category: null },
+        // Prefer groupId so renames don't break open nav; keep name for breadcrumbs
+        nav: { level: 'group', group: groupName, groupId: entry.id || null, category: null },
         system: false,
       };
     });
     // Uncategorized = products not in any of the grouped categories (distinct count)
     const allGroupedCatIds = new Set();
     for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
-    // Also include cats matched via fallback slugs
-    for (const slugs of Object.values(CATEGORY_GROUPS)) {
-      for (const s of slugs) {
-        const c = catBySlug.get(s);
-        if (c) allGroupedCatIds.add(c.id);
+    // Only use fallback slug coverage when we're in pure-fallback mode
+    if (useHardcodedFallback) {
+      for (const slugs of Object.values(CATEGORY_GROUPS)) {
+        for (const s of slugs) {
+          const c = catBySlug.get(s);
+          if (c) allGroupedCatIds.add(c.id);
+        }
       }
     }
     const groupedProductIds = new Set();
@@ -735,14 +743,17 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
     }
   } else if (opts.type === 'categories') {
     const groupName = opts.group;
+    const groupId = opts.groupId || null;
     if (groupName === '__uncategorized') {
       // Show categories not in any group
       const allGroupedCatIds = new Set();
       for (const arr of catByGroupId.values()) for (const c of arr) allGroupedCatIds.add(c.id);
-      for (const slugs of Object.values(CATEGORY_GROUPS)) {
-        for (const s of slugs) {
-          const c = catBySlug.get(s);
-          if (c) allGroupedCatIds.add(c.id);
+      if (useHardcodedFallback) {
+        for (const slugs of Object.values(CATEGORY_GROUPS)) {
+          for (const s of slugs) {
+            const c = catBySlug.get(s);
+            if (c) allGroupedCatIds.add(c.id);
+          }
         }
       }
       const cats = activeCats
@@ -750,11 +761,11 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || (a.name || '').localeCompare(b.name || ''));
       folders = cats.map(c => ({
         key: c.id,
-        name: c.name,
+        name: c.name, // always live DB name
         count: countByCat.get(c.id) || 0,
         meta: 'category',
         icon: 'folder',
-        nav: { level: 'category', group: groupName, category: c.id, categoryName: c.name },
+        nav: { level: 'category', group: groupName, groupId, category: c.id, categoryName: c.name },
         system: false,
       }));
 
@@ -771,27 +782,37 @@ async function renderFolderGrid(container, header, breadcrumb, opts) {
           count: noCategoryProductIds.size,
           meta: 'unassigned products',
           icon: 'folder_off',
-          nav: { level: 'category', group: groupName, category: '__no_category', categoryName: 'No Category' },
+          nav: { level: 'category', group: groupName, groupId, category: '__no_category', categoryName: 'No Category' },
           system: true,
         });
       }
     } else {
-      // Find the group in DB or fallback
-      const dbGroup = groupsByOrder.find(g => g.name === groupName);
+      // Resolve by groupId first (stable across renames), then by name, then fallback slugs
+      const dbGroup = (groupId && groupsByOrder.find(g => g.id === groupId))
+        || groupsByOrder.find(g => g.name === groupName);
       let cats;
       if (dbGroup && catByGroupId.has(dbGroup.id)) {
         cats = catByGroupId.get(dbGroup.id);
-      } else {
+      } else if (useHardcodedFallback || CATEGORY_GROUPS[groupName]) {
         const slugs = CATEGORY_GROUPS[groupName] || [];
         cats = slugs.map(s => catBySlug.get(s)).filter(Boolean);
+      } else {
+        cats = [];
       }
+      const displayGroupName = dbGroup?.name || groupName;
       folders = cats.map(c => ({
         key: c.id,
-        name: c.name,
+        name: c.name, // always live DB subcategory name
         count: countByCat.get(c.id) || 0,
         meta: 'category',
         icon: 'folder',
-        nav: { level: 'category', group: groupName, category: c.id, categoryName: c.name },
+        nav: {
+          level: 'category',
+          group: displayGroupName,
+          groupId: dbGroup?.id || groupId || null,
+          category: c.id,
+          categoryName: c.name,
+        },
         system: false,
       }));
     }
@@ -3951,16 +3972,16 @@ function renderSliderPickerBreadcrumb() {
 }
 
 async function renderSliderPickerFolders() {
-  // Build group folders, filtered by the search box.
-  // Uses DB-backed groups (sorted by sort_order) so newly created groups
-  // show up here. Falls back to the hardcoded map only if the DB is empty.
+  // Build group folders from DB only (same as Products directory). Hardcoded
+  // CATEGORY_GROUPS is bootstrap-only — merging it after renames created ghost
+  // folders with the old names (e.g. "Note Books & Pads").
   const q = (SLIDER_PICKER_STATE.search || '').trim().toLowerCase();
   const dbGroups = await fetchCategoryGroups();
   const groupsByOrder = (dbGroups || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-  const dbNames = new Set(groupsByOrder.map(g => g.name));
-  // Merge in any hardcoded groups not present in DB (legacy compatibility)
-  const fallbackOnly = Object.keys(CATEGORY_GROUPS).filter(n => !dbNames.has(n));
-  const allNames = [...groupsByOrder.map(g => g.name), ...fallbackOnly];
+  const useFallback = groupsByOrder.length === 0;
+  const allNames = useFallback
+    ? Object.keys(CATEGORY_GROUPS)
+    : groupsByOrder.map(g => g.name);
   const matchedGroups = allNames.filter(n => !q || n.toLowerCase().includes(q));
   if (matchedGroups.length === 0) return '<div class="empty-state"><span class="material-symbols-outlined">search_off</span><p>No groups match your search.</p></div>';
   // Count categories per group using DB
@@ -3975,7 +3996,7 @@ async function renderSliderPickerFolders() {
     const dbGroup = groupsByOrder.find(g => g.name === groupName);
     const catCount = (dbGroup && catsByGroupId.get(dbGroup.id)?.length) ?? (CATEGORY_GROUPS[groupName] || []).length;
     return `
-      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
+      <button class="admin-card" data-picker-nav='${JSON.stringify({ level: 'group', group: groupName, groupId: dbGroup?.id || null })}' style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);cursor:pointer;border:1px solid var(--color-border-light);text-align:left">
         <span class="material-symbols-outlined" style="color:var(--color-accent);font-size:28px">folder</span>
         <div>
           <strong>${escHtml(groupName)}</strong>
