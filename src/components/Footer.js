@@ -1,7 +1,36 @@
 import { getFooterContent } from '../lib/content.js';
 
+/** H3.22: only allow https map URLs or a single sanitized Google Maps iframe. */
+function safeMapEmbed(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  const s = raw.trim();
+  // Reject javascript:, data:, vbscript: etc.
+  if (/^(javascript|data|vbscript):/i.test(s)) return '';
+
+  if (s.startsWith('<iframe')) {
+    // Allow only Google Maps embed iframes with https src
+    const srcMatch = s.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
+    if (!srcMatch) return '';
+    const src = srcMatch[1];
+    if (!/^https:\/\/(www\.)?(google\.com|maps\.google\.com|maps\.googleapis\.com)\//i.test(src)
+      && !/^https:\/\/www\.google\.com\/maps\//i.test(src)
+      && !/^https:\/\/maps\.app\.goo\.gl\//i.test(src)) {
+      return '';
+    }
+    // Rebuild a minimal safe iframe (drop on* handlers / srcdoc)
+    return `<iframe src="${src.replace(/"/g, '&quot;')}" style="width:100%;height:150px;border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+  }
+
+  // Plain URL path
+  if (/^https:\/\//i.test(s)) {
+    return `<iframe src="${s.replace(/"/g, '&quot;')}" style="width:100%;height:150px;border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+  }
+  return '';
+}
+
 export function renderFooter(content) {
   const f = content ? getFooterContent(content) : {};
+  const mapHtml = safeMapEmbed(f.mapEmbed);
   return `
     <footer class="nyd-footer">
       <div class="nyd-footer__inner">
@@ -59,12 +88,9 @@ export function renderFooter(content) {
 
           <div class="nyd-footer__col nyd-footer__map-col">
             <h4 class="nyd-footer__heading">Find Us</h4>
-            ${f.mapEmbed
+            ${mapHtml
               ? `<div class="nyd-footer__map-container" style="border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border-light)">
-                  ${f.mapEmbed.trim().startsWith('<iframe')
-                    ? f.mapEmbed
-                    : `<iframe src="${f.mapEmbed}" style="width:100%;height:150px;border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`
-                  }
+                  ${mapHtml}
                  </div>`
               : `<img class="nyd-footer__map" src="/images/footer-map.png" alt="New Year Diaries location map" loading="lazy">`
             }

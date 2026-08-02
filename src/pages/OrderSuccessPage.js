@@ -1,4 +1,6 @@
-import { supabase } from '../lib/supabase.js';
+// H2.4: order success uses sessionStorage snapshot only.
+// After RLS hardening, anon cannot SELECT orders — and we must NOT re-open
+// a brute-forceable /order-success?order=… PII channel.
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const CARE_PHONE = '+91 9311135190';
@@ -46,12 +48,12 @@ export async function renderOrderSuccessPage() {
   let snap = null;
   try { snap = JSON.parse(sessionStorage.getItem('lastOrderSnapshot') || 'null'); } catch (_) {}
 
-  // Prefer snapshot; if missing/empty items, re-fetch from DB
-  let items = snap?.items || [];
-  let subtotal = snap?.subtotal;
-  let gstAmount = snap?.gstAmount;
-  let shipping = snap?.shipping;
-  let total = snap?.total;
+  // Snapshot only — never fetch order PII from DB as anon (H2.4 / C3).
+  const items = snap?.items || [];
+  const subtotal = snap?.subtotal;
+  const gstAmount = snap?.gstAmount;
+  const shipping = snap?.shipping;
+  const total = snap?.total;
   let shipHtml = '';
 
   if (snap) {
@@ -62,44 +64,6 @@ export async function renderOrderSuccessPage() {
         ${snap.addressLine1 || ''}${snap.city ? ', ' + snap.city : ''}${snap.state ? ', ' + snap.state : ''} ${snap.postcode || ''}
         ${snap.phone ? ` &middot; ${snap.phone}` : ''}
       </div>`;
-  }
-
-  if ((!items.length || !snap) && orderNumber) {
-    try {
-      const { data: order } = await supabase
-        .from('orders')
-        .select('id, first_name, last_name, phone, address_line_1, city, state, postcode, subtotal, gst_amount, shipping, total')
-        .eq('order_number', orderNumber)
-        .maybeSingle();
-      if (order) {
-        const { data: dbItems } = await supabase
-          .from('order_items')
-          .select('product_name, product_image, quantity, unit_price, line_total')
-          .eq('order_id', order.id);
-        if (dbItems?.length) {
-          items = dbItems.map(it => ({
-            name: it.product_name,
-            image: it.product_image,
-            qty: it.quantity,
-            unitPrice: it.unit_price,
-            lineTotal: it.line_total,
-          }));
-        }
-        subtotal = order.subtotal;
-        gstAmount = order.gst_amount;
-        shipping = order.shipping;
-        total = order.total;
-        shipHtml = `
-          <div class="order-overview__ship">
-            <strong>Shipping to:</strong>
-            ${order.first_name || ''} ${order.last_name || ''},
-            ${order.address_line_1 || ''}${order.city ? ', ' + order.city : ''}${order.state ? ', ' + order.state : ''} ${order.postcode || ''}
-            ${order.phone ? ` &middot; ${order.phone}` : ''}
-          </div>`;
-      }
-    } catch (e) {
-      console.warn('[order-success] DB fallback failed', e);
-    }
   }
 
   const hasOverview = orderNumber && (items.length || subtotal != null || snap);

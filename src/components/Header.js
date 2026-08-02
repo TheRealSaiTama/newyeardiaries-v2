@@ -261,6 +261,11 @@ export function updateHeaderCounts() {
     cartCount.textContent = totalItems;
     cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
     cartCount.setAttribute('aria-label', `${totalItems} item${totalItems === 1 ? '' : 's'} in cart`);
+    // H3.17: announce cart badge changes to screen readers
+    if (!cartCount.hasAttribute('aria-live')) {
+      cartCount.setAttribute('aria-live', 'polite');
+      cartCount.setAttribute('aria-atomic', 'true');
+    }
   }
 }
 
@@ -302,11 +307,19 @@ export function initSearchModal() {
   let debounceTimer;
   let searchToken = 0; // monotonically increasing token; stale renders bail out
 
+  let productsLoading = null;
   async function loadProducts() {
-    if (!allProducts.length) {
-      allProducts = await getProducts({ limit: 200 });
+    if (allProducts.length) return allProducts;
+    // H2.13: share one in-flight fetch so typing while loading waits correctly
+    if (!productsLoading) {
+      productsLoading = getProducts({ limit: 200 })
+        .then((list) => {
+          allProducts = list || [];
+          return allProducts;
+        })
+        .finally(() => { productsLoading = null; });
     }
-    return allProducts;
+    return productsLoading;
   }
 
   function openSearch() {
@@ -361,14 +374,16 @@ export function initSearchModal() {
       const products = await loadProducts();
       // Stale guard: bail if a newer keystroke/close superseded this one
       if (myToken !== searchToken) return;
-      const matched = products.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q) ||
-        (p.shortDescription || '').toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q) ||
-        (p.badge || '').toLowerCase().includes(q) ||
-        (p.sku || '').toLowerCase().includes(q)
-      ).slice(0, 8);
+      const matched = products.filter(p => {
+        const cat = (p.category || p.categoryName || '').toLowerCase();
+        const name = (p.name || p.title || '').toLowerCase();
+        return name.includes(q) ||
+          (p.description || '').toLowerCase().includes(q) ||
+          (p.shortDescription || '').toLowerCase().includes(q) ||
+          cat.includes(q) ||
+          (p.badge || '').toLowerCase().includes(q) ||
+          (p.sku || '').toLowerCase().includes(q);
+      }).slice(0, 8);
 
       if (!matched.length) {
         resultsEl.innerHTML = `
@@ -390,9 +405,9 @@ export function initSearchModal() {
                 ${p.image ? `<img src="${p.image}" alt="${p.name}">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
               </div>
               <div class="search-result-info">
-                <div class="search-result-name">${p.name}</div>
+                <div class="search-result-name">${p.name || p.title || ''}</div>
                 <div class="search-result-meta">
-                  ${p.category ? `<span>${p.category}</span>` : ''}
+                  ${(p.category || p.categoryName) ? `<span>${p.category || p.categoryName}</span>` : ''}
                   <span class="search-result-price">₹${Number(p.price).toLocaleString()}</span>
                   ${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
                 </div>

@@ -56,7 +56,10 @@ export function renderFilterSidebar() {
 }
 
 export function initFilterEvents() {
+  // M6: avoid stacking listeners when ShopPage re-inits after re-render
   document.querySelectorAll('.filter-section-title').forEach(title => {
+    if (title.dataset.bound === '1') return;
+    title.dataset.bound = '1';
     const toggle = () => {
       const section = title.closest('.filter-section');
       const isCollapsed = section?.classList.toggle('collapsed');

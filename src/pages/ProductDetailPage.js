@@ -1,7 +1,7 @@
 import { renderBreadcrumbs } from '../components/Breadcrumbs.js';
 import { renderProductCard, initProductCardSlideshows } from '../components/ProductCard.js';
 import { renderPDPSkeleton } from '../components/Skeleton.js';
-import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview, getCategories } from '../data/products.js';
+import { getProductBySlug, getProducts, formatPrice, getReviewsByProduct, addReview } from '../data/products.js';
 import { addToCart, getCart } from '../data/store.js';
 import { supabase } from '../lib/supabase.js';
 
@@ -58,15 +58,18 @@ export async function renderProductDetailPage(params) {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page-content"><div class="container section">${renderPDPSkeleton()}</div></div>`;
 
-  const [[product, allProducts, categories], reviews] = await Promise.all([
-    Promise.all([getProductBySlug(params.slug), getProducts()]),
-    getReviewsByProduct(params.slug),
+  // Load product first so reviews query uses product.id (not slug)
+  const [product, allProducts] = await Promise.all([
+    getProductBySlug(params.slug),
+    getProducts(),
   ]);
 
   if (!product) {
     app.innerHTML = `<div class="container section" style="text-align:center;padding:var(--space-24) 0;"><h1 class="heading-2">Product Not Found</h1><p class="text-body" style="margin:var(--space-4) 0;">The product you're looking for doesn't exist.</p><a href="/shop" class="btn btn--accent">Browse Collection</a></div>`;
     return;
   }
+
+  const reviews = await getReviewsByProduct(product.id);
 
   const cart = getCart();
   const isInCart = cart.some(item => String(item.productId) === String(product.id));
@@ -76,6 +79,37 @@ export async function renderProductDetailPage(params) {
     const { data: links } = await supabase.from('product_categories').select('categories(name)').eq('product_id', product.id);
     productCategoryList = (links || []).map(l => l.categories?.name).filter(Boolean);
   }
+
+  // H3.31: per-product title + basic JSON-LD Product schema
+  try {
+    document.title = `${product.title || product.name} | New Year Diaries`;
+    let ld = document.getElementById('pdp-jsonld');
+    if (!ld) {
+      ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.id = 'pdp-jsonld';
+      document.head.appendChild(ld);
+    }
+    const img = product.image && !String(product.image).startsWith('data:')
+      ? product.image
+      : undefined;
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.title || product.name,
+      description: product.shortDescription || product.description || '',
+      sku: product.sku || undefined,
+      image: img,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'INR',
+        price: Number(product.price) || 0,
+        availability: product.inStock === false
+          ? 'https://schema.org/OutOfStock'
+          : 'https://schema.org/InStock',
+      },
+    });
+  } catch { /* ignore */ }
 
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
   const reviewsContent = `
@@ -117,7 +151,21 @@ export async function renderProductDetailPage(params) {
             </div>
           `;
 
-  const related = allProducts.filter(p => p.id !== product.id && p.categoryId === product.categoryId).slice(0, 3);
+  // M12/M13: match on categoryId OR shared junction slugs; fallback bestsellers
+  let related = allProducts.filter(p => {
+    if (p.id === product.id) return false;
+    if (product.categoryId && p.categoryId === product.categoryId) return true;
+    const a = p.categorySlugs || [];
+    const b = product.categorySlugs || [];
+    if (a.length && b.length && a.some(s => b.includes(s))) return true;
+    return false;
+  }).slice(0, 4);
+  if (!related.length) {
+    related = allProducts
+      .filter(p => p.id !== product.id)
+      .sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0))
+      .slice(0, 4);
+  }
 
   app.innerHTML = `
     <div class="page-content">
@@ -198,8 +246,8 @@ export async function renderProductDetailPage(params) {
                     <button class="qty-step-btn" id="qty-plus" aria-label="Increase">+</button>
                   </div>
                   <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;width:100%;">
-                    <button class="btn btn--accent btn--lg${isInCart ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart ? ' disabled' : ''} style="width:100%;">
-                      ${isInCart ? 'Added to Cart' : `
+                    <button class="btn btn--accent btn--lg${isInCart || product.inStock === false ? ' btn--added' : ''}" id="pdp-add-cart"${isInCart || product.inStock === false ? ' disabled' : ''} style="width:100%;">
+                      ${product.inStock === false ? 'Sold Out' : isInCart ? 'Added to Cart' : `
                         <span class="material-symbols-outlined" style="font-size:18px;">shopping_bag</span>
                         Add to Cart
                       `}
@@ -213,12 +261,12 @@ export async function renderProductDetailPage(params) {
         </div>
 
         <div class="pdp-detail-tabs">
-          <div class="pdp-tab-bar">
-            <button type="button" class="pdp-tab active" data-tab="desc">Description</button>
-            <button type="button" class="pdp-tab" data-tab="tags">Tags</button>
-            <button type="button" class="pdp-tab" data-tab="reviews">Reviews (${reviews.length})</button>
+          <div class="pdp-tab-bar" role="tablist">
+            <button type="button" class="pdp-tab active" role="tab" aria-selected="true" aria-controls="pdp-tab-desc" id="tab-desc" data-tab="desc">Description</button>
+            <button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-tags" id="tab-tags" data-tab="tags">Tags</button>
+            <button type="button" class="pdp-tab" role="tab" aria-selected="false" aria-controls="pdp-tab-reviews" id="tab-reviews" data-tab="reviews">Reviews (${reviews.length})</button>
           </div>
-          <div id="pdp-tab-desc" class="pdp-tab-panel">
+          <div id="pdp-tab-desc" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-desc">
             ${(productCategoryList.length || product.tags) ? `
               <div style="font-size:var(--fs-sm);color:var(--color-text-tertiary);margin-bottom:var(--space-4);line-height:1.5;">
                 ${productCategoryList.length ? `<div><strong>Categories:</strong> ${productCategoryList.join(', ')}</div>` : ''}
@@ -227,10 +275,10 @@ export async function renderProductDetailPage(params) {
             ` : ''}
             ${product.description ? `<div class="pdp-long-desc" style="margin:0;">${product.description}</div>` : '<p style="color:var(--color-text-tertiary);">No description available.</p>'}
           </div>
-          <div id="pdp-tab-tags" class="pdp-tab-panel" style="display:none;">
+          <div id="pdp-tab-tags" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-tags" style="display:none;">
             ${product.tags ? product.tags.split(',').map(t=>t.trim()).filter(Boolean).join(', ') : 'No tags.'}
           </div>
-          <div id="pdp-tab-reviews" class="pdp-tab-panel" style="display:none;">
+          <div id="pdp-tab-reviews" class="pdp-tab-panel" role="tabpanel" aria-labelledby="tab-reviews" style="display:none;">
             ${reviewsContent}
           </div>
         </div>
@@ -265,9 +313,13 @@ export async function renderProductDetailPage(params) {
 
   document.getElementById('pdp-add-cart')?.addEventListener('click', () => {
     try {
+      if (product.inStock === false) {
+        showToast('This product is out of stock.', 'error');
+        return;
+      }
       const qty = parseInt(qtyInput.value) || pdpMOQ;
       addToCart(product.id, qty);
-      
+
       const btn = document.getElementById('pdp-add-cart');
       if (btn) {
         btn.classList.add('btn--added');
@@ -280,8 +332,24 @@ export async function renderProductDetailPage(params) {
   });
 
   const tabBtns = document.querySelectorAll('.pdp-tab');
-  const tabPanels = {desc:document.getElementById('pdp-tab-desc'),tags:document.getElementById('pdp-tab-tags'),reviews:document.getElementById('pdp-tab-reviews')};
-  tabBtns.forEach(btn=>{btn.addEventListener('click',()=>{tabBtns.forEach(b=>b.classList.remove('active'));btn.classList.add('active');Object.values(tabPanels).forEach(p=>{if(p)p.style.display='none';});const tab=btn.dataset.tab;if(tabPanels[tab])tabPanels[tab].style.display='';});});
+  const tabPanels = {
+    desc: document.getElementById('pdp-tab-desc'),
+    tags: document.getElementById('pdp-tab-tags'),
+    reviews: document.getElementById('pdp-tab-reviews'),
+  };
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      Object.values(tabPanels).forEach(p => { if (p) p.style.display = 'none'; });
+      const tab = btn.dataset.tab;
+      if (tabPanels[tab]) tabPanels[tab].style.display = '';
+    });
+  });
 
   // Rating stars
   let selectedRating = 0;
@@ -300,27 +368,39 @@ export async function renderProductDetailPage(params) {
     });
   });
 
-  // Review form
+  // Review form — H2.8: client-side rate limit (1 review / product / 10 min)
   document.getElementById('review-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const rating = parseInt(fd.get('rating')) || selectedRating;
     if (!rating) { showToast('Please select a star rating.', 'error'); return; }
+
+    const rateKey = `__nyd_review_${product.id}`;
+    try {
+      const last = Number(localStorage.getItem(rateKey) || 0);
+      if (last && Date.now() - last < 10 * 60 * 1000) {
+        showToast('Please wait a few minutes before submitting another review.', 'error');
+        return;
+      }
+    } catch { /* ignore */ }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     try {
       await addReview(product.id, fd.get('reviewer_name'), rating, fd.get('review_text'));
+      try { localStorage.setItem(rateKey, String(Date.now())); } catch { /* ignore */ }
       showToast('Review submitted!');
       e.target.reset();
       selectedRating = 0;
       document.getElementById('review-rating-val').value = 0;
       document.querySelectorAll('.rating-star-btn .material-symbols-outlined').forEach(s => s.classList.remove('filled'));
-      // Reload reviews
       const newReviews = await getReviewsByProduct(product.id);
       const list = document.getElementById('pdp-reviews-list');
-      if (list) {
-        list.innerHTML = reviewsListHtml(newReviews);
-      }
+      if (list) list.innerHTML = reviewsListHtml(newReviews);
     } catch (err) {
       showToast('Failed to submit review.', 'error');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 
@@ -381,6 +461,8 @@ function showToast(message, type = 'success') {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.id = 'toast-notification';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
   toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1A1A1A;color:white;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;z-index:7000;transform:translateY(80px);opacity:0;transition:all 0.3s ease;';
   if (type === 'error') toast.style.background = '#c0392b';
   toast.textContent = message;

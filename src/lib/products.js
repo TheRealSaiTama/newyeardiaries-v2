@@ -7,8 +7,10 @@ export function normalizeProduct(product) {
     slug: product.slug,
     name: product.name,
     title: product.name,
-    category: product.category_id,
+    // Keep both shapes: search/UI use category name; some callers use categoryId.
+    category: product.category?.name || '',
     categoryName: product.category?.name || '',
+    categoryId: product.category_id || '',
     material: product.material || '',
     size: product.size || '',
     pages: product.pages,

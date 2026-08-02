@@ -46,6 +46,8 @@ function showToast(message) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'toast-notification';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.style.cssText = `
       position: fixed; bottom: 24px; right: 24px; background: #1A1A1A; color: white;
       padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
@@ -78,9 +80,10 @@ export function addToQuoteList(productId, qty = 100) {
   const quoteList = getQuoteList();
   const existing = quoteList.find(item => String(item.productId) === String(productId));
   if (existing) {
-    existing.qty = qty;
+    // Match cart behaviour: re-adding same product raises qty, not silent replace
+    existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 100);
   } else {
-    quoteList.push({ productId, qty });
+    quoteList.push({ productId, qty: Number(qty) || 100 });
   }
   localStorage.setItem('quoteList', JSON.stringify(quoteList));
   updateHeaderCounts();

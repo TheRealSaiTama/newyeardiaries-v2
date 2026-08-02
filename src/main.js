@@ -38,6 +38,16 @@ import { renderAdminPage, initAdminPage } from './pages/AdminPage.js';
 
 let appContent = null;
 
+// H3.24: global error surface — avoid silent white screens
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (ev) => {
+    console.error('[nyd:uncaught]', ev.error || ev.message, ev.filename, ev.lineno);
+  });
+  window.addEventListener('unhandledrejection', (ev) => {
+    console.error('[nyd:unhandledrejection]', ev.reason);
+  });
+}
+
 // Helpers to upsert <meta> tags in document.head. Upsert by name/property so
 // re-calls (e.g. after a settings change) replace the old value rather than
 // stacking duplicates. Defaults in index.html are kept as the SSR-ish fallback

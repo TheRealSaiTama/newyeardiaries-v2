@@ -11,40 +11,54 @@
 //   supabase functions deploy verify-admin --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
+  'https://newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+
+function corsHeadersFor(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
 const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD') ?? '';
 const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'admin@newyeardiaries.in';
 
-function json(status: number, body: unknown) {
+function json(req: Request, status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeadersFor(req), 'Content-Type': 'application/json' },
   });
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeadersFor(req) });
   }
   if (req.method !== 'POST') {
-    return json(405, { error: 'Method not allowed' });
+    return json(req, 405, { error: 'Method not allowed' });
+  }
+
+  const origin = req.headers.get('origin') || '';
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return json(req, 403, { error: 'Origin not allowed' });
   }
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return json(503, {
+    return json(req, 503, {
       error: 'Server not configured',
       hint: 'Set SUPABASE_URL and SERVICE_ROLE_KEY secrets, then redeploy.',
     });
   }
   if (!ADMIN_PASSWORD) {
-    return json(503, {
+    return json(req, 503, {
       error: 'Admin password not configured',
       hint: 'Set ADMIN_PASSWORD secret, then redeploy.',
     });
@@ -54,12 +68,12 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return json(400, { error: 'Invalid JSON' });
+    return json(req, 400, { error: 'Invalid JSON' });
   }
 
   const { password } = body;
   if (!password || typeof password !== 'string') {
-    return json(400, { error: 'password is required' });
+    return json(req, 400, { error: 'password is required' });
   }
 
   // Constant-ish-time compare to limit timing attacks (string compare is fine here, the
@@ -67,7 +81,7 @@ Deno.serve(async (req) => {
   if (password !== ADMIN_PASSWORD) {
     // small delay to make brute-force less attractive
     await new Promise((r) => setTimeout(r, 250));
-    return json(401, { error: 'Invalid password' });
+    return json(req, 401, { error: 'Invalid password' });
   }
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -95,7 +109,7 @@ Deno.serve(async (req) => {
         email_confirm: true,
       });
       if (created.error) {
-        return json(500, { error: 'Failed to create admin user: ' + created.error.message });
+        return json(req, 500, { error: 'Failed to create admin user: ' + created.error.message });
       }
       // Now sign in
       signIn = await admin.auth.signInWithPassword({
@@ -103,20 +117,20 @@ Deno.serve(async (req) => {
         password: ADMIN_PASSWORD,
       });
       if (signIn.error) {
-        return json(500, { error: 'Failed to sign in after create: ' + signIn.error.message });
+        return json(req, 500, { error: 'Failed to sign in after create: ' + signIn.error.message });
       }
     } else {
-      return json(500, { error: 'Sign-in failed: ' + msg });
+      return json(req, 500, { error: 'Sign-in failed: ' + msg });
     }
   }
 
   const session = signIn.data?.session;
   const user = signIn.data?.user;
   if (!session || !user) {
-    return json(500, { error: 'No session returned' });
+    return json(req, 500, { error: 'No session returned' });
   }
 
-  return json(200, {
+  return json(req, 200, {
     ok: true,
     access_token: session.access_token,
     refresh_token: session.refresh_token,

@@ -95,7 +95,7 @@ export async function getProducts({ fresh = false } = {}) {
   return fetchProductsFresh();
 }
 
-async function fetchProductsFresh() {
+async function fetchProductsFresh(attempt = 1) {
   try {
     // Fetch products with their primary category's name+slug, AND the full
     // product_categories junction so we know every category a product belongs to
@@ -110,6 +110,15 @@ async function fetchProductsFresh() {
         .from('product_categories')
         .select('product_id, category_id, sort_order, category:categories!product_categories_category_id_fkey(slug)'),
     ]);
+
+    // H3.26: retry once on transport / timeout style failures
+    if ((prodRes.error || juncRes.error) && attempt < 3) {
+      const msg = (prodRes.error || juncRes.error)?.message || '';
+      if (/timeout|network|fetch|502|503|504/i.test(msg) || !prodRes.data) {
+        await new Promise(r => setTimeout(r, 400 * attempt));
+        return fetchProductsFresh(attempt + 1);
+      }
+    }
 
     const products = prodRes.data || [];
     // Build a map: productId -> array of category slugs (from the junction)
@@ -152,6 +161,11 @@ async function fetchProductsFresh() {
     return _cache;
   } catch (err) {
     console.error('[products] fetchProductsFresh failed:', err);
+    // H3.26: one retry on hard throw
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return fetchProductsFresh(attempt + 1);
+    }
     return _cache || [];
   }
 }

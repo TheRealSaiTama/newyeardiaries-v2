@@ -13,6 +13,8 @@ function showToast(message, type = 'success') {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'toast-notification';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.style.cssText = `
       position: fixed; bottom: 24px; right: 24px; background: #1A1A1A; color: white;
       padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
@@ -481,12 +483,14 @@ export async function renderCheckoutPage() {
     try { sessionStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(uploadedLogos)); } catch { /* quota */ }
   }
   function restoreLogos() {
+    // Only restore when module list is empty — re-renders must not double-append
+    if (uploadedLogos.length) return false;
     try {
       const raw = sessionStorage.getItem(LOGO_STORAGE_KEY);
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr) && arr.length) {
-          uploadedLogos.push(...arr);
+          uploadedLogos = arr.slice();
           return true;
         }
       }
@@ -596,23 +600,12 @@ export async function renderCheckoutPage() {
     // ponytail: no payment UI now → default to bank transfer (offline confirmation).
     const paymentMethod = 'bank';
 
-    // Generate a human-readable order number
-    // M2 fix: use a short random suffix so simultaneous orders can't collide
-    // (the old 8-digit timestamp wraps every ~28h and collides under load).
-    // Format: NYD-YYYYMMDD-XXXX (4 random uppercase alphanumerics).
-    const _now = new Date();
-    const _datePart = `${_now.getFullYear()}${String(_now.getMonth() + 1).padStart(2, '0')}${String(_now.getDate()).padStart(2, '0')}`;
-    const _rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-    const orderNumber = `NYD-${_datePart}-${_rand}`;
-    // Single GST 18% line (not CGST/SGST split — avoids confusion for interstate IGST buyers)
-    const gstAmount = subtotal * gstRate;
-    const finalTotal = shipping > 0 ? total + shipping : total;
-
-    // Build order items (denormalized). Keep image for email thumbnails.
-    // data: images OK for email (capped later); relative paths absolutized in notify.js
-    const items = cartItems.map(item => {
+    // Email/preview line items use client display prices; DB totals come from
+    // place_order RPC (server-side product prices — H2.3).
+    const displayItems = cartItems.map(item => {
       const rawImg = item.product.image || item.product.images?.[0] || null;
       return {
+        product_id: item.product.id,
         product_name: item.product.title || item.product.name,
         product_image: rawImg || null,
         product_sku: item.product.sku || '',
@@ -624,56 +617,72 @@ export async function renderCheckoutPage() {
       };
     });
 
-    // Disable button + show progress while we save + email
     if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
     showToast('Processing your order…', 'success');
 
-    // 1. Insert order row
-    let orderRow = null;
-    let orderErr = null;
+    // H2.1: single atomic RPC (order + items). H2.3: server recomputes prices.
+    // Fallback: dual insert if RPC not deployed yet.
+    let orderNumber = null;
+    let orderId = null;
+    let serverSubtotal = Number(subtotal.toFixed(2));
+    let serverGst = Number((subtotal * gstRate).toFixed(2));
+    let serverShipping = Number(shipping.toFixed(2));
+    let serverTotal = Number((subtotal + subtotal * gstRate + (shipping > 0 ? shipping : 0)).toFixed(2));
 
-    const insertPayload = {
-      order_number: orderNumber,
-      first_name: data.firstName,
-      last_name: data.lastName,
-      company: data.company || null,
-      gst: data.gst || null,
-      country: 'India',
-      address_line_1: data.address,
-      address_line_2: null,
-      city: data.city,
-      state: data.state,
-      postcode: data.pin,
-      phone: data.phone,
-      email: data.email,
-      special_instructions: null,
-      customisation: data.customisation || null,
-      additional_info: data.additionalInfo || null,
-      logo_images: uploadedLogos.length ? uploadedLogos.map(l => ({ name: l.name, data: l.dataUrl })) : [],
-      payment_method: paymentMethod,
-      privacy_agreed: true,
-      subtotal: Number(subtotal.toFixed(2)),
-      gst_amount: Number(gstAmount.toFixed(2)),
-      shipping: Number(shipping.toFixed(2)),
-      total: Number(finalTotal.toFixed(2)),
-      status: 'pending',
-    };
+    const logoPayload = uploadedLogos.length
+      ? uploadedLogos.map(l => ({ name: l.name, data: l.dataUrl }))
+      : [];
 
-    const res = await supabase.from('orders').insert(insertPayload).select().single();
-    orderRow = res.data;
-    orderErr = res.error;
+    const rpcItems = cartItems.map(item => ({
+      product_id: String(item.product.id),
+      quantity: Number(item.qty) || 1,
+    }));
 
-    // Fallback: If new columns are missing in remote schema, serialize them into special_instructions
-    if (orderErr && (orderErr.code === 'PGRST204' || orderErr.code === '42703' || orderErr.message?.includes('column'))) {
-      console.warn('New columns not found in database schema, falling back to special_instructions serialization');
-      
-      const serializedInstructions = [
-        data.customisation ? `[Customisation Requirements]\n${data.customisation}` : null,
-        data.additionalInfo ? `[Additional Info]\n${data.additionalInfo}` : null,
-        uploadedLogos.length ? `[Uploaded Logos]\n${uploadedLogos.map(l => l.name).join(', ')}` : null
-      ].filter(Boolean).join('\n\n');
+    let placed = false;
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('place_order', {
+      p_first_name: data.firstName,
+      p_last_name: data.lastName,
+      p_email: data.email,
+      p_phone: data.phone,
+      p_address_line_1: data.address,
+      p_city: data.city,
+      p_state: data.state,
+      p_postcode: data.pin,
+      p_items: rpcItems,
+      p_company: data.company || null,
+      p_gst: data.gst || null,
+      p_address_line_2: null,
+      p_country: 'India',
+      p_special_instructions: null,
+      p_customisation: data.customisation || null,
+      p_additional_info: data.additionalInfo || null,
+      p_logo_images: logoPayload,
+      p_payment_method: paymentMethod,
+      p_privacy_agreed: true,
+    });
 
-      const fallbackPayload = {
+    if (!rpcErr && rpcData?.ok) {
+      placed = true;
+      orderNumber = rpcData.order_number;
+      orderId = rpcData.order_id;
+      serverSubtotal = Number(rpcData.subtotal);
+      serverGst = Number(rpcData.gst_amount);
+      serverShipping = Number(rpcData.shipping);
+      serverTotal = Number(rpcData.total);
+    } else {
+      // RPC missing / failed → legacy dual insert (still better than failing hard)
+      console.warn('[checkout] place_order RPC unavailable, using fallback insert', rpcErr);
+
+      const _now = new Date();
+      const _datePart = `${_now.getFullYear()}${String(_now.getMonth() + 1).padStart(2, '0')}${String(_now.getDate()).padStart(2, '0')}`;
+      const _rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+      orderNumber = `NYD-${_datePart}-${_rand}`;
+      serverSubtotal = Number(subtotal.toFixed(2));
+      serverGst = Number((subtotal * gstRate).toFixed(2));
+      serverShipping = Number(shipping.toFixed(2));
+      serverTotal = Number((serverSubtotal + serverGst + (serverShipping > 0 ? serverShipping : 0)).toFixed(2));
+
+      const insertPayload = {
         order_number: orderNumber,
         first_name: data.firstName,
         last_name: data.lastName,
@@ -687,42 +696,92 @@ export async function renderCheckoutPage() {
         postcode: data.pin,
         phone: data.phone,
         email: data.email,
-        special_instructions: serializedInstructions || null,
+        special_instructions: null,
+        customisation: data.customisation || null,
+        additional_info: data.additionalInfo || null,
+        logo_images: logoPayload,
         payment_method: paymentMethod,
         privacy_agreed: true,
-        subtotal: Number(subtotal.toFixed(2)),
-        gst_amount: Number(gstAmount.toFixed(2)),
-        shipping: Number(shipping.toFixed(2)),
-        total: Number(finalTotal.toFixed(2)),
+        subtotal: serverSubtotal,
+        gst_amount: serverGst,
+        shipping: serverShipping,
+        total: serverTotal,
         status: 'pending',
       };
 
-      const fallbackRes = await supabase.from('orders').insert(fallbackPayload).select().single();
-      orderRow = fallbackRes.data;
-      orderErr = fallbackRes.error;
+      let orderRow = null;
+      let orderErr = null;
+      const res = await supabase.from('orders').insert(insertPayload).select().single();
+      orderRow = res.data;
+      orderErr = res.error;
+
+      if (orderErr && (orderErr.code === 'PGRST204' || orderErr.code === '42703' || orderErr.message?.includes('column'))) {
+        const serializedInstructions = [
+          data.customisation ? `[Customisation Requirements]\n${data.customisation}` : null,
+          data.additionalInfo ? `[Additional Info]\n${data.additionalInfo}` : null,
+          uploadedLogos.length ? `[Uploaded Logos]\n${uploadedLogos.map(l => l.name).join(', ')}` : null,
+        ].filter(Boolean).join('\n\n');
+
+        const fallbackPayload = {
+          order_number: orderNumber,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          company: data.company || null,
+          gst: data.gst || null,
+          country: 'India',
+          address_line_1: data.address,
+          address_line_2: null,
+          city: data.city,
+          state: data.state,
+          postcode: data.pin,
+          phone: data.phone,
+          email: data.email,
+          special_instructions: serializedInstructions || null,
+          payment_method: paymentMethod,
+          privacy_agreed: true,
+          subtotal: serverSubtotal,
+          gst_amount: serverGst,
+          shipping: serverShipping,
+          total: serverTotal,
+          status: 'pending',
+        };
+        const fallbackRes = await supabase.from('orders').insert(fallbackPayload).select().single();
+        orderRow = fallbackRes.data;
+        orderErr = fallbackRes.error;
+      }
+
+      if (orderErr || !orderRow) {
+        console.error('Order insert failed:', orderErr || rpcErr);
+        showToast(rpcErr?.message || orderErr?.message || 'Could not place order. Please try again.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
+        return;
+      }
+
+      orderId = orderRow.id;
+      const { error: itemsErr } = await supabase.from('order_items').insert(
+        displayItems.map(({ product_sku, product_image, product_id, ...it }) => ({
+          ...it,
+          product_id: product_id != null ? String(product_id) : null,
+          order_id: orderRow.id,
+          product_image: product_image && !String(product_image).startsWith('data:')
+            ? product_image
+            : null,
+        }))
+      );
+      if (itemsErr) {
+        // H2.1 partial: order without items — surface error, keep order for support
+        console.error('Order items insert failed:', itemsErr);
+        showToast('Order saved but items failed to save. Contact support with your order number.', 'error');
+      }
+      placed = true;
     }
 
-    if (orderErr) {
-      console.error('Order insert failed:', orderErr);
-      showToast('Could not place order. Please try again.', 'error');
+    if (!placed || !orderNumber) {
+      showToast(rpcErr?.message || 'Could not place order. Please try again.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Place Order'; }
       return;
     }
 
-    // 2. Insert order items — omit huge base64 images from DB (keep name/price)
-    const { error: itemsErr } = await supabase.from('order_items').insert(
-      items.map(({ product_sku, product_image, ...it }) => ({
-        ...it,
-        order_id: orderRow.id,
-        // store path/https only; base64 bloated rows and often fails insert
-        product_image: product_image && !String(product_image).startsWith('data:')
-          ? product_image
-          : null,
-      }))
-    );
-    if (itemsErr) console.error('Order items insert failed:', itemsErr);
-
-    // Full payload for email (keep real file data so attachments work)
     const emailPayload = {
       orderNumber,
       firstName: data.firstName,
@@ -735,7 +794,7 @@ export async function renderCheckoutPage() {
       postcode: data.pin,
       phone: data.phone,
       email: data.email,
-      items: items.map(it => ({
+      items: displayItems.map(it => ({
         name: it.product_name,
         sku: it.product_sku,
         qty: it.quantity,
@@ -743,10 +802,10 @@ export async function renderCheckoutPage() {
         image: it.product_image,
         lineTotal: it.line_total,
       })),
-      subtotal: Number(subtotal.toFixed(2)),
-      gstAmount: Number(gstAmount.toFixed(2)),
-      shipping: Number(shipping.toFixed(2)),
-      total: Number(finalTotal.toFixed(2)),
+      subtotal: serverSubtotal,
+      gstAmount: serverGst,
+      shipping: serverShipping,
+      total: serverTotal,
       specialInstructions: data.additionalInfo || data.customisation || '',
       customisation: data.customisation || '',
       additionalInfo: data.additionalInfo || '',
@@ -755,12 +814,28 @@ export async function renderCheckoutPage() {
       tAndCAgreed: true,
     };
 
-    // 3. Send email FIRST with full logos/images (don't wait for sessionStorage)
-    const emailPromise = sendOrderEmail(emailPayload).catch(e => console.error('Order email failed:', e));
+    // H2.2: wait for email before navigating (with soft timeout so user isn't stuck)
+    if (btn) btn.textContent = 'Sending confirmation…';
+    let emailOk = false;
+    let emailWarn = '';
+    try {
+      const emailResult = await Promise.race([
+        sendOrderEmail(emailPayload),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('email-timeout')), 20000)),
+      ]);
+      emailOk = !!(emailResult && emailResult.ok !== false);
+      if (emailResult?.sent?.droppedOversized?.length) {
+        emailWarn = ` Some files were too large for email (${emailResult.sent.droppedOversized.join(', ')}).`;
+      }
+    } catch (e) {
+      console.error('Order email failed:', e);
+      emailOk = false;
+    }
 
-    // Snapshot for success page — lighter (sessionStorage quota)
+    // H2.4: success page uses session snapshot only — no anon order SELECT by number
     const orderSnapshot = {
       ...emailPayload,
+      orderId,
       logos: uploadedLogos.map(l => ({ name: l.name, dataUrl: null })),
     };
     sessionStorage.setItem('lastOrderNumber', orderNumber);
@@ -775,17 +850,20 @@ export async function renderCheckoutPage() {
       }
     }
 
-    // 4. Clear cart + redirect (email continues in background)
     clearCart();
     cachedCartItems = null;
     lastCartJson = '';
     sessionStorage.removeItem('checkoutStep');
     sessionStorage.removeItem('checkoutData');
-    // M1 fix: clear persisted logo uploads after successful order.
     try { sessionStorage.removeItem('__nyd_checkout_logos'); } catch { /* ignore */ }
     uploadedLogos = [];
-    // don't block UI; emailPromise already fired
-    void emailPromise;
+
+    if (!emailOk) {
+      showToast('Order placed — confirmation email may be delayed. We have your order.' + emailWarn, 'error');
+    } else if (emailWarn) {
+      showToast('Order placed!' + emailWarn, 'success');
+    }
+
     navigateTo('/order-success');
   });
 }

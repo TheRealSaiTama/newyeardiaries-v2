@@ -77,8 +77,8 @@ export async function renderBulkQuotePage() {
                 <div class="input-group"><label>Phone *</label><input name="phone" type="tel" class="input-field" autocomplete="tel" inputmode="tel" pattern="(?:\\+91[- ]?)?[6-9][0-9]{9}" required></div>
               </div>
               <div class="input-group">
-                <label>Product Interest *</label>
-                <select name="product_type" class="input-field select-field" required>
+                <label for="bq-product-type">Product Interest *</label>
+                <select id="bq-product-type" name="product_type" class="input-field select-field" required>
                   <option value="">Select a category</option>
                   <option ${quoteItems.length > 0 ? 'selected' : ''}>Custom / Bespoke</option>
                   <option>2027 Diaries</option>
@@ -87,8 +87,8 @@ export async function renderBulkQuotePage() {
                 </select>
               </div>
               <div class="form-row">
-                <div class="input-group"><label>Estimated Quantity *</label><input name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" value="${totalUnits || 100}" required></div>
-                <div class="input-group"><label>Required By *</label><input name="required_by" type="date" class="input-field" min="${today}" required></div>
+                <div class="input-group"><label for="bq-quantity">Estimated Quantity *</label><input id="bq-quantity" name="quantity" type="number" class="input-field" placeholder="Min. 25 units" min="25" step="1" value="${totalUnits || 100}" required></div>
+                <div class="input-group"><label for="bq-required-by">Required By *</label><input id="bq-required-by" name="required_by" type="date" class="input-field" min="${today}" required></div>
               </div>
               <div class="input-group">
                 <label>Customization Details</label>
@@ -176,19 +176,20 @@ export async function renderBulkQuotePage() {
       company,
       product_type: form.product_type.value || 'Custom / Bespoke',
       quantity,
+      // M17: required_by is a top-level field (also kept in body for older email templates)
+      required_by: form.required_by.value || null,
       custom_requirements: [
         quoteItems.length > 0
           ? `SELECTED PRODUCTS FOR ENQUIRY:\n` + quoteItems.map(it => `- ${it.product.title} (SKU: ${it.product.sku}) - Qty: ${it.qty}`).join('\n')
           : '',
         form.custom_requirements.value.trim(),
-        form.required_by.value ? `Required by: ${form.required_by.value}` : '',
       ].filter(Boolean).join('\n\n') || null,
       enquiry_code: enquiryCode,
       product_names: productNamesStr || null,
       attachments,
     };
 
-    const { error } = await supabase.from('quote_requests').insert([{
+    let { error } = await supabase.from('quote_requests').insert([{
       name: data.name,
       email: data.email,
       phone: data.phone,
@@ -201,7 +202,27 @@ export async function renderBulkQuotePage() {
       // see them in the panel without opening the email.
       enquiry_code: data.enquiry_code,
       product_names: data.product_names,
+      // M17: top-level required_by (column added in 20260802003)
+      required_by: data.required_by,
     }]);
+
+    // If required_by column not migrated yet, retry without it
+    if (error && (error.code === 'PGRST204' || error.message?.includes('required_by'))) {
+      ({ error } = await supabase.from('quote_requests').insert([{
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        company: data.company,
+        product_type: data.product_type,
+        quantity: data.quantity,
+        custom_requirements: [
+          data.custom_requirements,
+          data.required_by ? `Required by: ${data.required_by}` : null,
+        ].filter(Boolean).join('\n\n') || null,
+        enquiry_code: data.enquiry_code,
+        product_names: data.product_names,
+      }]));
+    }
 
     if (error) {
       console.error(error);
