@@ -686,7 +686,11 @@ export async function renderCheckoutPage() {
 
       const _now = new Date();
       const _datePart = `${_now.getFullYear()}${String(_now.getMonth() + 1).padStart(2, '0')}${String(_now.getDate()).padStart(2, '0')}`;
-      const _rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+      // 4-digit numeric suffix to match the family's preferred order-number
+      // format (NYD-YYYYMMDD-1006 style). 10,000 values per day is enough
+      // for current volume; the DB has a UNIQUE constraint that catches
+      // any rare collision and surfaces a retry-able error to the user.
+      const _rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
       orderNumber = `NYD-${_datePart}-${_rand}`;
       serverSubtotal = Number(subtotal.toFixed(2));
       serverGst = Number((subtotal * gstRate).toFixed(2));
