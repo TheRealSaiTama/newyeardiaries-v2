@@ -2276,6 +2276,8 @@ body.is-admin-route #faq-chatbot {
   gap: var(--space-2);
   margin-top: var(--space-8);
   flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
 }
 .shop-pag-btn {
   min-width: 40px;
@@ -2292,6 +2294,9 @@ body.is-admin-route #faq-chatbot {
   font-size: var(--fs-base);
   font-weight: var(--fw-medium);
   transition: var(--transition-fast);
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 .shop-pag-btn:hover:not(:disabled) {
   background: var(--color-surface-alt);

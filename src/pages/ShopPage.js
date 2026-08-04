@@ -4,9 +4,83 @@ import { renderProductCard, initProductCardSlideshows } from '../components/Prod
 import { renderProductCardSkeleton } from '../components/Skeleton.js';
 import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS, fetchCategories, getCategorySlugsByGroupName } from '../lib/categories.js';
+import { navigateTo } from '../router.js';
 
 const PRODUCTS_PER_PAGE = 12;
-const MAX_VISIBLE_PAGES = 5; // pages to show around current
+const MAX_VISIBLE_PAGES = 5;
+
+function buildPageUrl(page) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('page', String(page));
+  return `/shop?${params.toString()}`;
+}
+
+function getCurrentShopPage() {
+  return parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1;
+}
+
+function getTotalPagesFromDom() {
+  const root = document.querySelector('.shop-pagination');
+  if (root?.dataset.total) {
+    const t = parseInt(root.dataset.total, 10);
+    if (!Number.isNaN(t) && t > 0) return t;
+  }
+  const pages = [...document.querySelectorAll('.shop-pagination .shop-pag-btn[data-page]')]
+    .map((b) => parseInt(b.dataset.page, 10))
+    .filter((n) => !Number.isNaN(n));
+  return pages.length ? Math.max(...pages) : 1;
+}
+
+function mountPagination(container, currentPage, totalPages, insertAfterEl) {
+  if (!container && !insertAfterEl) return;
+  const existing = (container || insertAfterEl.parentElement)?.querySelector?.('.shop-pagination')
+    || document.querySelector('.shop-pagination');
+  if (existing) existing.remove();
+  if (totalPages <= 1) return;
+  const pagDiv = document.createElement('div');
+  pagDiv.className = 'shop-pagination';
+  pagDiv.dataset.total = String(totalPages);
+  pagDiv.innerHTML = `
+    <button type="button" class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    ${renderPaginationButtons(currentPage, totalPages)}
+    <button type="button" class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  `;
+  if (insertAfterEl) insertAfterEl.after(pagDiv);
+  else if (container) container.appendChild(pagDiv);
+  ensurePaginationDelegation();
+}
+
+function ensurePaginationDelegation() {
+  if (window.__shopPagBound) return;
+  window.__shopPagBound = true;
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.shop-pag-btn');
+    if (!btn || !btn.closest('.shop-pagination')) return;
+    if (btn.disabled || btn.getAttribute('disabled') != null) return;
+    e.preventDefault();
+    if (btn.id === 'pag-prev') {
+      const current = getCurrentShopPage();
+      if (current > 1) navigateTo(buildPageUrl(current - 1));
+      return;
+    }
+    if (btn.id === 'pag-next') {
+      const current = getCurrentShopPage();
+      const total = getTotalPagesFromDom();
+      if (current < total) navigateTo(buildPageUrl(current + 1));
+      return;
+    }
+    if (btn.dataset.page) {
+      const page = parseInt(btn.dataset.page, 10);
+      if (!Number.isNaN(page)) navigateTo(buildPageUrl(page));
+    }
+  });
+}
+
+ensurePaginationDelegation();
 
 function getPaginationItems(currentPage, totalPages) {
   if (totalPages <= 7) {
@@ -27,7 +101,7 @@ function renderPaginationButtons(currentPage, totalPages) {
   const items = getPaginationItems(currentPage, totalPages);
   return items.map(p => {
     if (p === '...') return `<span class="shop-pag-ellipsis">…</span>`;
-    return `<button class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+    return `<button type="button" class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
   }).join('');
 }
 const PAGE_TITLES = {
@@ -199,24 +273,8 @@ export async function renderShopPage() {
     initProductCardSlideshows(grid);
   }
 
-  // Replace pagination block (or insert it if it doesn't exist yet).
   const mainEl = document.querySelector('.shop-main');
-  const existingPag = mainEl?.querySelector('.shop-pagination');
-  if (existingPag) existingPag.remove();
-  if (totalPages > 1 && mainEl) {
-    const pagDiv = document.createElement('div');
-    pagDiv.className = 'shop-pagination';
-    pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      ${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    `;
-    mainEl.appendChild(pagDiv);
-  }
+  mountPagination(mainEl, currentPage, totalPages);
 
   initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs);
   initGoTopButton();
@@ -235,8 +293,8 @@ export async function renderShopPage() {
   } catch { /* quota or disabled — ignore */ }
 }
 
-// Re-initialise the shop page's interactive bits after a cache-paint.
 function reinitShopPage() {
+  try { ensurePaginationDelegation(); } catch (e) { console.warn('[shop] pagination init failed:', e); }
   try { initFilterEvents(); } catch (e) { console.warn('[shop] filter events init failed:', e); }
   try { initGoTopButton(); } catch (e) { console.warn('[shop] go-top init failed:', e); }
   try { initProductCardSlideshows(); } catch (e) { console.warn('[shop] slideshow init failed:', e); }
@@ -323,19 +381,7 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
       ? pageProducts.map(p => renderProductCard(p)).join('')
       : `<div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}.</p></div>`;
     initProductCardSlideshows(grid);
-    const mainEl = document.querySelector('.shop-main');
-    const existingPag = mainEl?.querySelector('.shop-pagination');
-    if (existingPag) existingPag.remove();
-    if (totalPages > 1 && mainEl) {
-      const pagDiv = document.createElement('div');
-      pagDiv.className = 'shop-pagination';
-      pagDiv.innerHTML = `
-        <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
-        ${renderPaginationButtons(currentPage, totalPages)}
-        <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
-      `;
-      mainEl.appendChild(pagDiv);
-    }
+    mountPagination(document.querySelector('.shop-main'), currentPage, totalPages);
   } catch (e) { console.warn('[shop] in-place refresh failed:', e); }
 };
 
@@ -353,13 +399,6 @@ function initGoTopButton() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
-
-function buildPageUrl(page) {
-  const params = new URLSearchParams(window.location.search);
-  params.set('page', String(page));
-  return `/shop?${params.toString()}`;
-}
-
 
 /**
  * Per-category "Featured" sort. The first matching slug (from the page's
@@ -490,28 +529,8 @@ function initShopEvents(products, currentPage, totalPages, searchQ, usePerCatego
     });
   });
 
-  // H2.10 fix: use in-app navigation (navigateTo) instead of full page reload
-  // (window.location.href) so the user doesn't lose scroll position and the
-  // loader doesn't flash on every page change.
-  document.getElementById('pag-prev')?.addEventListener('click', () => {
-    if (currentPage > 1) navigateTo(buildPageUrl(currentPage - 1));
-  });
-  document.getElementById('pag-next')?.addEventListener('click', () => {
-    if (currentPage < totalPages) navigateTo(buildPageUrl(currentPage + 1));
-  });
-  document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      navigateTo(buildPageUrl(parseInt(btn.dataset.page)));
-    });
-  });
-
-  const goTopBtn = document.getElementById('go-top-btn');
-  window.addEventListener('scroll', () => {
-    if (goTopBtn) goTopBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
-  }, { passive: true });
-  goTopBtn?.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  ensurePaginationDelegation();
+  initGoTopButton();
 }
 
 function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) {
@@ -534,31 +553,5 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
 
   grid.innerHTML = pageProducts.map(p => renderProductCard(p)).join('');
   initProductCardSlideshows(grid);
-
-  const mainEl = document.querySelector('.shop-main');
-  const existingPag = mainEl?.querySelector('.shop-pagination');
-  if (existingPag) existingPag.remove();
-
-  if (totalPages > 1) {
-    const pagDiv = document.createElement('div');
-    pagDiv.className = 'shop-pagination';
-    pagDiv.innerHTML = `
-      <button class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>
-      ${renderPaginationButtons(currentPage, totalPages)}
-      <button class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>
-    `;
-    grid.after(pagDiv);
-
-    document.getElementById('pag-prev')?.addEventListener('click', () => {
-      if (currentPage > 1) navigateTo(buildPageUrl(currentPage - 1));
-    });
-    document.getElementById('pag-next')?.addEventListener('click', () => {
-      if (currentPage < totalPages) navigateTo(buildPageUrl(currentPage + 1));
-    });
-    document.querySelectorAll('.shop-pag-btn[data-page]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navigateTo(buildPageUrl(parseInt(btn.dataset.page)));
-      });
-    });
-  }
+  mountPagination(null, currentPage, totalPages, grid);
 }
