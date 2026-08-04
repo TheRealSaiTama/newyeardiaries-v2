@@ -3342,8 +3342,10 @@ async function renderHomepageSection(container) {
   const { data: shopCats } = await supabase.from('shop_categories').select('*').order('sort_order');
   const { data: primaryCats } = await supabase.from('categories').select('id, name, slug').eq('active', true).order('sort_order');
   const { data: trustBadges } = await supabase.from('trust_badges').select('*').order('position');
-  const { data: sliderSections } = await supabase.from('homepage_slider_sections').select('*').order('sort_order');
-  const { data: sliderItems } = await supabase.from('homepage_slider_items').select('*').order('position');
+  const { data: sliderSections, error: sliderSecErr } = await supabase.from('homepage_slider_sections').select('*').order('sort_order');
+  const { data: sliderItems, error: sliderItemsErr } = await supabase.from('homepage_slider_items').select('*').order('position');
+  if (sliderSecErr) console.warn('[admin] slider sections:', sliderSecErr.message);
+  if (sliderItemsErr) console.warn('[admin] slider items:', sliderItemsErr.message);
 
   container.innerHTML = `
     <div class="admin-header">
@@ -3439,7 +3441,15 @@ async function renderHomepageSection(container) {
             </div>
           </div>`;
         }).join('')}
-      </div>` : `<div class="empty-state" style="padding:var(--space-6)"><span class="material-symbols-outlined">view_carousel</span><p>No slider sections yet. Run migration 20260620002 to seed the 5 default sections.</p></div>`}
+      </div>` : `<div class="empty-state" style="padding:var(--space-6)">
+        <span class="material-symbols-outlined">view_carousel</span>
+        <p>${sliderSecErr
+          ? `Could not load sliders (permission). Run SQL migration <code>20260804001_fix_slider_rls_authenticated</code> in Supabase — admin is authenticated but policies were anon-only.`
+          : 'No slider sections yet. Seed defaults below, or run migration 20260620002.'}</p>
+        <button type="button" class="admin-btn admin-btn-primary" id="seed-slider-sections-btn" style="margin-top:var(--space-4)">
+          <span class="material-symbols-outlined">playlist_add</span> Seed 5 default sections
+        </button>
+      </div>`}
     </div>
 
         <div class="admin-card" style="padding:0;overflow:hidden">
@@ -3509,6 +3519,27 @@ async function renderHomepageSection(container) {
         renderHomepageSection(container);
       });
     };
+  });
+
+  document.getElementById('seed-slider-sections-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('seed-slider-sections-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Seeding…'; }
+    const defaults = [
+      { key: 'leather_diary_2026', title: 'Leather Diary 2027', view_all_link: '/shop?cat=leather-diaries', bg_color: '#FAF8F5', sort_order: 1, active: true, category_slug: 'leather-diaries' },
+      { key: 'combo_gifts', title: 'Latest Combo Gift Sets', view_all_link: '/shop?cat=diary-with-pen-gift-set', bg_color: '#ffffff', sort_order: 2, active: true, category_slug: 'diary-with-pen-gift-set' },
+      { key: 'trending', title: 'Trending items', view_all_link: '/shop', bg_color: '#FAF8F5', sort_order: 3, active: true },
+      { key: 'best_selling_2026', title: 'Best Selling 2027 Diary', view_all_link: '/shop', bg_color: '#ffffff', sort_order: 4, active: true },
+      { key: 'premium_diary_2026', title: 'Premium diary 2027', view_all_link: '/shop?cat=premium-diary', bg_color: '#FAF8F5', sort_order: 5, active: true, category_slug: 'premium-diary' },
+    ];
+    const { error } = await supabase.from('homepage_slider_sections').upsert(defaults, { onConflict: 'key' });
+    if (error) {
+      showToast('Seed failed: ' + error.message + ' — apply migration 20260804001 in Supabase SQL Editor first.', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined">playlist_add</span> Seed 5 default sections'; }
+      return;
+    }
+    bustContentCache();
+    showToast('Slider sections seeded!');
+    renderHomepageSection(container);
   });
 
   document.querySelectorAll('.edit-slider-section-btn').forEach(btn => {
