@@ -556,6 +556,18 @@ body.is-admin-route #faq-chatbot {
   position: relative;
   cursor: zoom-in;
 }
+.pdp-main-image.is-hover-zoom {
+  cursor: crosshair;
+}
+.pdp-main-image.is-hover-zoom .pdp-slide--active img {
+  will-change: transform;
+  transition: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pdp-main-image:hover .pdp-slide--active img {
+    cursor: crosshair;
+  }
+}
 .pdp-zoom-btn {
   position: absolute;
   top: 12px;
@@ -649,6 +661,12 @@ body.is-admin-route #faq-chatbot {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.pdp-slide img {
+  transform-origin: center center;
+  transition: transform 0.12s ease-out;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .pdp-main-image .placeholder-icon {
   font-size: 64px;

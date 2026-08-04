@@ -436,16 +436,45 @@ export async function renderProductDetailPage(params) {
   const thumbs = document.querySelectorAll('.pdp-thumb');
   const images = product.images;
   let currentIdx = 0;
-  let slideshowInterval = null;
-  let slideshowActive = false;
   let zoomOpen = false;
+  const HOVER_ZOOM = 2.4;
+  const finePointer = typeof window.matchMedia === 'function'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   function isVideoSrc(src) {
     return src && (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4'));
   }
 
+  function activeImg() {
+    return mainImageEl?.querySelector('.pdp-slide--active img') || null;
+  }
+
+  function clearHoverZoom() {
+    if (!mainImageEl) return;
+    mainImageEl.classList.remove('is-hover-zoom');
+    const img = activeImg();
+    if (img) {
+      img.style.transform = '';
+      img.style.transformOrigin = '';
+    }
+  }
+
+  function applyHoverZoom(e) {
+    if (!mainImageEl || zoomOpen || !finePointer) return;
+    const img = activeImg();
+    if (!img) return;
+    const rect = mainImageEl.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+    mainImageEl.classList.add('is-hover-zoom');
+    img.style.transformOrigin = `${x}% ${y}%`;
+    img.style.transform = `scale(${HOVER_ZOOM})`;
+  }
+
   function switchImage(idx) {
     if (idx < 0 || idx >= images.length || idx === currentIdx) return;
+    clearHoverZoom();
     const currentSlide = mainImageEl.querySelector('.pdp-slide--active');
     const src = images[idx];
     const alt = mainImageEl.dataset.alt;
@@ -470,21 +499,10 @@ export async function renderProductDetailPage(params) {
     thumb.addEventListener('click', () => switchImage(parseInt(thumb.dataset.index)));
   });
 
-  if (images.length > 1) {
-    mainImageEl.addEventListener('mouseenter', () => {
-      if (zoomOpen) return;
-      slideshowActive = true;
-      slideshowInterval = setInterval(() => {
-        if (!slideshowActive || zoomOpen) return;
-        switchImage((currentIdx + 1) % images.length);
-      }, 1500);
-    });
-    mainImageEl.addEventListener('mouseleave', () => {
-      slideshowActive = false;
-      clearInterval(slideshowInterval);
-      slideshowInterval = null;
-      if (!zoomOpen) switchImage(0);
-    });
+  if (mainImageEl && finePointer) {
+    mainImageEl.addEventListener('mousemove', applyHoverZoom);
+    mainImageEl.addEventListener('mouseenter', applyHoverZoom);
+    mainImageEl.addEventListener('mouseleave', clearHoverZoom);
   }
 
   function closeZoom() {
@@ -497,11 +515,9 @@ export async function renderProductDetailPage(params) {
   function openZoom() {
     const src = images[currentIdx] || product.image;
     if (!src || isVideoSrc(src)) return;
+    clearHoverZoom();
     closeZoom();
     zoomOpen = true;
-    slideshowActive = false;
-    clearInterval(slideshowInterval);
-    slideshowInterval = null;
     document.body.style.overflow = 'hidden';
     const overlay = document.createElement('div');
     overlay.id = 'pdp-zoom-overlay';
@@ -530,7 +546,8 @@ export async function renderProductDetailPage(params) {
 
   mainImageEl?.addEventListener('click', (e) => {
     if (e.target.closest('.pdp-zoom-btn')) return;
-    const img = mainImageEl.querySelector('.pdp-slide--active img');
+    if (isVideoSrc(images[currentIdx] || product.image)) return;
+    const img = activeImg();
     if (img) openZoom();
   });
 }
