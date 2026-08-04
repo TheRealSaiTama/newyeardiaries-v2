@@ -17,9 +17,40 @@ function isCorporateProduct(p) {
   );
 }
 
+function applyCorporateFilters(products) {
+  const checked = {
+    material: [...document.querySelectorAll('.filter-sidebar input[name=material]:checked')].map(i => i.value),
+    size: [...document.querySelectorAll('.filter-sidebar input[name=size]:checked')].map(i => i.value),
+    price: [...document.querySelectorAll('.filter-sidebar input[name=price]:checked')].map(i => i.value),
+  };
+  return products.filter(p => {
+    if (checked.material.length && !checked.material.some(m => (p.material || '').toLowerCase().includes(m.toLowerCase()))) return false;
+    if (checked.size.length && !checked.size.some(s => (p.size || '').toLowerCase().includes(s.toLowerCase()))) return false;
+    if (checked.price.length) {
+      const ok = checked.price.some(range => {
+        const [min, max] = range.split('-').map(Number);
+        const price = Number(p.price) || 0;
+        return price >= min && price <= max;
+      });
+      if (!ok) return false;
+    }
+    return true;
+  });
+}
+
+function paintCorporateGrid(list) {
+  const grid = document.querySelector('.shop-main .product-grid');
+  if (!grid) return;
+  grid.innerHTML = list.length
+    ? list.map(p => renderProductCard(p)).join('')
+    : '<p class="text-body">No products match your filters. <a href="/corporate">Clear filters</a> or <a href="/shop">browse all</a>.</p>';
+  initProductCardSlideshows(grid);
+}
+
 export async function renderCorporatePage() {
   const products = await getProducts();
   const corporateProducts = products.filter(isCorporateProduct);
+  window.__corporateProducts = corporateProducts;
 
   const app = document.getElementById('app');
 
@@ -54,6 +85,13 @@ export async function renderCorporatePage() {
 
   initFilterEvents();
   initProductCardSlideshows();
+  document.querySelectorAll('.filter-sidebar input[type=checkbox]').forEach(cb => {
+    if (cb.dataset.corpBound === '1') return;
+    cb.dataset.corpBound = '1';
+    cb.addEventListener('change', () => {
+      paintCorporateGrid(applyCorporateFilters(window.__corporateProducts || []));
+    });
+  });
   document.querySelectorAll('.quick-view-trigger').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();

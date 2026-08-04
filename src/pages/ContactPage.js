@@ -133,11 +133,19 @@ export function renderContactPage(params, appContent) {
       return;
     }
 
-    sendContactEmail(data).catch((err) => console.error('Contact email failed:', err));
+    let emailOk = true;
+    try {
+      await sendContactEmail(data);
+    } catch (err) {
+      console.error('Contact email failed:', err);
+      emailOk = false;
+    }
     form.reset();
     document.getElementById('contact-files-hint').textContent = 'Max 5 files, 5 MB each. Files come in the email as attachments.';
     btn.classList.add('btn--success');
-    btn.textContent = attachments.length ? `✓ Sent with ${attachments.length} file(s)!` : '✓ Message Sent!';
+    btn.textContent = emailOk
+      ? (attachments.length ? `✓ Sent with ${attachments.length} file(s)!` : '✓ Message Sent!')
+      : '✓ Saved — email may be delayed';
     setTimeout(() => {
       btn.disabled = false;
       btn.classList.remove('btn--success');

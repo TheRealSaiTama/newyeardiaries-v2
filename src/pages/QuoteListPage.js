@@ -13,6 +13,11 @@ export async function renderQuoteListPage() {
     })
   )).filter(Boolean);
 
+  if (quoteItems.length !== quoteList.length) {
+    const validIds = new Set(quoteItems.map(i => String(i.productId)));
+    quoteList.filter(i => !validIds.has(String(i.productId))).forEach(i => removeFromQuoteList(i.productId));
+  }
+
   const totalUnits = quoteItems.reduce((sum, item) => sum + item.qty, 0);
 
   app.innerHTML = `

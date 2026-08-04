@@ -324,6 +324,8 @@ export function renderSearchModal() {
   `;
 }
 
+let _searchModalState = null;
+
 export function initSearchModal() {
   const searchBtn = document.getElementById('search-btn');
   const overlay = document.getElementById('search-overlay');
@@ -333,20 +335,21 @@ export function initSearchModal() {
 
   if (!searchBtn || !overlay) return;
 
-  // Idempotency guard — wrapPage() re-runs this on every navigation.
-  // Without it, input/keydown listeners stack up and race each other,
-  // causing the "shows results then reverts" glitch.
-  if (searchBtn.dataset.bound === '1') return;
-  searchBtn.dataset.bound = '1';
+  if (_searchModalState) {
+    if (searchBtn.dataset.bound !== '1') {
+      searchBtn.dataset.bound = '1';
+      searchBtn.addEventListener('click', _searchModalState.openSearch);
+    }
+    return;
+  }
 
   let allProducts = [];
   let debounceTimer;
-  let searchToken = 0; // monotonically increasing token; stale renders bail out
+  let searchToken = 0;
 
   let productsLoading = null;
   async function loadProducts() {
     if (allProducts.length) return allProducts;
-    // H2.13: share one in-flight fetch so typing while loading waits correctly
     if (!productsLoading) {
       productsLoading = getProducts({ limit: 200 })
         .then((list) => {
@@ -359,21 +362,30 @@ export function initSearchModal() {
   }
 
   function openSearch() {
-    overlay.classList.add('active');
+    const ov = document.getElementById('search-overlay');
+    const inp = document.getElementById('search-input');
+    if (!ov) return;
+    ov.classList.add('active');
     lockBodyScroll();
-    setTimeout(() => input?.focus(), 50);
+    setTimeout(() => inp?.focus(), 50);
     loadProducts();
   }
 
   function closeSearch() {
-    if (!overlay.classList.contains('active')) return;
-    overlay.classList.remove('active');
+    const ov = document.getElementById('search-overlay');
+    const inp = document.getElementById('search-input');
+    const res = document.getElementById('search-results');
+    if (!ov?.classList.contains('active')) return;
+    ov.classList.remove('active');
     unlockBodyScroll();
-    if (input) input.value = '';
-    if (resultsEl) resultsEl.innerHTML = '<p class="search-hint">Start typing to search...</p>';
-    searchToken++; // invalidate any in-flight search
+    if (inp) inp.value = '';
+    if (res) res.innerHTML = '<p class="search-hint">Start typing to search...</p>';
+    searchToken++;
   }
 
+  _searchModalState = { openSearch, closeSearch };
+
+  searchBtn.dataset.bound = '1';
   searchBtn.addEventListener('click', openSearch);
   closeBtn?.addEventListener('click', closeSearch);
   overlay.addEventListener('click', (e) => {
@@ -381,35 +393,33 @@ export function initSearchModal() {
   });
 
   document.addEventListener('keydown', (e) => {
+    const ov = document.getElementById('search-overlay');
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
-      if (overlay.classList.contains('active')) {
-        closeSearch();
-      } else {
-        openSearch();
-      }
+      if (ov?.classList.contains('active')) closeSearch();
+      else openSearch();
     }
-    if (e.key === 'Escape' && overlay.classList.contains('active')) {
-      closeSearch();
-    }
+    if (e.key === 'Escape' && ov?.classList.contains('active')) closeSearch();
   });
 
   input?.addEventListener('input', (e) => {
+    const res = document.getElementById('search-results');
+    if (!res) return;
     const q = e.target.value.trim().toLowerCase();
     clearTimeout(debounceTimer);
 
     if (!q) {
       searchToken++;
-      resultsEl.innerHTML = '<p class="search-hint">Start typing to search...</p>';
+      res.innerHTML = '<p class="search-hint">Start typing to search...</p>';
       return;
     }
 
-    resultsEl.innerHTML = '<p class="search-loading">Searching...</p>';
+    res.innerHTML = '<p class="search-loading">Searching...</p>';
     const myToken = ++searchToken;
+    const safeQ = q.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
     debounceTimer = setTimeout(async () => {
       const products = await loadProducts();
-      // Stale guard: bail if a newer keystroke/close superseded this one
       if (myToken !== searchToken) return;
       const matched = products.filter(p => {
         const cat = (p.category || p.categoryName || '').toLowerCase();
@@ -423,30 +433,33 @@ export function initSearchModal() {
       }).slice(0, 8);
 
       if (!matched.length) {
-        resultsEl.innerHTML = `
+        res.innerHTML = `
           <div class="search-empty">
             <span class="material-symbols-outlined">search_off</span>
-            <p>No results for "<strong>${q}</strong>"</p>
+            <p>No results for "<strong>${safeQ}</strong>"</p>
             <a href="/shop" class="btn btn--secondary btn--sm" data-close-search>Browse All Products</a>
           </div>
         `;
+        res.querySelectorAll('[data-close-search]').forEach(el => {
+          el.addEventListener('click', () => { closeSearch(); });
+        });
         return;
       }
 
-      resultsEl.innerHTML = `
+      res.innerHTML = `
         <div class="search-result-header">${matched.length} result${matched.length > 1 ? 's' : ''}</div>
         <div class="search-result-list">
           ${matched.map(p => `
             <a href="/${p.slug}" class="search-result-item" data-slug="${p.slug}">
               <div class="search-result-img">
-                ${p.image ? `<img src="${p.image}" alt="${p.name}">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
+                ${p.image ? `<img src="${p.image}" alt="">` : '<div class="search-result-img-placeholder"><span class="material-symbols-outlined">image</span></div>'}
               </div>
               <div class="search-result-info">
-                <div class="search-result-name">${p.name || p.title || ''}</div>
+                <div class="search-result-name">${(p.name || p.title || '').replace(/</g, '&lt;')}</div>
                 <div class="search-result-meta">
-                  ${(p.category || p.categoryName) ? `<span>${p.category || p.categoryName}</span>` : ''}
+                  ${(p.category || p.categoryName) ? `<span>${String(p.category || p.categoryName).replace(/</g, '&lt;')}</span>` : ''}
                   <span class="search-result-price">₹${Number(p.price).toLocaleString()}</span>
-                  ${p.badge ? `<span class="badge badge-new">${p.badge}</span>` : ''}
+                  ${p.badge ? `<span class="badge badge-new">${String(p.badge).replace(/</g, '&lt;')}</span>` : ''}
                 </div>
               </div>
             </a>
@@ -454,20 +467,20 @@ export function initSearchModal() {
         </div>
         <div class="search-result-footer">
           <a href="/shop?q=${encodeURIComponent(q)}" class="search-view-all" data-close-search>
-            View all results for "${q.replace(/"/g, '&quot;')}"
+            View all results for "${safeQ}"
             <span class="material-symbols-outlined">arrow_forward</span>
           </a>
         </div>
       `;
 
-      resultsEl.querySelectorAll('.search-result-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.preventDefault();
+      res.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', (ev) => {
+          ev.preventDefault();
           closeSearch();
           navigateTo(item.dataset.slug ? `/${item.dataset.slug}` : '/shop');
         });
       });
-      resultsEl.querySelectorAll('[data-close-search]').forEach(el => {
+      res.querySelectorAll('[data-close-search]').forEach(el => {
         el.addEventListener('click', () => { closeSearch(); });
       });
     }, 250);

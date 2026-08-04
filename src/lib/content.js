@@ -113,7 +113,13 @@ export function bustContentCache() {
   } catch (e) {}
   try {
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('nyd-content-updated'));
+      fetchContentFresh()
+        .then((fresh) => {
+          window.dispatchEvent(new CustomEvent('nyd-content-updated', { detail: fresh }));
+        })
+        .catch(() => {
+          window.dispatchEvent(new CustomEvent('nyd-content-updated', { detail: null }));
+        });
       if (typeof window.__clearPageCache === 'function') window.__clearPageCache();
     }
   } catch (e) {}
@@ -274,18 +280,18 @@ export function getFooterContent(content) {
 }
 
 export function getAnnouncementContent(content) {
-  const texts = (content.announcements || []).map(a => a.text);
-  const fallback = content.siteContent['header.announcement_text'] || '';
-  const link = content.siteContent['header.announcement_link'] || '';
+  const texts = (content?.announcements || []).map(a => a?.text).filter(Boolean);
+  const fallback = content?.siteContent?.['header.announcement_text'] || '';
+  const link = content?.siteContent?.['header.announcement_link'] || '';
   return { texts, fallback, link };
 }
 
 export function getHeroContent(content) {
-  return content.homepageSections['hero'] || null;
+  return content?.homepageSections?.['hero'] || null;
 }
 
 export function getCtaContent(content) {
-  return content.homepageSections['cta'] || null;
+  return content?.homepageSections?.['cta'] || null;
 }
 
 export function getTrustBadges(content) {

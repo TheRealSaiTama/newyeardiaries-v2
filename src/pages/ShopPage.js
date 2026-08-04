@@ -6,6 +6,7 @@ import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS, fetchCategories, getCategorySlugsByGroupName } from '../lib/categories.js';
 import { navigateTo } from '../router.js';
 import { buildShopPageUrl, renderPaginationButtonsHtml } from '../lib/shopPagination.js';
+import { escapeHtml } from '../lib/escapeHtml.js';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -52,6 +53,33 @@ function mountPagination(container, currentPage, totalPages, insertAfterEl) {
   ensurePaginationDelegation();
 }
 
+function hasClientShopOverrides() {
+  if (document.querySelector('.filter-sidebar input[type=checkbox]:checked')) return true;
+  const sort = document.getElementById('sort-select')?.value;
+  return !!(sort && sort !== 'featured');
+}
+
+function paginateInMemory(targetPage) {
+  const productsNow = window.__shopProducts || [];
+  const sortVal = document.getElementById('sort-select')?.value || 'featured';
+  const useFeat = window.__shopUsePerCategoryFeatured;
+  const featSlugs = window.__shopFeaturedSlugs || [];
+  let list = applyFilters(productsNow).slice();
+  if (sortVal === 'price-asc' || sortVal.includes('Low to High')) list.sort((a, b) => a.price - b.price);
+  else if (sortVal === 'price-desc' || sortVal.includes('High to Low')) list.sort((a, b) => b.price - a.price);
+  else if (sortVal === 'newest' || sortVal.includes('Newest')) {
+    list.sort((a, b) => {
+      if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
+      return (b.sortOrder || 0) - (a.sortOrder || 0);
+    });
+  } else if (useFeat) list.sort(categoryFeaturedSort(featSlugs));
+  else list.sort(globalFeaturedSort);
+  const totalPages = Math.max(1, Math.ceil(list.length / PRODUCTS_PER_PAGE));
+  const page = Math.min(Math.max(1, targetPage), totalPages);
+  renderFilteredGrid(list, page, totalPages, window.__shopSearchQ || '');
+  window.__shopClientPage = page;
+}
+
 function ensurePaginationDelegation() {
   if (window.__shopPagBound) return;
   window.__shopPagBound = true;
@@ -60,20 +88,28 @@ function ensurePaginationDelegation() {
     if (!btn || !btn.closest('.shop-pagination')) return;
     if (btn.disabled || btn.getAttribute('disabled') != null) return;
     e.preventDefault();
+    const go = (page) => {
+      if (hasClientShopOverrides()) paginateInMemory(page);
+      else navigateTo(buildPageUrl(page));
+    };
     if (btn.id === 'pag-prev') {
-      const current = getCurrentShopPage();
-      if (current > 1) navigateTo(buildPageUrl(current - 1));
+      const current = hasClientShopOverrides()
+        ? (window.__shopClientPage || 1)
+        : getCurrentShopPage();
+      if (current > 1) go(current - 1);
       return;
     }
     if (btn.id === 'pag-next') {
-      const current = getCurrentShopPage();
+      const current = hasClientShopOverrides()
+        ? (window.__shopClientPage || 1)
+        : getCurrentShopPage();
       const total = getTotalPagesFromDom();
-      if (current < total) navigateTo(buildPageUrl(current + 1));
+      if (current < total) go(current + 1);
       return;
     }
     if (btn.dataset.page) {
       const page = parseInt(btn.dataset.page, 10);
-      if (!Number.isNaN(page)) navigateTo(buildPageUrl(page));
+      if (!Number.isNaN(page)) go(page);
     }
   });
 }
@@ -105,16 +141,17 @@ export async function renderShopPage() {
   let pageDesc = 'Crafted for permanence. Discover our curated selection of premium diaries, designed to capture your thoughts, plans, and legacy.';
   let breadcrumbLabel = 'All Diaries';
   if (searchQ) {
-    pageTitle = `Search: "${searchQ}"`;
-    breadcrumbLabel = `Search: "${searchQ}"`;
+    const safeQ = escapeHtml(searchQ);
+    pageTitle = `Search: "${safeQ}"`;
+    breadcrumbLabel = `Search: "${safeQ}"`;
   } else if (catSlug) {
-    pageTitle = catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    pageTitle = escapeHtml(catSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
     breadcrumbLabel = pageTitle;
   } else if (groupName) {
     const meta = PAGE_TITLES[groupName];
     if (meta) { pageTitle = meta.title; pageDesc = meta.desc; }
-    else { pageTitle = groupName; }
-    breadcrumbLabel = groupName;
+    else { pageTitle = escapeHtml(groupName); }
+    breadcrumbLabel = pageTitle;
   }
 
   // ===== Step 1: paint the page shell + skeleton grid SYNCHRONOUSLY =====
@@ -243,7 +280,7 @@ export async function renderShopPage() {
       : `
         <div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);">
           <span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span>
-          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}. Try adjusting your filters.</p>
+          <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${escapeHtml(searchQ)}"` : ''}. Try adjusting your filters.</p>
         </div>
       `;
     initProductCardSlideshows(grid);
@@ -355,7 +392,7 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
     const pageProducts = products.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
     grid.innerHTML = pageProducts.length > 0
       ? pageProducts.map(p => renderProductCard(p)).join('')
-      : `<div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}.</p></div>`;
+      : `<div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${escapeHtml(searchQ)}"` : ''}.</p></div>`;
     initProductCardSlideshows(grid);
     mountPagination(document.querySelector('.shop-main'), currentPage, totalPages);
     window.__shopProducts = products;
@@ -535,9 +572,9 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
   const grid = document.getElementById('product-grid');
   if (!grid) return;
 
-  const PRODUCTS_PER_PAGE = 12;
   const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const pageProducts = filteredProducts.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+  window.__shopClientPage = currentPage;
 
   if (pageProducts.length === 0) {
     grid.innerHTML = `
@@ -546,6 +583,7 @@ function renderFilteredGrid(filteredProducts, currentPage, totalPages, searchQ) 
         <p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products match your filters. Try adjusting your selection.</p>
       </div>
     `;
+    mountPagination(document.querySelector('.shop-main'), 1, 0, null);
     return;
   }
 

@@ -460,16 +460,20 @@ function raceWithTimeout(promise, ms, label) {
 }
 
 // Listen for background cache updates and refresh the UI when they occur
-window.addEventListener('nyd-content-updated', (e) => {
-  appContent = e.detail;
-  // Re-apply meta tags immediately so admin edits show up without a reload
+window.addEventListener('nyd-content-updated', async (e) => {
+  if (e.detail) {
+    appContent = e.detail;
+  } else {
+    try {
+      appContent = await getContent();
+    } catch (err) {
+      console.warn('[main] getContent after content bust failed:', err);
+    }
+  }
   try { applyMetaTags(appContent?.siteSettings); } catch (err) {
     console.warn('[main] applyMetaTags after content update failed:', err);
   }
   try {
-    // Page HTML cache is now stale — clear it so the next render is fresh.
-    // Without this, wrapPage() serves the cached HTML and admin edits are
-    // invisible until a full reload. Reported 2026-07-31.
     clearPageCache();
     resolveRoute();
   } catch (err) {

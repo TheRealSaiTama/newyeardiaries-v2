@@ -341,31 +341,58 @@ function initHeroSlider() {
     d.onclick = () => goTo(parseInt(d.dataset.idx));
   });
 
-  // Pause auto-slide on hover/touch (resume on leave) — better UX
-  slider.addEventListener('mouseenter', stopTimer);
-  slider.addEventListener('mouseleave', resetTimer);
+  if (slider.dataset.hoverBound !== '1') {
+    slider.dataset.hoverBound = '1';
+    slider.addEventListener('mouseenter', () => {
+      if (window.__heroSlider) {
+        clearInterval(window.__heroSlider.timer);
+        window.__heroSlider.timer = null;
+      }
+    });
+    slider.addEventListener('mouseleave', () => {
+      if (window.__heroSlider) {
+        clearInterval(window.__heroSlider.timer);
+        window.__heroSlider.timer = setInterval(() => {
+          const s = window.__heroSlider;
+          if (!s) return;
+          const slidesNow = Array.from(document.querySelectorAll('.hero-slide'));
+          if (slidesNow.length <= 1) return;
+          const nextIdx = (s.current + 1) % slidesNow.length;
+          document.getElementById('heroNext')?.click();
+        }, SLIDE_MS);
+      }
+    });
+  }
 
   resetTimer();
-
-  // Stable handle: cleanup reads state.timer (live), not a snapshot
   window.__heroSlider = state;
 }
 
 function initProductCardEvents() {
-  document.getElementById('apCatLeft')?.addEventListener('click', () => apCatScroll('apCatGrid', -1));
-  document.getElementById('apCatRight')?.addEventListener('click', () => apCatScroll('apCatGrid', 1));
+  const left = document.getElementById('apCatLeft');
+  const right = document.getElementById('apCatRight');
+  if (left && left.dataset.bound !== '1') {
+    left.dataset.bound = '1';
+    left.addEventListener('click', () => apCatScroll('apCatGrid', -1));
+  }
+  if (right && right.dataset.bound !== '1') {
+    right.dataset.bound = '1';
+    right.addEventListener('click', () => apCatScroll('apCatGrid', 1));
+  }
 
   document.querySelectorAll('.ap-product-slider-btn').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       apCatScroll(btn.dataset.slider, parseInt(btn.dataset.dir));
     });
   });
 
-  // Keep catalogue slider arrow enabled/disabled state in sync with scroll.
   document.querySelectorAll('.ap-catalogue-section .ap-cat-grid').forEach(grid => {
+    if (grid.dataset.scrollBound === '1') return;
+    grid.dataset.scrollBound = '1';
     grid.addEventListener('scroll', () => requestAnimationFrame(syncSliderArrows), { passive: true });
   });
-  // Initial sync after layout settles.
   requestAnimationFrame(() => requestAnimationFrame(syncSliderArrows));
 }
 
