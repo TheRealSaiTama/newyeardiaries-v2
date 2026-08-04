@@ -5,14 +5,12 @@ import { renderProductCardSkeleton } from '../components/Skeleton.js';
 import { getProducts } from '../data/products.js';
 import { CATEGORY_GROUPS, fetchCategories, getCategorySlugsByGroupName } from '../lib/categories.js';
 import { navigateTo } from '../router.js';
+import { buildShopPageUrl, renderPaginationButtonsHtml } from '../lib/shopPagination.js';
 
 const PRODUCTS_PER_PAGE = 12;
-const MAX_VISIBLE_PAGES = 5;
 
 function buildPageUrl(page) {
-  const params = new URLSearchParams(window.location.search);
-  params.set('page', String(page));
-  return `/shop?${params.toString()}`;
+  return buildShopPageUrl(page, window.location.search || '');
 }
 
 function getCurrentShopPage() {
@@ -44,7 +42,7 @@ function mountPagination(container, currentPage, totalPages, insertAfterEl) {
     <button type="button" class="shop-pag-btn" id="pag-prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
       <span class="material-symbols-outlined">chevron_left</span>
     </button>
-    ${renderPaginationButtons(currentPage, totalPages)}
+    ${renderPaginationButtonsHtml(currentPage, totalPages)}
     <button type="button" class="shop-pag-btn" id="pag-next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
       <span class="material-symbols-outlined">chevron_right</span>
     </button>
@@ -82,28 +80,6 @@ function ensurePaginationDelegation() {
 
 ensurePaginationDelegation();
 
-function getPaginationItems(currentPage, totalPages) {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-  const items = [];
-  items.push(1);
-  const start = Math.max(2, currentPage - 1);
-  const end = Math.min(totalPages - 1, currentPage + 1);
-  if (start > 2) items.push('...');
-  for (let i = start; i <= end; i++) items.push(i);
-  if (end < totalPages - 1) items.push('...');
-  items.push(totalPages);
-  return items;
-}
-
-function renderPaginationButtons(currentPage, totalPages) {
-  const items = getPaginationItems(currentPage, totalPages);
-  return items.map(p => {
-    if (p === '...') return `<span class="shop-pag-ellipsis">…</span>`;
-    return `<button type="button" class="shop-pag-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
-  }).join('');
-}
 const PAGE_TITLES = {
   'Corporate Gift Sets': { title: 'Corporate Gift Sets', desc: 'Premium corporate gifting solutions — curated sets and gift packages that leave a lasting impression.' },
   'Business Gifts': { title: 'Business Gifts', desc: 'Professional business gifting — eco-friendly, practical, and memorable.' },
@@ -382,6 +358,11 @@ window.__nydCacheRefresh = async function nydCacheRefreshShop() {
       : `<div class="no-results" style="grid-column:1/-1;text-align:center;padding:var(--space-12) var(--space-4);"><span class="material-symbols-outlined" style="font-size:48px;color:var(--color-text-tertiary);">search_off</span><p style="margin-top:var(--space-4);color:var(--color-text-secondary);">No products found${searchQ ? ` for "${searchQ}"` : ''}.</p></div>`;
     initProductCardSlideshows(grid);
     mountPagination(document.querySelector('.shop-main'), currentPage, totalPages);
+    window.__shopProducts = products;
+    window.__shopFeaturedSlugs = featuredSlugs;
+    window.__shopUsePerCategoryFeatured = usePerCategoryFeatured;
+    window.__shopSearchQ = searchQ || '';
+    initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs);
   } catch (e) { console.warn('[shop] in-place refresh failed:', e); }
 };
 
@@ -498,12 +479,15 @@ function applyFilters(allProducts) {
 }
 
 function initShopEvents(products, currentPage, totalPages, searchQ, usePerCategoryFeatured, featuredSlugs) {
-  document.getElementById('filter-toggle')?.addEventListener('click', () => {
-    document.getElementById('filter-sidebar')?.classList.toggle('mobile-active');
-  });
+  window.__shopProducts = products;
+  window.__shopFeaturedSlugs = featuredSlugs;
+  window.__shopUsePerCategoryFeatured = usePerCategoryFeatured;
+  window.__shopSearchQ = searchQ;
 
   function applySort(list, val) {
     const sorted = list.slice();
+    const useFeat = window.__shopUsePerCategoryFeatured;
+    const featSlugs = window.__shopFeaturedSlugs || [];
     if (val === 'price-asc' || val.includes('Low to High')) sorted.sort((a, b) => a.price - b.price);
     else if (val === 'price-desc' || val.includes('High to Low')) sorted.sort((a, b) => b.price - a.price);
     else if (val === 'newest' || val.includes('Newest')) {
@@ -511,22 +495,36 @@ function initShopEvents(products, currentPage, totalPages, searchQ, usePerCatego
         if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt);
         return (b.sortOrder || 0) - (a.sortOrder || 0);
       });
-    } else if (usePerCategoryFeatured) sorted.sort(categoryFeaturedSort(featuredSlugs));
+    } else if (useFeat) sorted.sort(categoryFeaturedSort(featSlugs));
     else sorted.sort(globalFeaturedSort);
     return sorted;
   }
 
-  document.getElementById('sort-select')?.addEventListener('change', (e) => {
-    const sorted = applySort(applyFilters(products), e.target.value);
-    renderFilteredGrid(sorted, 1, Math.max(1, Math.ceil(sorted.length / PRODUCTS_PER_PAGE)), searchQ);
-  });
+  function rerenderFromFilters() {
+    const productsNow = window.__shopProducts || [];
+    const sortVal = document.getElementById('sort-select')?.value || 'featured';
+    const filtered = applySort(applyFilters(productsNow), sortVal);
+    renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), window.__shopSearchQ || '');
+  }
+
+  const filterToggle = document.getElementById('filter-toggle');
+  if (filterToggle && filterToggle.dataset.bound !== '1') {
+    filterToggle.dataset.bound = '1';
+    filterToggle.addEventListener('click', () => {
+      document.getElementById('filter-sidebar')?.classList.toggle('mobile-active');
+    });
+  }
+
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect && sortSelect.dataset.bound !== '1') {
+    sortSelect.dataset.bound = '1';
+    sortSelect.addEventListener('change', () => rerenderFromFilters());
+  }
 
   document.querySelectorAll('.filter-sidebar input[type=checkbox]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const sortVal = document.getElementById('sort-select')?.value || 'featured';
-      const filtered = applySort(applyFilters(products), sortVal);
-      renderFilteredGrid(filtered, 1, Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE)), searchQ);
-    });
+    if (cb.dataset.bound === '1') return;
+    cb.dataset.bound = '1';
+    cb.addEventListener('change', () => rerenderFromFilters());
   });
 
   ensurePaginationDelegation();

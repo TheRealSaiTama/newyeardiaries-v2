@@ -12,6 +12,7 @@ function normalize(p) {
     title: p.name,
     // `category` is the display NAME (legacy). Prefer `categorySlug` for filtering.
     category: p.category?.name || '',
+    categoryName: p.category?.name || '',
     categorySlug: p.category?.slug || '',
     categoryId: p.category_id || '',
     material: p.material || '',
@@ -71,9 +72,11 @@ export async function getProducts({ fresh = false } = {}) {
       const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Ignore localStorage older than TTL — prevents deleted products sticking around
-        if (parsed.fetchedAt && Date.now() - parsed.fetchedAt < CACHE_TTL) {
-          _cache = parsed.data;
+        const list = parsed.data;
+        const withinTtl = parsed.fetchedAt && Date.now() - parsed.fetchedAt < CACHE_TTL;
+        const usable = Array.isArray(list) && list.length > 0 && list.some((p) => p && p.image);
+        if (withinTtl && usable) {
+          _cache = list;
           _fetchedAt = parsed.fetchedAt;
         } else {
           localStorage.removeItem(PRODUCTS_STORAGE_KEY);
@@ -81,6 +84,7 @@ export async function getProducts({ fresh = false } = {}) {
       }
     } catch (e) {
       console.warn('[products] failed to load localStorage cache:', e);
+      try { localStorage.removeItem(PRODUCTS_STORAGE_KEY); } catch (_) {}
     }
   }
 
@@ -234,7 +238,6 @@ async function fetchProductsBackground() {
 
 export async function getProductBySlug(slug) {
   if (!slug) return null;
-  // ponytail: hit DB directly so deleted products never resolve from stale cache
   try {
     const { data, error } = await supabase
       .from('products')
@@ -244,8 +247,26 @@ export async function getProductBySlug(slug) {
       .maybeSingle();
     if (!error && data) {
       const base = normalize(data);
-      base.categorySlugs = base.categorySlug ? [base.categorySlug] : [];
-      base.categorySortOrders = {};
+      try {
+        const { data: junc } = await supabase
+          .from('product_categories')
+          .select('sort_order, category:categories!product_categories_category_id_fkey(slug)')
+          .eq('product_id', data.id);
+        const slugs = [];
+        const sortMap = {};
+        for (const row of junc || []) {
+          const s = row.category?.slug;
+          if (!s) continue;
+          if (!slugs.includes(s)) slugs.push(s);
+          if (row.sort_order != null) sortMap[s] = row.sort_order;
+        }
+        if (base.categorySlug && !slugs.includes(base.categorySlug)) slugs.unshift(base.categorySlug);
+        base.categorySlugs = slugs.length ? slugs : (base.categorySlug ? [base.categorySlug] : []);
+        base.categorySortOrders = sortMap;
+      } catch {
+        base.categorySlugs = base.categorySlug ? [base.categorySlug] : [];
+        base.categorySortOrders = {};
+      }
       return base;
     }
   } catch (e) {

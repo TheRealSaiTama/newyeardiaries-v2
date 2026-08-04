@@ -1,46 +1,41 @@
-// ===== Store — Cart (localStorage) =====
 import { updateHeaderCounts } from '../components/Header.js';
+import {
+  parseStorageList,
+  addLineItem,
+  removeLineItem,
+  setLineQty,
+} from '../lib/cartStorage.js';
 
 export function getCart() {
-  return JSON.parse(localStorage.getItem('cart') || '[]');
+  return parseStorageList(localStorage.getItem('cart'));
+}
+
+function saveCart(cart) {
+  try { localStorage.setItem('cart', JSON.stringify(cart)); } catch (e) { console.warn('[cart] write failed', e); }
 }
 
 export function addToCart(productId, qty = 1) {
-  const cart = getCart();
-  const existing = cart.find(item => String(item.productId) === String(productId));
-  if (existing) {
-    // M4 fix: increment instead of replace — adding the same product again
-    // should raise the quantity, not silently overwrite it.
-    existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 1);
-  } else {
-    cart.push({ productId, qty: Number(qty) || 1 });
-  }
-  try { localStorage.setItem('cart', JSON.stringify(cart)); } catch (e) { console.warn('[cart] write failed', e); }
+  const cart = addLineItem(getCart(), productId, qty, 1);
+  saveCart(cart);
   try { updateHeaderCounts(); } catch { /* header not ready yet */ }
   try { showToast('Added to Cart'); } catch { /* toast not ready */ }
 }
 
 export function removeFromCart(productId) {
-  let cart = getCart();
-  cart = cart.filter(item => String(item.productId) !== String(productId));
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateHeaderCounts();
+  saveCart(removeLineItem(getCart(), productId));
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
 export function updateCartQty(productId, qty, minQty = 1) {
-  const cart = getCart();
-  const item = cart.find(i => String(i.productId) === String(productId));
-  if (item) item.qty = Math.max(minQty, qty);
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateHeaderCounts();
+  saveCart(setLineQty(getCart(), productId, qty, minQty));
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
 export function clearCart() {
-  localStorage.removeItem('cart');
-  updateHeaderCounts();
+  try { localStorage.removeItem('cart'); } catch { /* ignore */ }
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
-// Toast notification
 function showToast(message) {
   let toast = document.getElementById('toast-notification');
   if (!toast) {
@@ -68,46 +63,36 @@ function showToast(message) {
   }, 2500);
 }
 
-// Global function for inline onclick handlers
 window.__addToCart = (id, qty) => addToCart(id, qty);
 
-// ===== Quote List (localStorage) =====
 export function getQuoteList() {
-  return JSON.parse(localStorage.getItem('quoteList') || '[]');
+  return parseStorageList(localStorage.getItem('quoteList'));
+}
+
+function saveQuote(list) {
+  try { localStorage.setItem('quoteList', JSON.stringify(list)); } catch (e) { console.warn('[quote] write failed', e); }
 }
 
 export function addToQuoteList(productId, qty = 100) {
-  const quoteList = getQuoteList();
-  const existing = quoteList.find(item => String(item.productId) === String(productId));
-  if (existing) {
-    // Match cart behaviour: re-adding same product raises qty, not silent replace
-    existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 100);
-  } else {
-    quoteList.push({ productId, qty: Number(qty) || 100 });
-  }
-  localStorage.setItem('quoteList', JSON.stringify(quoteList));
-  updateHeaderCounts();
-  showToast('Added to Quote List');
+  const quoteList = addLineItem(getQuoteList(), productId, qty, 100);
+  saveQuote(quoteList);
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
+  try { showToast('Added to Quote List'); } catch { /* toast not ready */ }
 }
 
 export function removeFromQuoteList(productId) {
-  let quoteList = getQuoteList();
-  quoteList = quoteList.filter(item => String(item.productId) !== String(productId));
-  localStorage.setItem('quoteList', JSON.stringify(quoteList));
-  updateHeaderCounts();
+  saveQuote(removeLineItem(getQuoteList(), productId));
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
 export function updateQuoteQty(productId, qty) {
-  const quoteList = getQuoteList();
-  const item = quoteList.find(i => String(i.productId) === String(productId));
-  if (item) item.qty = Math.max(10, qty);
-  localStorage.setItem('quoteList', JSON.stringify(quoteList));
-  updateHeaderCounts();
+  saveQuote(setLineQty(getQuoteList(), productId, qty, 10));
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
 export function clearQuoteList() {
-  localStorage.removeItem('quoteList');
-  updateHeaderCounts();
+  try { localStorage.removeItem('quoteList'); } catch { /* ignore */ }
+  try { updateHeaderCounts(); } catch { /* header not ready */ }
 }
 
 window.__addToQuote = (id, qty) => addToQuoteList(id, qty);

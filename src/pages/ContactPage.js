@@ -61,7 +61,10 @@ export function renderContactPage(params, appContent) {
     </div>
   `;
 
-  document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
+  const contactForm = document.getElementById('contact-form');
+  if (contactForm && contactForm.dataset.bound === '1') return;
+  if (contactForm) contactForm.dataset.bound = '1';
+  contactForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
     const btn = document.getElementById('contact-submit-btn');

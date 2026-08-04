@@ -3,6 +3,7 @@ import { fetchCategories, seedCategoriesIfEmpty, getCategoriesByGroup, CATEGORY_
 import { getProducts } from '../lib/products.js';
 import { renderProductCard } from './ProductCard.js';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock.js';
+import { navigateTo } from '../router.js';
 
 let _cachedContent = null;
 let _cachedCategories = null;
@@ -285,8 +286,11 @@ export function initHeaderEvents() {
 export function updateHeaderCounts() {
   const cartCount = document.getElementById('cart-count');
   let cartItems = [];
-  try { cartItems = JSON.parse(localStorage.getItem('cart') || '[]'); } catch { cartItems = []; }
-  // M10 fix: sum quantities (5 of same product = "5"), not unique product count.
+  try {
+    const raw = localStorage.getItem('cart');
+    const parsed = raw ? JSON.parse(raw) : [];
+    cartItems = Array.isArray(parsed) ? parsed : [];
+  } catch { cartItems = []; }
   const totalItems = cartItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
 
   if (cartCount) {
@@ -423,7 +427,7 @@ export function initSearchModal() {
           <div class="search-empty">
             <span class="material-symbols-outlined">search_off</span>
             <p>No results for "<strong>${q}</strong>"</p>
-            <a href="/shop" class="btn btn--secondary btn--sm" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">Browse All Products</a>
+            <a href="/shop" class="btn btn--secondary btn--sm" data-close-search>Browse All Products</a>
           </div>
         `;
         return;
@@ -449,8 +453,8 @@ export function initSearchModal() {
           `).join('')}
         </div>
         <div class="search-result-footer">
-          <a href="/shop" class="search-view-all" onclick="document.getElementById('search-overlay').classList.remove('active');document.body.style.overflow=''">
-            View all results for "${q}"
+          <a href="/shop?q=${encodeURIComponent(q)}" class="search-view-all" data-close-search>
+            View all results for "${q.replace(/"/g, '&quot;')}"
             <span class="material-symbols-outlined">arrow_forward</span>
           </a>
         </div>
@@ -462,6 +466,9 @@ export function initSearchModal() {
           closeSearch();
           navigateTo(item.dataset.slug ? `/${item.dataset.slug}` : '/shop');
         });
+      });
+      resultsEl.querySelectorAll('[data-close-search]').forEach(el => {
+        el.addEventListener('click', () => { closeSearch(); });
       });
     }, 250);
   });

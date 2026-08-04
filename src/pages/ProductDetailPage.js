@@ -205,7 +205,7 @@ export async function renderProductDetailPage(params) {
 
         <div class="pdp-layout">
           <div class="pdp-gallery">
-            <div class="pdp-main-image" data-images='${JSON.stringify(product.images)}' data-alt="${product.title.replace(/'/g, "&#39;")}" data-current="0">
+            <div class="pdp-main-image" data-images="${JSON.stringify(product.images || []).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" data-alt="${String(product.title || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}" data-current="0">
               <div class="pdp-slide pdp-slide--active">${renderProductMedia(product.image, product.title)}</div>
               <button type="button" class="pdp-zoom-btn" id="pdp-zoom-btn" aria-label="Zoom image"><span class="material-symbols-outlined" aria-hidden="true">zoom_in</span></button>
             </div>

@@ -107,7 +107,10 @@ export async function renderBulkQuotePage() {
     </div>
   `;
 
-  document.getElementById('bulk-quote-form')?.addEventListener('submit', async (e) => {
+  const bulkForm = document.getElementById('bulk-quote-form');
+  if (bulkForm && bulkForm.dataset.bound === '1') return;
+  if (bulkForm) bulkForm.dataset.bound = '1';
+  bulkForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
     const btn = document.getElementById('submit-btn');

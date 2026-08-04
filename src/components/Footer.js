@@ -76,13 +76,13 @@ export function renderFooter(content) {
              <h4 class="nyd-footer__heading">Our Products</h4>
              <div class="nyd-footer__services">${content?.footerSections?.services_list?.content || ''}</div>
              <ul class="nyd-footer__links">
-              <li><a href="/shop">Premium Diary</a></li>
-              <li><a href="/shop">New Year Diary</a></li>
-              <li><a href="/shop">Leather Planners</a></li>
-              <li><a href="/shop">Calendars</a></li>
-              <li><a href="/shop/corporate">Corporate Gift Sets</a></li>
-              <li><a href="/shop/corporate">Best Seller Corporate Gifts</a></li>
-              <li><a href="/shop">Leather Gifts</a></li>
+              <li><a href="/shop?group=Premium%20Diary">Premium Diary</a></li>
+              <li><a href="/shop?group=New%20Year%20Diary">New Year Diary</a></li>
+              <li><a href="/shop?group=Leather%20Planners">Leather Planners</a></li>
+              <li><a href="/shop?group=Calendars">Calendars</a></li>
+              <li><a href="/shop?group=Corporate%20Gift%20Sets">Corporate Gift Sets</a></li>
+              <li><a href="/corporate">Corporate Gifts</a></li>
+              <li><a href="/shop?group=Leather%20Gifts">Leather Gifts</a></li>
             </ul>
           </div>
 

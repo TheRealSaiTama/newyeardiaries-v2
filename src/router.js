@@ -55,7 +55,10 @@ export function resolveRoute() {
     }
   }
 
-  // 404 fallback — show homepage
+  const notFound = routes.find(r => r.path === '/404');
+  if (notFound) {
+    return notFound.handler({});
+  }
   const fallback = routes.find(r => r.path === '/');
   if (fallback) {
     return fallback.handler({});
@@ -70,12 +73,14 @@ export function initRouter() {
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a[href]');
     if (!link) return;
+    if (e.defaultPrevented) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
     const href = link.getAttribute('href');
 
-    // Skip external links, hash links, and special protocols
-    if (!href || href.startsWith('http') || href.startsWith('mailto:') ||
-        href.startsWith('tel:') || href.startsWith('#') || link.target === '_blank') {
+    if (!href || href.startsWith('http') || href.startsWith('//') || href.startsWith('mailto:') ||
+        href.startsWith('tel:') || href.startsWith('#') || link.target === '_blank' ||
+        link.hasAttribute('download') || link.dataset.noSpa === '1') {
       return;
     }
 

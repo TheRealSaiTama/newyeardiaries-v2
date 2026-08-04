@@ -1,18 +1,20 @@
-/** Prefer http(s) URLs over base64 data URLs for list cards (H2.9 mitigation). */
-function safeCardSrc(src) {
-  if (!src || typeof src !== 'string') return '';
-  if (src.startsWith('data:')) return ''; // skip huge base64 in grid HTML
-  return src;
+function isHttpSrc(src) {
+  return typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/'));
+}
+
+function isDataSrc(src) {
+  return typeof src === 'string' && src.startsWith('data:image');
 }
 
 export function renderProductCard(product) {
-  const rawImages = product.images || [];
-  const images = rawImages.map(safeCardSrc).filter(Boolean);
-  // Fall back to single image field if gallery was all base64
-  if (!images.length) {
-    const one = safeCardSrc(product.image);
-    if (one) images.push(one);
-  }
+  const rawImages = (product.images && product.images.length)
+    ? product.images
+    : (product.image ? [product.image] : []);
+  const httpImages = rawImages.filter(isHttpSrc);
+  // Prefer remote URLs for grid weight; if product only has base64, still show one so cards aren't blank
+  const images = httpImages.length
+    ? httpImages
+    : rawImages.filter(isDataSrc).slice(0, 1);
   const hasMultiple = images.length > 1;
 
   let img;

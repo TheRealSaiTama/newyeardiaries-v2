@@ -4,7 +4,7 @@ import './styles/global.css';
 import './styles/components.css';
 import './styles/pages.css';
 
-import { addRoute, initRouter, resolveRoute } from './router.js';
+import { addRoute, initRouter, resolveRoute, navigateTo } from './router.js';
 import { renderHeader, initHeaderEvents, updateHeaderCounts, loadHeaderCategories, initSearchModal, renderSearchModal } from './components/Header.js';
 import { initFaqChatbot } from './components/FaqChatbot.js';
 import { renderFooter } from './components/Footer.js';
@@ -398,6 +398,7 @@ addRoute('/privacy-policy', wrapPage(renderPrivacyPolicyPage));
 addRoute('/terms', wrapPage(renderTermsPage));
 addRoute('/shipping-returns', wrapPage(renderShippingReturnsPage));
 addRoute('/branding', wrapPage(renderBrandingPage));
+addRoute('/404', wrapPage(renderNotFoundPage));
 addRoute('/admin', (params) => {
   document.getElementById('header-area').style.display = 'none';
   document.getElementById('footer-area').style.display = 'none';
