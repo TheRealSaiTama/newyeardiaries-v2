@@ -5,6 +5,7 @@ let _fetchedAt = null;
 const CACHE_TTL = 60_000;
 
 const CONTENT_STORAGE_KEY = '__nyd_content_cache';
+const CONTENT_CACHE_VERSION = 3;
 
 function stripHeavy(value) {
   if (value == null) return value;
@@ -42,17 +43,7 @@ function slimContentForStorage(data) {
       sort_order: a.sort_order,
     })),
     footerSections: stripHeavy(data.footerSections || {}),
-    banners: (data.banners || []).map((b) => ({
-      id: b.id,
-      title: b.title,
-      subtitle: b.subtitle,
-      cta_text: b.cta_text,
-      cta_link: b.cta_link,
-      image_url: typeof b.image_url === 'string' && b.image_url.startsWith('data:') ? '' : b.image_url,
-      mobile_image_url: typeof b.mobile_image_url === 'string' && b.mobile_image_url.startsWith('data:') ? '' : b.mobile_image_url,
-      order_index: b.order_index,
-      active: b.active,
-    })),
+    banners: [],
     trustBadges: (data.trustBadges || []).map((b) => ({
       id: b.id,
       title: b.title,
@@ -63,15 +54,21 @@ function slimContentForStorage(data) {
     })),
     sliderSections: data.sliderSections || [],
     sliderItems: data.sliderItems || [],
-    shopCategories: (data.shopCategories || []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      link: c.link,
-      image_url: typeof c.image_url === 'string' && c.image_url.startsWith('data:') ? '' : c.image_url,
-      sort_order: c.sort_order,
-      active: c.active,
-    })),
+    shopCategories: [],
   };
+}
+
+function isUsableStoredCache(data) {
+  if (!data || typeof data !== 'object') return false;
+  const cats = data.shopCategories || [];
+  if (cats.length > 0) {
+    const missingLabel = cats.some((c) => !(c.title || c.name));
+    const allBlankImages = cats.every((c) => !c.image_url);
+    if (missingLabel || allBlankImages) return false;
+  }
+  const banners = data.banners || [];
+  if (banners.length > 0 && banners.every((b) => !b.image_url)) return false;
+  return true;
 }
 
 function clearNydStorageKeys() {
@@ -88,7 +85,11 @@ function clearNydStorageKeys() {
 }
 
 function persistContentCache(data, fetchedAt) {
-  const payload = JSON.stringify({ data: slimContentForStorage(data), fetchedAt });
+  const payload = JSON.stringify({
+    v: CONTENT_CACHE_VERSION,
+    data: slimContentForStorage(data),
+    fetchedAt,
+  });
   try {
     localStorage.setItem(CONTENT_STORAGE_KEY, payload);
     return true;
@@ -126,15 +127,26 @@ export async function getContent() {
       const stored = localStorage.getItem(CONTENT_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        _cache = parsed.data;
-        _fetchedAt = parsed.fetchedAt;
+        if (parsed.v === CONTENT_CACHE_VERSION && isUsableStoredCache(parsed.data)) {
+          _cache = parsed.data;
+          _fetchedAt = parsed.fetchedAt;
+        } else {
+          localStorage.removeItem(CONTENT_STORAGE_KEY);
+        }
       }
     } catch (e) {
       console.warn('[content] failed to load localStorage cache:', e);
+      try { localStorage.removeItem(CONTENT_STORAGE_KEY); } catch (_) {}
     }
   }
 
   if (_cache) {
+    const missingVisuals =
+      !(_cache.shopCategories && _cache.shopCategories.length) &&
+      !(_cache.banners && _cache.banners.length);
+    if (missingVisuals) {
+      return fetchContentFresh();
+    }
     const isStale = Date.now() - _fetchedAt >= CACHE_TTL;
     if (isStale) {
       fetchContentBackground();

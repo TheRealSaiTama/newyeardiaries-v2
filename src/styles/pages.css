@@ -554,6 +554,75 @@ body.is-admin-route #faq-chatbot {
   border: 1px solid var(--color-border-light);
   margin-bottom: var(--space-4);
   position: relative;
+  cursor: zoom-in;
+}
+.pdp-zoom-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.pdp-zoom-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+.pdp-zoom-btn .material-symbols-outlined {
+  font-size: 22px;
+}
+.pdp-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.pdp-zoom-img {
+  max-width: min(96vw, 1100px);
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+.pdp-zoom-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9001;
+}
+.pdp-zoom-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.pdp-zoom-close .material-symbols-outlined {
+  font-size: 24px;
 }
 .pdp-slide {
   position: absolute;

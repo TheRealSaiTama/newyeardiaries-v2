@@ -207,6 +207,7 @@ export async function renderProductDetailPage(params) {
           <div class="pdp-gallery">
             <div class="pdp-main-image" data-images='${JSON.stringify(product.images)}' data-alt="${product.title.replace(/'/g, "&#39;")}" data-current="0">
               <div class="pdp-slide pdp-slide--active">${renderProductMedia(product.image, product.title)}</div>
+              <button type="button" class="pdp-zoom-btn" id="pdp-zoom-btn" aria-label="Zoom image"><span class="material-symbols-outlined" aria-hidden="true">zoom_in</span></button>
             </div>
             <div class="pdp-thumbnails">
               ${product.images.slice(0, 8).map((img, i) => `
@@ -431,21 +432,24 @@ export async function renderProductDetailPage(params) {
     }
   });
 
-  // Image gallery
   const mainImageEl = document.querySelector('.pdp-main-image');
   const thumbs = document.querySelectorAll('.pdp-thumb');
   const images = product.images;
   let currentIdx = 0;
   let slideshowInterval = null;
   let slideshowActive = false;
+  let zoomOpen = false;
+
+  function isVideoSrc(src) {
+    return src && (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4'));
+  }
 
   function switchImage(idx) {
     if (idx < 0 || idx >= images.length || idx === currentIdx) return;
     const currentSlide = mainImageEl.querySelector('.pdp-slide--active');
     const src = images[idx];
     const alt = mainImageEl.dataset.alt;
-    const isVideo = src && (src.includes('video/mp4') || src.toLowerCase().split('?')[0].endsWith('.mp4'));
-    const media = isVideo ? `<video src="${src}" controls muted playsinline></video>` : `<img src="${src}" alt="${alt}">`;
+    const media = isVideoSrc(src) ? `<video src="${src}" controls muted playsinline></video>` : `<img src="${src}" alt="${alt}">`;
     const nextSlide = document.createElement('div');
     nextSlide.className = 'pdp-slide pdp-slide--next';
     nextSlide.innerHTML = media;
@@ -468,9 +472,10 @@ export async function renderProductDetailPage(params) {
 
   if (images.length > 1) {
     mainImageEl.addEventListener('mouseenter', () => {
+      if (zoomOpen) return;
       slideshowActive = true;
       slideshowInterval = setInterval(() => {
-        if (!slideshowActive) return;
+        if (!slideshowActive || zoomOpen) return;
         switchImage((currentIdx + 1) % images.length);
       }, 1500);
     });
@@ -478,9 +483,56 @@ export async function renderProductDetailPage(params) {
       slideshowActive = false;
       clearInterval(slideshowInterval);
       slideshowInterval = null;
-      switchImage(0);
+      if (!zoomOpen) switchImage(0);
     });
   }
+
+  function closeZoom() {
+    const overlay = document.getElementById('pdp-zoom-overlay');
+    if (overlay) overlay.remove();
+    zoomOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  function openZoom() {
+    const src = images[currentIdx] || product.image;
+    if (!src || isVideoSrc(src)) return;
+    closeZoom();
+    zoomOpen = true;
+    slideshowActive = false;
+    clearInterval(slideshowInterval);
+    slideshowInterval = null;
+    document.body.style.overflow = 'hidden';
+    const overlay = document.createElement('div');
+    overlay.id = 'pdp-zoom-overlay';
+    overlay.className = 'pdp-zoom-overlay';
+    overlay.innerHTML = `
+      <button type="button" class="pdp-zoom-close" aria-label="Close zoom"><span class="material-symbols-outlined">close</span></button>
+      <img src="${src}" alt="${mainImageEl.dataset.alt || product.title}" class="pdp-zoom-img" />
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay || e.target.closest('.pdp-zoom-close')) closeZoom();
+    });
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        closeZoom();
+        document.removeEventListener('keydown', onKey);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+  }
+
+  document.getElementById('pdp-zoom-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openZoom();
+  });
+
+  mainImageEl?.addEventListener('click', (e) => {
+    if (e.target.closest('.pdp-zoom-btn')) return;
+    const img = mainImageEl.querySelector('.pdp-slide--active img');
+    if (img) openZoom();
+  });
 }
 
 function showToast(message, type = 'success') {

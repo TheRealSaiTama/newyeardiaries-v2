@@ -35,10 +35,6 @@ export function renderContactPage(params, appContent) {
                 <span class="material-symbols-outlined">location_on</span>
                 <div><strong>Address</strong><br><span class="text-sm">${address}</span></div>
               </div>
-              <div class="contact-info-card">
-                <span class="material-symbols-outlined">factory</span>
-                <div><strong>Factory Tours</strong><br><span class="text-sm">Available by appointment.<br>See our manufacturing process firsthand.</span></div>
-              </div>
             </div>
           </div>
           <div class="bulk-quote-form">

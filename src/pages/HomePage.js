@@ -87,6 +87,7 @@ export async function renderHomePage() {
   }
 
   const shopCategories = content.shopCategories || [];
+  const heroBanners = (content.banners || []).filter((b) => b && b.image_url);
 
   const app = document.getElementById('app');
 
@@ -94,7 +95,7 @@ export async function renderHomePage() {
     <div class="page-content">
       <section class="hero-section">
         <div class="hero-slider" id="hero-slider">
-          ${(content.banners && content.banners.length > 0) ? content.banners.map((b, i) => `
+          ${heroBanners.length > 0 ? heroBanners.map((b, i) => `
             <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background-image:url('${b.image_url}')">
               ${(b.title || b.subtitle || b.cta_text) ? `
               <div class="hero-slide-content" style="position:absolute; bottom:20%; left:10%; color:#fff; background:rgba(0,0,0,0.5); padding:2rem; border-radius:8px;">
@@ -135,16 +136,19 @@ export async function renderHomePage() {
           </div>
           <div class="ap-cat-wrapper">
             <div class="ap-cat-grid" id="apCatGrid">
-              ${(shopCategories || []).map(sc => `
+              ${(shopCategories || []).map(sc => {
+                const label = sc.title || sc.name || 'Category';
+                return `
                 <div class="ap-cat-card-wrap">
-                  <a href="${sc.link}" class="ap-cat-card">
+                  <a href="${sc.link || '/shop'}" class="ap-cat-card">
                     <div class="ap-cat-img-wrapper">
-                      <img src="${sc.image_url || '/images/placeholder.jpg'}" alt="${sc.title}" loading="lazy" />
+                      <img src="${sc.image_url || '/images/placeholder.jpg'}" alt="${label}" loading="lazy" />
                     </div>
-                    <div class="ap-cat-label">${sc.title}</div>
+                    <div class="ap-cat-label">${label}</div>
                   </a>
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
             <button class="ap-cat-arrow ap-cat-arrow--left" id="apCatLeft">&#8249;</button>
             <button class="ap-cat-arrow ap-cat-arrow--right" id="apCatRight">&#8250;</button>
