@@ -370,24 +370,51 @@ export async function initAdminPage() {
       }
 
       try {
-        // Call the server-side verify-admin Edge Function. The shared password
-        // is now stored only as a Supabase secret — never in the JS bundle.
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const res = await fetch(`${supabaseUrl}/functions/v1/verify-admin`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          },
-          body: JSON.stringify({ password: pass }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.access_token) {
-          throw new Error(data?.error || `Sign-in failed (${res.status})`);
+        let data = null;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          try {
+            const controller = new AbortController();
+            const t = setTimeout(() => controller.abort(), 20000);
+            const res = await fetch(`${supabaseUrl}/functions/v1/verify-admin`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                apikey: anonKey,
+                Authorization: `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({ password: pass }),
+              signal: controller.signal,
+            });
+            clearTimeout(t);
+            const body = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+              throw Object.assign(new Error(body?.error || 'Invalid password'), { fatal: true });
+            }
+            if (!res.ok || !body?.access_token) {
+              lastErr = new Error(body?.error || `Sign-in failed (${res.status})`);
+              if (attempt < 4 && (res.status >= 500 || res.status === 0)) {
+                await new Promise((r) => setTimeout(r, 400 * attempt));
+                continue;
+              }
+              throw lastErr;
+            }
+            data = body;
+            break;
+          } catch (e) {
+            if (e?.fatal) throw e;
+            lastErr = e?.name === 'AbortError' ? new Error('Login timed out — try again') : e;
+            if (attempt < 4) {
+              await new Promise((r) => setTimeout(r, 500 * attempt));
+              continue;
+            }
+            throw lastErr;
+          }
         }
-        // Promote the anon-key client to the admin's authenticated session.
+        if (!data?.access_token) throw lastErr || new Error('Sign-in failed');
+
         const setRes = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
@@ -401,16 +428,19 @@ export async function initAdminPage() {
         errEl.className = 'login-error';
         errEl.setAttribute('role', 'alert');
         errEl.setAttribute('aria-live', 'polite');
-        errEl.textContent = err?.message || 'Wrong password. Try again.';
+        const msg = err?.message || 'Wrong password. Try again.';
+        errEl.textContent = msg;
         errEl.style.cssText = 'color:var(--color-error);text-align:center;font-size:var(--fs-sm);margin-top:var(--space-2)';
         form.after(errEl);
-        document.getElementById('admin-pass').value = '';
+        if (/invalid password|wrong password/i.test(msg)) {
+          document.getElementById('admin-pass').value = '';
+        }
         document.getElementById('admin-pass').focus();
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = origLabel || 'Sign In';
         }
-        setTimeout(() => errEl.remove(), 4000);
+        setTimeout(() => errEl.remove(), 5000);
       }
     });
     return;
@@ -875,7 +905,8 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
   let query = supabase
     .from('products')
     .select('*, category:categories!products_category_id_fkey(name)', { count: 'exact' })
-    .order('created_at', { ascending: false });
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('name', { ascending: true });
   let categorySlug = null;
   let sortByProduct = null;
 
@@ -927,10 +958,14 @@ async function renderProductRows(container, header, opts, breadcrumb = '') {
       if (categorySlug === 'a-to-z-diary-collection') return (a.name || '').localeCompare(b.name || '');
       const sa = sortByProduct?.get(a.id);
       const sb = sortByProduct?.get(b.id);
-      if (sa == null && sb == null) return (a.name || '').localeCompare(b.name || '');
-      if (sa == null) return 1;
-      if (sb == null) return -1;
-      return sa - sb || (a.name || '').localeCompare(b.name || '');
+      const va = (sa != null && Number(sa) > 0)
+        ? Number(sa)
+        : ((a.sort_order != null && Number(a.sort_order) > 0) ? Number(a.sort_order) : 999999);
+      const vb = (sb != null && Number(sb) > 0)
+        ? Number(sb)
+        : ((b.sort_order != null && Number(b.sort_order) > 0) ? Number(b.sort_order) : 999999);
+      if (va !== vb) return va - vb;
+      return (a.name || '').localeCompare(b.name || '');
     });
     count = products.length;
     products = products.slice(from, to + 1);

@@ -89,10 +89,14 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  let signIn = await admin.auth.signInWithPassword({
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
-  });
+  async function signInAdmin() {
+    return admin.auth.signInWithPassword({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+  }
+
+  let signIn = await signInAdmin();
 
   if (signIn.error) {
     const msg = signIn.error.message || '';
@@ -102,20 +106,46 @@ Deno.serve(async (req) => {
       signIn.error.status === 400;
 
     if (isInvalidLogin) {
-      const created = await admin.auth.admin.createUser({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-        email_confirm: true,
-      });
-      if (created.error) {
-        return json(req, 500, { error: 'Failed to create admin user: ' + created.error.message });
+      let existingId: string | null = null;
+      try {
+        const listed = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+        const hit = (listed.data?.users || []).find(
+          (u) => (u.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase(),
+        );
+        if (hit?.id) existingId = hit.id;
+      } catch {
+        existingId = null;
       }
-      signIn = await admin.auth.signInWithPassword({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-      });
+
+      if (existingId) {
+        const updated = await admin.auth.admin.updateUserById(existingId, {
+          password: ADMIN_PASSWORD,
+          email_confirm: true,
+        });
+        if (updated.error) {
+          return json(req, 500, { error: 'Failed to sync admin password: ' + updated.error.message });
+        }
+      } else {
+        const created = await admin.auth.admin.createUser({
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD,
+          email_confirm: true,
+        });
+        if (created.error) {
+          const already = (created.error.message || '').toLowerCase().includes('already');
+          if (!already) {
+            return json(req, 500, { error: 'Failed to create admin user: ' + created.error.message });
+          }
+        }
+      }
+
+      signIn = await signInAdmin();
       if (signIn.error) {
-        return json(req, 500, { error: 'Failed to sign in after create: ' + signIn.error.message });
+        await new Promise((r) => setTimeout(r, 200));
+        signIn = await signInAdmin();
+      }
+      if (signIn.error) {
+        return json(req, 500, { error: 'Failed to sign in after setup: ' + signIn.error.message });
       }
     } else {
       return json(req, 500, { error: 'Sign-in failed: ' + msg });
