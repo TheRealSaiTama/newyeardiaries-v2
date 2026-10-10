@@ -7,7 +7,8 @@
  *   SMTP_FROM   = optional, default "New Year Diaries <SMTP_USER>"
  *   ORDER_ADMIN_EMAIL = optional, default newyeardiaries@gmail.com
  *   ALLOWED_ORIGINS   = optional, comma-separated origin allowlist
- *                        (default: newyeardiaries.in, newyeardiaries-v2.vercel.app, localhost)
+ *                        (default: newyeardiaries.in, diaryprinting.in,
+ *                         newyeardiaries-v2.vercel.app, localhost)
  *
  * Deploy:
  *   supabase functions deploy send-order-email --no-verify-jwt
@@ -18,7 +19,7 @@
  */
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || 'https://newyeardiaries.in,https://www.newyeardiaries.in,https://diaryprinting.in,https://www.diaryprinting.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 function corsHeadersFor(req: Request) {

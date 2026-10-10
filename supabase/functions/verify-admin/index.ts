@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
-  'https://newyeardiaries.in,https://www.newyeardiaries.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
+  'https://newyeardiaries.in,https://www.newyeardiaries.in,https://diaryprinting.in,https://www.diaryprinting.in,https://newyeardiaries-v2.vercel.app,http://localhost:5173,http://localhost:4173')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 function isAllowedOrigin(origin: string) {
