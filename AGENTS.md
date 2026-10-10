@@ -247,3 +247,52 @@ Vercel auto-deploys on push to `main`. Configure in Vercel dashboard:
 - **Build command**: `npm run build`
 - **Output directory**: `dist`
 - **Environment variables**: Add all `VITE_*` vars and `SUPABASE_*` vars
+
+### Which host serves what (verified 2026-10-10)
+
+This is NOT the same thing as `VITE_SITE_URL`. Two separate systems are live:
+
+| Host | Serves | Notes |
+|---|---|---|
+| `newyeardiaries-v2.vercel.app` | **This V2 SPA** | Vercel build of this repo. Confirmed live, serves the chunked Vite output (`admin`, `branding`, `bulk-quote`, `checkout` chunks from `vite.config.js` `manualChunks`). |
+| `newyeardiaries.in` | **WordPress + WooCommerce** | The long-standing cPanel/hostinger store. `robots.txt` disallows `/wp-admin/` and lists `wp-content/uploads/wc-logs/`; sitemap is `sitemap_index.xml` (WP-generated). |
+
+**Gotcha**: `VITE_SITE_URL=https://newyeardiaries.in` and the `og:url`/canonical defaults in
+`index.html` point at the **WordPress** site, not at the V2 deployment. So the V2 SPA emits
+canonical/OG tags for a host that serves different content. When verifying "is V2 live" or
+checking a V2 bug, always hit `newyeardiaries-v2.vercel.app`, never the `.in` domain.
+`newyeardiaries-v2.vercel.app` is also the hardcoded default in `src/lib/notify.js` and an
+allowed origin in both Edge Functions (`verify-admin`, `send-order-email`).
+
+### Supabase project: free tier, auto-pauses (verified 2026-10-10)
+
+Project `cqrnmyssytgfvgrhhfoz` ("New Year Diaries Project", org `glwmpewqwakelmcchfgk`) is on the
+**FREE plan, region `ap-northeast-1` (Tokyo), nano compute**. Two consequences that bit us on
+2026-10-10:
+
+1. **It auto-pauses after 7 days of inactivity.** While paused, `*.supabase.co` stops resolving
+   (DNS returns **NXDOMAIN**, confirmed via Google Public DNS), so the whole SPA silently dies
+   while Vercel still returns HTTP 200. **Do not diagnose NXDOMAIN as "project deleted."** Check
+   Supabase dashboard → project status first. A paused project is restorable for 90 days with data
+   intact, no data loss.
+2. **Dashboard reads "LAST BACKUP: No backups".** Free tier gets zero automated backups. Only
+   Pro/Team/Enterprise get daily snapshots (7/14/30 days). There is no server-side safety net.
+
+**Recovery drill**: to restore the SPA, Supabase dashboard → the project → Restore. Takes ~2 min,
+boots in ~1 min. No code change or redeploy needed, the `.env` project ref is unchanged.
+
+**Backup gap**: this repo has NO Postgres dump of any kind.
+- `NYD.sql` is a trap. It is a 344-line **MySQL/MariaDB phpMyAdmin dump of a different, unrelated
+  database** (`NYD`, 7 tables like `code_items`). It is NOT a Supabase backup. Do not attempt to
+  restore from it.
+- `supabase/products_seed.sql` has only 4 sample INSERTs, not the real catalog.
+- `wc-product-export-2-8-2026-1785685087657.csv` holds 9,780 **WooCommerce** rows and is the only
+  bulk product data on disk, but it predates the V2 model and lacks V2 fields (sort_order, meta
+  tags, base64 images, bulk pricing).
+- `backups/` (gitignored) holds JSON exports taken via the anon REST key. Covers products,
+  categories, banners, content, quote_requests, contact_submissions. It **cannot** cover
+  `orders`, `order_items`, or `enquiries`, because RLS restricts those to the `authenticated` role.
+
+**To get a real full dump** you need the DB password: dashboard → Connect → Session pooler
+connection string, then `supabase db dump --linked --file <path>` (CLI 2.111.0 is installed
+locally; `psql`/`pg_dump` are NOT on this machine). Do this before anything else touches it.

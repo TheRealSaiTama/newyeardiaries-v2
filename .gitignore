@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .env
 .vercel
+
+# Off-site database exports (contains real product data + customer leads).
+# Never commit these. Keep them on disk / cloud storage only.
+backups/

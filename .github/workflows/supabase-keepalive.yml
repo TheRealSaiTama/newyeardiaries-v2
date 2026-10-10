@@ -1,0 +1,64 @@
+name: Supabase Keepalive
+
+# Free-tier Supabase projects auto-pause after 7 days of inactivity.
+# This pings the REST API on a real table so the inactivity clock never resets.
+# Runs on GitHub's infra, so it keeps working even when your PC is off.
+
+on:
+  schedule:
+    # Every 2 days at 06:00 UTC. Ping interval is far inside the 7-day window,
+    # so several consecutive failures are tolerated before a real pause.
+    - cron: '0 6 */2 * *'
+  workflow_dispatch: # lets you trigger it manually from the Actions tab
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_ANON_KEY secret is missing."
+            exit 1
+          fi
+
+          # Hit a real table so this counts as genuine database activity,
+          # not just a static asset hit on the project domain.
+          for attempt in 1 2; do
+            code=$(curl -s -o /tmp/ping.out -w '%{http_code}' \
+              --max-time 30 \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/categories?select=id&limit=1" || echo "000")
+
+            echo "attempt $attempt -> HTTP $code"
+            head -c 200 /tmp/ping.out; echo
+
+            if [ "$code" = "200" ]; then
+              echo "Keepalive OK. Inactivity clock reset."
+              exit 0
+            fi
+            [ "$attempt" = "1" ] && sleep 30
+          done
+
+          echo "::error::Supabase did not respond 200. Project may be paused."
+          exit 1
+
+      - name: Check live site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          # Optional repo variable. Set SITE_URL to your Vercel URL to also
+          # confirm the storefront itself renders.
+          if [ -z "$SITE_URL" ]; then
+            echo "SITE_URL not set, skipping site check."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$SITE_URL" || echo "000")
+          echo "site -> HTTP $code"
+          [ "$code" = "200" ] || echo "::warning::Storefront returned $code"
