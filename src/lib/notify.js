@@ -187,7 +187,7 @@ function buildEnquiryHtml(type, data, code) {
       <div style="font-size:12px;color:#444;line-height:1.7;">
         Cell &nbsp;: + 91 93111 35190<br>
         Off. &nbsp;&nbsp;: 011 2394 7088, 3333 1586<br>
-        Web &nbsp;: <a href="https://www.newyeardiaries.in" style="color:#1a56db;text-decoration:none;">www.newyeardiaries.in</a>
+        Web &nbsp;: <a href="${SITE_ORIGIN}" style="color:#1a56db;text-decoration:none;">${SITE_ORIGIN.replace(/^https?:\/\//, '')}</a>
       </div>
       <div style="font-size:11px;color:#888;margin-top:10px;line-height:1.5;">New Year Diaries &mdash; Premium Diaries, Planners &amp; Corporate Gifts<br>174 D, Bawana Industrial Area, Delhi 110039, India</div>
     </td>
@@ -423,7 +423,7 @@ async function buildOrderHtml(data, attachments = []) {
     '<tr><td style="padding:22px 24px;background:#fdf9f3;text-align:center;border-top:2px solid #a0522d;">',
     '<div style="font-size:14px;font-weight:700;color:#a0522d;margin:0 0 6px 0;">New Year Diaries</div>',
     '<div style="font-size:12px;color:#666;margin:0 0 4px 0;">174 D, Bawana Industrial Area, Delhi 110039, India</div>',
-    '<div style="font-size:12px;color:#666;margin:0;">Phone: +91 93111 35190 | support@newyeardiaries.in | www.newyeardiaries.in</div>',
+    `<div style="font-size:12px;color:#666;margin:0;">Phone: +91 93111 35190 | support@newyeardiaries.in | ${SITE_ORIGIN.replace(/^https?:\/\//, '')}</div>`,
     '</td></tr>',
 
     '</table></td></tr></table></body></html>',
