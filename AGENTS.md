@@ -296,3 +296,59 @@ boots in ~1 min. No code change or redeploy needed, the `.env` project ref is un
 **To get a real full dump** you need the DB password: dashboard → Connect → Session pooler
 connection string, then `supabase db dump --linked --file <path>` (CLI 2.111.0 is installed
 locally; `psql`/`pg_dump` are NOT on this machine). Do this before anything else touches it.
+
+---
+
+## The OTHER store: `newyeardiaries.in` (WordPress), compromised 2025-09 to 2026-11
+
+The old WordPress store on cPanel (`199.79.62.8`, cPanel user `newyee9c`, home `/home1/newyee9c`)
+was **compromised**. Fully remediated on 2026-11-11. Read
+`NYD-WP-INCIDENT-REPORT-FINAL.md` before touching that server.
+
+Facts that are easy to get wrong:
+
+- **cPanel user is `newyee9c`**, DB is `newyee9c_diary`, **table prefix is `wpvn_`** (not `wp_`).
+  Using `wp_` makes queries fail silently.
+- **Table prefix matters more than it looks.** A `grep`-based config parser that misses the
+  closing quote after `DB_USER` resolves empty credentials. Then `mysqldump` writes a 4 KB stub and
+  every query fails while reporting "clean". Always assert the connection, never trust an empty
+  result from a connection you did not verify.
+- **The SSH shell is cPanel `jailshell`.** It strips inline `-p<password>` from the `mysql`
+  command line, so credentials must go through `--defaults-extra-file`. `find -maxdepth` is
+  unreliable. `set -u` plus a bare `$1` aborts the script before any fallback runs.
+- **Apache logs live at `/etc/apache2/logs/domlogs/newyee9c`** (symlinked as `~/access-logs`).
+  `~/logs/` only holds roundcube. **cPanel rotates these daily**, so only about one day survives;
+  anything older is gone for good.
+- **`wp core verify-checksums` flags `error_log` files as "File should not exist".** They were
+  genuine PHP error logs here, not webshells. Check content before deleting, and never delete a
+  file that is actually core (`wp-includes/Text/Diff/Engine/shell.php` is core, not a webshell).
+- **`wp-includes/Text/Diff/Engine/shell.php` is legitimate WordPress core**, the Horde
+  `Text_Diff_Engine_shell` class. Do not treat "shell" in a filename as a backdoor.
+- **The live vector was WP Rocket 3.12.5.1** (`/_ignition/execute-solution`, unauthenticated RCE).
+  `site-helper-*` mu-plugins and `wp-helper-*` plugin drops plus a `/.tmb/` path-traversal
+  uploader kept reinstalling a crypto drainer. `/.tmb/` dates back to **2025-09-01**.
+- **Access to `newyee9c_diary` via the `newyee9c_neeraj` MySQL user is ALL PRIVILEGES** and
+  `secure_file_priv` is `/var/lib/mysql-files/`, so that account can rewrite `wpvn_options` but
+  **cannot** write files into the webroot. File drops came from the uploader webshell, not SQL.
+- **The `.htaccess` on that host is load-bearing.** The `RewriteCond REQUEST_FILENAME !-f / !-d`
+  conditions must stay attached to the catch-all `RewriteRule . /index.php [L]`. Inserting any
+  rule between them makes every non-file path return 403 and takes the whole storefront down.
+
+### Helper scripts in `scripts/`
+
+All read-only unless stated. Each one is self-contained and can be run from cPanel Terminal via
+`curl -sL -H "Accept: application/vnd.github.raw" "https://api.github.com/repos/TheRealSaiTama/newyeardiaries-v2/contents/scripts/<name>.sh?ref=main" -o ~/<name>.sh && bash ~/<name>.sh`.
+Use the `api.github.com` URL, not `raw.githubusercontent.com`, which serves a stale cached copy.
+
+| Script | Purpose |
+|---|---|
+| `nyd-wp-audit.sh` | read-only inventory of plugins, users, cron, FTP accounts, recent files |
+| `nyd-db-audit.sh` | prefix-aware database audit |
+| `nyd-remediate.sh` | backup + remove + harden + verify |
+| `nyd-forensics.sh` | analyse the deleted malware from the backup tarballs |
+| `nyd-eradicate.sh` | evidence dump, then remove backdoors and rogue admins |
+| `nyd-final.sh` | access-log forensics and remaining backdoors |
+| `nyd-restore-log.sh` | restore deleted core files, mine the domlogs |
+| `nyd-lockdown.sh` | remove the uploader, block IPs and exploit paths |
+| `nyd-fix-htaccess.sh` | rewrite `.htaccess` with correct rule ordering |
+| `nyd-unblock.sh` | remove a wrongly blocked IP from the blocklist |
