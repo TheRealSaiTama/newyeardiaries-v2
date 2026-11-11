@@ -15,17 +15,29 @@ RED=$'\033[31m'; YEL=$'\033[33m'; GRN=$'\033[32m'; CYA=$'\033[36m'; RST=$'\033[0
 LINE="-------------------------------------------------------------"
 
 find_root() {
-  for d in "${1:-}" "$HOME/public_html" "$HOME/../public_html" /var/www/html \
-           /var/www/*/public_html /usr/local/apache/htdocs; do
-    [ -n "$d" ] && [ -f "$d/wp-config.php" ] && { echo "$d"; return 0; }
+  local explicit="${1:-}"
+  if [ -n "$explicit" ] && [ -f "$explicit/wp-config.php" ]; then echo "$explicit"; return 0; fi
+  # standard shared-hosting layouts
+  for d in "$HOME/public_html" "$HOME/../public_html" "/home1/$USER/public_html" \
+           "/home2/$USER/public_html" "/home3/$USER/public_html" \
+           "$HOME/www/newyeardiaries.in" "$HOME/newyeardiaries.in" \
+           /var/www/html /usr/local/apache/htdocs; do
+    [ -f "$d/wp-config.php" ] && { echo "$d"; return 0; }
   done
+  # brute scan a few levels under home
+  local found
+  found=$(find "$HOME" -maxdepth 4 -name wp-config.php -not -path '*/node_modules/*' 2>/dev/null | head -1)
+  if [ -n "$found" ]; then dirname "$found"; return 0; fi
   return 1
 }
 
 ROOT=$(find_root "$1")
 if [ -z "$ROOT" ]; then
   echo "${RED}Could not find wp-config.php.${RST}"
-  echo "Pass the path explicitly:  bash nyd-wp-audit.sh /home/USER/public_html"
+  echo "Home dir is: $HOME"
+  echo "Run this first to locate it, then pass the path:"
+  echo "  find $HOME -maxdepth 4 -name wp-config.php 2>/dev/null"
+  echo "Then:  bash nyd-audit.sh <path-to-folder-containing-wp-config.php>"
   exit 1
 fi
 echo "${CYA}WordPress root: $ROOT${RST}"
