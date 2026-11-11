@@ -17,27 +17,37 @@ LINE="-------------------------------------------------------------"
 find_root() {
   local explicit="${1:-}"
   if [ -n "$explicit" ] && [ -f "$explicit/wp-config.php" ]; then echo "$explicit"; return 0; fi
-  # standard shared-hosting layouts
-  for d in "$HOME/public_html" "$HOME/../public_html" "/home1/$USER/public_html" \
-           "/home2/$USER/public_html" "/home3/$USER/public_html" \
+  # standard shared-hosting layouts (jailshell-safe: no globs, plain paths)
+  for d in "$HOME/public_html" "$HOME/../public_html" \
            "$HOME/www/newyeardiaries.in" "$HOME/newyeardiaries.in" \
+           "$HOME/domains/newyeardiaries.in" "$HOME/domains/newyeardiaries.in/public_html" \
+           "/home1/$USER/public_html" "/home2/$USER/public_html" "/home3/$USER/public_html" \
            /var/www/html /usr/local/apache/htdocs; do
     [ -f "$d/wp-config.php" ] && { echo "$d"; return 0; }
   done
-  # brute scan a few levels under home
+  # bounded scan under home (jailshell may cap depth, so try shallow first)
   local found
-  found=$(find "$HOME" -maxdepth 4 -name wp-config.php -not -path '*/node_modules/*' 2>/dev/null | head -1)
-  if [ -n "$found" ]; then dirname "$found"; return 0; fi
+  for depth in 2 3 4 5; do
+    found=$(find "$HOME" -maxdepth "$depth" -name wp-config.php 2>/dev/null | head -1)
+    if [ -n "$found" ]; then dirname "$found"; return 0; fi
+  done
+  # last resort: direct listing of likely dirs
+  for d in "$HOME"/*/ "$HOME"/*/*/; do
+    [ -f "${d}wp-config.php" ] && { echo "${d%/}"; return 0; }
+  done
   return 1
 }
 
-ROOT=$(find_root "$1")
+ROOT=$(find_root "${1:-}")
 if [ -z "$ROOT" ]; then
   echo "${RED}Could not find wp-config.php.${RST}"
   echo "Home dir is: $HOME"
-  echo "Run this first to locate it, then pass the path:"
-  echo "  find $HOME -maxdepth 4 -name wp-config.php 2>/dev/null"
-  echo "Then:  bash nyd-audit.sh <path-to-folder-containing-wp-config.php>"
+  echo ""
+  echo "Run this and paste the output:"
+  echo "  ls -la $HOME"
+  echo "  find $HOME -maxdepth 3 -name wp-config.php 2>/dev/null"
+  echo "Then re-run with the folder that contains wp-config.php:"
+  echo "  bash ~/nyd-audit.sh /path/to/that/folder"
   exit 1
 fi
 echo "${CYA}WordPress root: $ROOT${RST}"
@@ -73,9 +83,15 @@ fi
 
 # ---------------------------------------------------------------- 3. MALWARE STRINGS
 echo ""
-echo "${CYA}[3] Known ClickFix / fake-captcha signatures inside PHP files${RST}"
+echo "${CYA}[3] Payload + malware signatures inside PHP files${RST}"
 echo "$LINE"
-PAT='mshta|nochain-sw|front-probe|timelevel12|init-block|proxyvector|gravityzone|ClipboardItem|navigator\.clipboard|execCommand\(.copy|wp_pf_11d0793d|widget_block'
+# The exact XOR key of the injected drainer, plus known ClickFix/fake-captcha
+# families. The drainer rebuilds its strings at runtime, so the loader marker
+# is the only reliable file-level hit.
+PAT='xlxjMiihfcPDc26Vy4U58h+CAeZP|mshta|nochain-sw|front-probe|timelevel12|init-block|proxyvector|gravityzone|ClipboardItem|navigator\.clipboard|execCommand\(.copy|wp_pf_11d0793d|widget_block'
+echo "  -- scanning docroot for the payload marker --"
+grep -rl 'xlxjMiihfcPDc26Vy4U58h+CAeZP' "$ROOT" 2>/dev/null | head -20 | sed "s|^$ROOT|  HIT |"
+echo "  -- scanning for other malware signatures --"
 if grep -rIlE "$PAT" "$ROOT/wp-content" "$ROOT/wp-config.php" "$ROOT/index.php" 2>/dev/null | head -30 | while read -r f; do
       printf "  ${RED}HIT${RST} %s\n" "${f#$ROOT/}"
       grep -oIE '.{0,60}'"$PAT"'.{0,60}' "$f" 2>/dev/null | head -3 | sed 's/^/        /'
@@ -103,11 +119,16 @@ DBH=${DBH:-localhost}
 echo "  DB: $DBN on $DBH as $DBU"
 
 if command -v mysql >/dev/null 2>&1; then
-  M="mysql -h $DBH -u '$DBU' -p'$DBP' '$DBN' -N -B"
+  # cPanel jailshell strips inline `-p<password>` from the mysql command line,
+  # so pass credentials through a defaults file instead.
+  CNF="$HOME/.nyd-db.cnf"
+  umask 077
+  printf '[client]\nhost=%s\nuser=%s\npassword=%s\n' "$DBH" "$DBU" "$DBP" > "$CNF"
+  M="mysql --defaults-extra-file=$CNF -N -B $DBN"
   echo "  -- MYSQL USERS WITH ACCESS TO THIS DB --"
-  eval "$M -e \"SELECT user,host FROM mysql.user WHERE user NOT IN ('','mysql.sys','mysql.session','mysql.infoschema');\"" 2>/dev/null \
+  $M -e "SELECT user,host FROM mysql.user WHERE user NOT IN ('','mysql.sys','mysql.session','mysql.infoschema');" 2>/dev/null \
     | while read -r u h; do
-        g=$(eval "$M -e \"SHOW GRANTS FOR '$u'@'$h';\"" 2>/dev/null | tr '\n' ' ')
+        g=$($M -e "SHOW GRANTS FOR '$u'@'$h';" 2>/dev/null | tr '\n' ' ')
         case "$g" in
           *"$DBN"*|*ALL\ PRIVILEGES*|*" \`$DBN\`"*) flag="${RED} <-- HAS ACCESS TO THIS DB${RST}" ;;
           *) flag="" ;;
@@ -115,10 +136,11 @@ if command -v mysql >/dev/null 2>&1; then
         printf "  %-24s %s%s\n" "$u@$h" "${g:0:110}" "$flag"
       done
   echo "  -- OPTIONS THAT CARRY MALWARE --"
-  eval "$M -e \"SELECT option_name, LEFT(option_value,120) FROM wp_options WHERE option_name IN ('widget_block','widget_custom_html','site_url','home') OR option_value LIKE '%wp_pf_11d0793d%' OR option_value LIKE '%mshta%' OR option_value LIKE '%base64_decode%' LIMIT 25;\"" 2>/dev/null | sed 's/^/  /'
+  $M -e "SELECT option_name, LEFT(option_value,120) FROM wp_options WHERE option_value LIKE '%xlxjMiihfcPDc26Vy4U58h+CAeZP%' OR option_name IN ('widget_block','widget_custom_html') OR option_value LIKE '%wp_pf_11d0793d%' OR option_value LIKE '%mshta%' OR option_value LIKE '%base64_decode%' LIMIT 25;" 2>/dev/null | sed 's/^/  /'
   echo "  -- SCHEDULED CRON (malware often self-reinstalls via cron) --"
-  eval "$M -e \"SELECT option_name, option_value FROM wp_options WHERE option_name='cron';\"" 2>/dev/null \
+  $M -e "SELECT option_value FROM wp_options WHERE option_name='cron';" 2>/dev/null \
     | tr ';' '\n' | grep -oE '[a-z0-9_]{30,}' | sort -u | head -20 | sed 's/^/  /'
+  rm -f "$CNF"
 else
   echo "  ${YEL}mysql client not on PATH - skipping DB checks.${RST}"
   echo "  Run these manually in phpMyAdmin -> SQL:"
