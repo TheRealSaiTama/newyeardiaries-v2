@@ -1,16 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  NYD WordPress - Deep Clean & Hardening Script
+#  NYD WordPress - Deep Clean & Hardening Script (v2)
 #  Run: bash ~/nyd-deep-clean.sh
-#
-#  Tasks handled:
-#  1. Neutralize directfwd.com malware / rogue error pages (403.shtml, etc.)
-#  2. Quarantine massive exposed backups (26_oct_backup.zip, etc.) outside public_html
-#  3. Quarantine exposed management portals (/manage TinyFileManager, /v2_backup, /neeraj)
-#  4. Deactivate and remove risky plugins (wp-file-manager) & purge residual caches
-#  5. Invalidate all WordPress session tokens (kill rogue admin sessions)
-#  6. Lock down .htaccess with explicit clean error documents
-#  7. Full integrity verification and live HTTP check
 # =============================================================================
 
 set -u
@@ -18,6 +9,7 @@ set -u
 WP_DIR="$HOME/public_html"
 cd "$WP_DIR" 2>/dev/null || cd /home1/newyee9c/public_html || { echo "FATAL: cannot cd to public_html"; exit 1; }
 ROOT=$(pwd)
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || echo "$0")
 
 STAMP=$(date +%Y%m%d-%H%M%S)
 BK="$HOME/nyd-deep-clean-$STAMP"
@@ -34,8 +26,8 @@ info() { echo "  [INFO] $1"; }
 
 echo "==================================================================="
 echo "  NYD DEEP CLEAN & SECURITY HARDENING - $(date)"
-echo "  Target: $ROOT"
-echo "  Backup: $BK"
+echo "  Target:     $ROOT"
+echo "  Backup:     $BK"
 echo "  Quarantine: $QUARANTINE"
 echo "==================================================================="
 
@@ -53,29 +45,35 @@ echo "--- 1. BACKUP CURRENT CONFIGURATION ---"
 echo ""
 echo "--- 2. NEUTRALIZE directfwd.com & MALICIOUS ERROR PAGES ---"
 
-# Scan docroot and home for directfwd / skz_pid markers
+# Scan only web-facing HTML/SHTML/PHP files in public_html and home (never touch .sh or backup dirs)
 FOUND_MALICIOUS_PAGES=0
 while IFS= read -r f; do
   [ -f "$f" ] || continue
+  # Safeguard: never touch shell scripts or self
+  case "$f" in
+    *.sh|*.bash|*.py|*.log|*.txt|*.tar.gz|*.zip) continue ;;
+  esac
+  [ "$f" = "$SCRIPT_PATH" ] && continue
+
   FOUND_MALICIOUS_PAGES=$((FOUND_MALICIOUS_PAGES+1))
-  info "Found malicious redirect in: $f"
+  info "Found malicious redirect in web file: $f"
   cp -p "$f" "$BK/$(basename "$f").infected"
   echo "403 Forbidden" > "$f"
   chmod 644 "$f"
   ok "Cleaned $f"
-done < <(grep -rliE 'directfwd\.com|_skz_pid|9POBEX80W' "$ROOT" "$HOME" 2>/dev/null --exclude-dir=nyd-* --exclude-dir=quarantined* || true)
+done < <(find "$ROOT" "$HOME" -maxdepth 2 \( -name "*.shtml" -o -name "*.html" -o -name "*.htm" -o -name "*.php" \) -type f -exec grep -lE 'directfwd\.com|_skz_pid|9POBEX80W' {} + 2>/dev/null || true)
 
 if [ "$FOUND_MALICIOUS_PAGES" -eq 0 ]; then
-  info "No explicit error files found with directfwd marker; will enforce clean Apache ErrorDocuments."
+  info "No infected web error files found; Apache ErrorDocument rules will enforce clean responses."
 fi
 
-# Neutralize standard cPanel shtml error files if they exist
+# Neutralize standard cPanel shtml error files if they exist in docroot
 for shtml in 400.shtml 401.shtml 403.shtml 404.shtml 500.shtml; do
   if [ -f "$ROOT/$shtml" ]; then
     cp -p "$ROOT/$shtml" "$BK/$shtml.before"
-    echo "$shtml" | sed 's/\.shtml//' > "$ROOT/$shtml"
+    echo "$shtml: Access Denied" > "$ROOT/$shtml"
     chmod 644 "$ROOT/$shtml"
-    ok "Reset $shtml to plain text"
+    ok "Reset $shtml to clean text"
   fi
 done
 
@@ -97,7 +95,7 @@ for zipf in \
   fi
 done
 
-# Stray backup .htaccess files
+# Stray backup config files in docroot
 for stray in .htaccess_ .htaccess.bk .htaccess.phpupgrader.* .htaccess.lock-*; do
   if [ -f "$ROOT/$stray" ]; then
     mv "$ROOT/$stray" "$BK/" 2>/dev/null && ok "Archived stray config: $stray"
